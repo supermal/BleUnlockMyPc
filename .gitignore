@@ -1,0 +1,8 @@
+.worktrees/
+out/
+bin/
+obj/
+x64/
+x86/
+*.user
+.vs/
