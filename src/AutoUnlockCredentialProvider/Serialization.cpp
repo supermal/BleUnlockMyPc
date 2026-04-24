@@ -112,7 +112,7 @@ static HRESULT PackKerb(const std::wstring& username, const std::wstring& passwo
     if (!pLogon) return E_OUTOFMEMORY;
     ZeroMemory(pLogon, cbTotal);
 
-    pLogon->Logon.MessageType = KerbInteractiveUnlockLogon;
+    pLogon->Logon.MessageType = KerbWorkstationUnlockLogon;
     PBYTE pb = reinterpret_cast<PBYTE>(pLogon + 1);
 
     pLogon->Logon.LogonDomainName.Length        = static_cast<USHORT>(cbDomain);
