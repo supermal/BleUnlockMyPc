@@ -12,6 +12,8 @@ public partial class Form1 : Form
         @"SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{6D9E3F7A-2C8B-4E5D-A1F0-3B7C9D2E6F4A}";
 
     private CancellationTokenSource _pipeCts = new();
+    private DateTime _credSentAt = DateTime.MinValue;
+    private const int CooldownSeconds = 30;
 
     public Form1()
     {
@@ -63,8 +65,16 @@ public partial class Form1 : Form
                     PipeOptions.Asynchronous);
 
                 await pipe.WaitForConnectionAsync(ct);
-                Log("[监听式] CP 已连接，立即发送凭据（模拟 RSSI 已触发）");
 
+                var cooldownLeft = CooldownSeconds - (DateTime.Now - _credSentAt).TotalSeconds;
+                if (cooldownLeft > 0)
+                {
+                    Log($"[监听式] 冷却中，还需等待 {cooldownLeft:F0} 秒（防止密码错误时死循环）");
+                    pipe.Disconnect();
+                    continue;
+                }
+
+                Log("[监听式] CP 已连接，立即发送凭据（模拟 RSSI 已触发）");
                 await SendCredentialsAsync(pipe, ct);
                 pipe.Disconnect();
             }
@@ -165,7 +175,9 @@ public partial class Form1 : Form
 
         byte[] payload = Encoding.UTF8.GetBytes($"{username}\n{password}\n");
         await pipe.WriteAsync(payload, ct);
+        _credSentAt = DateTime.Now;
         Log($"已发送凭据：{username} / {"*".PadRight(password.Length, '*')}");
+        Log($"若密码错误请修正后 {CooldownSeconds} 秒内重试无效，请等待冷却后再试");
 
         byte[] buf = new byte[16];
         int read = await pipe.ReadAsync(buf, ct);
@@ -193,6 +205,8 @@ public partial class Form1 : Form
                 "未填写凭据", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
+        // 点击按钮即视为用户确认本次凭据有效，重置冷却
+        _credSentAt = DateTime.MinValue;
         _ = TriggerLockAndUnlockAsync(5);
     }
 
