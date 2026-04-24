@@ -1,0 +1,143 @@
+#include "CredentialProvider.h"
+#include "guids.h"
+#include <new>
+
+extern LONG g_cDllRef;
+
+CAutoUnlockCredentialProvider::CAutoUnlockCredentialProvider()
+    : _cRef(1)
+    , _pcpe(nullptr)
+    , _upAdviseContext(0)
+    , _pCredential(nullptr)
+    , _pPipeClient(nullptr)
+    , _credentialsReady(false)
+{
+    InterlockedIncrement(&g_cDllRef);
+    InitializeCriticalSection(&_cs);
+
+    _pCredential = new (std::nothrow) CAutoUnlockCredential();
+
+    _pPipeClient = new (std::nothrow) CPipeClient(
+        [this](const std::wstring& u, const std::wstring& p)
+        {
+            OnCredentialsReceived(u, p);
+        });
+
+    if (_pPipeClient) _pPipeClient->Start();
+}
+
+CAutoUnlockCredentialProvider::~CAutoUnlockCredentialProvider()
+{
+    if (_pPipeClient) { _pPipeClient->Stop(); delete _pPipeClient; }
+    if (_pCredential) _pCredential->Release();
+    if (_pcpe)        _pcpe->Release();
+    DeleteCriticalSection(&_cs);
+    InterlockedDecrement(&g_cDllRef);
+}
+
+ULONG CAutoUnlockCredentialProvider::AddRef()
+{
+    return InterlockedIncrement(&_cRef);
+}
+
+ULONG CAutoUnlockCredentialProvider::Release()
+{
+    LONG cRef = InterlockedDecrement(&_cRef);
+    if (cRef == 0) delete this;
+    return cRef;
+}
+
+HRESULT CAutoUnlockCredentialProvider::QueryInterface(REFIID riid, void** ppv)
+{
+    if (riid == IID_IUnknown || riid == IID_ICredentialProvider)
+    {
+        *ppv = static_cast<ICredentialProvider*>(this);
+        AddRef();
+        return S_OK;
+    }
+    *ppv = nullptr;
+    return E_NOINTERFACE;
+}
+
+HRESULT CAutoUnlockCredentialProvider::SetUsageScenario(
+    CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus, DWORD)
+{
+    if (cpus == CPUS_UNLOCK_WORKSTATION || cpus == CPUS_LOGON)
+        return S_OK;
+    return E_NOTIMPL;
+}
+
+HRESULT CAutoUnlockCredentialProvider::SetSerialization(
+    const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION*)
+{
+    return E_NOTIMPL;
+}
+
+HRESULT CAutoUnlockCredentialProvider::Advise(ICredentialProviderEvents* pcpe, UINT_PTR upAdviseContext)
+{
+    if (_pcpe) _pcpe->Release();
+    _pcpe = pcpe;
+    if (_pcpe) _pcpe->AddRef();
+    _upAdviseContext = upAdviseContext;
+    return S_OK;
+}
+
+HRESULT CAutoUnlockCredentialProvider::UnAdvise()
+{
+    if (_pcpe) { _pcpe->Release(); _pcpe = nullptr; }
+    return S_OK;
+}
+
+HRESULT CAutoUnlockCredentialProvider::GetFieldDescriptorCount(DWORD* pdwCount)
+{
+    *pdwCount = 0;
+    return S_OK;
+}
+
+HRESULT CAutoUnlockCredentialProvider::GetFieldDescriptorAt(DWORD,
+    CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd)
+{
+    *ppcpfd = nullptr;
+    return E_INVALIDARG;
+}
+
+HRESULT CAutoUnlockCredentialProvider::GetCredentialCount(
+    DWORD* pdwCount, DWORD* pdwDefault, BOOL* pbAutoLogonWithDefault)
+{
+    EnterCriticalSection(&_cs);
+    bool ready = _credentialsReady;
+    LeaveCriticalSection(&_cs);
+
+    if (ready)
+    {
+        *pdwCount               = 1;
+        *pdwDefault             = 0;
+        *pbAutoLogonWithDefault = TRUE;
+    }
+    else
+    {
+        *pdwCount               = 0;
+        *pdwDefault             = CREDENTIAL_PROVIDER_NO_DEFAULT;
+        *pbAutoLogonWithDefault = FALSE;
+    }
+    return S_OK;
+}
+
+HRESULT CAutoUnlockCredentialProvider::GetCredentialAt(DWORD dwIndex,
+    ICredentialProviderCredential** ppcpc)
+{
+    if (dwIndex != 0 || !_pCredential) return E_INVALIDARG;
+    return _pCredential->QueryInterface(IID_ICredentialProviderCredential,
+        reinterpret_cast<void**>(ppcpc));
+}
+
+void CAutoUnlockCredentialProvider::OnCredentialsReceived(
+    const std::wstring& username, const std::wstring& password)
+{
+    EnterCriticalSection(&_cs);
+    if (_pCredential) _pCredential->SetCredentials(username, password);
+    _credentialsReady = true;
+    LeaveCriticalSection(&_cs);
+
+    if (_pcpe) _pcpe->CredentialsChanged(_upAdviseContext);
+}
