@@ -42,7 +42,7 @@ static const WCHAR s_szCPKeyFmt[] =
     L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\Credential Providers\\"
     L"{6D9E3F7A-2C8B-4E5D-A1F0-3B7C9D2E6F4A}";
 static const WCHAR s_szCLSIDKeyFmt[] =
-    L"CLSID\\{6D9E3F7A-2C8B-4E5D-A1F0-3B7C9D2E6F4A}";
+    L"SOFTWARE\\Classes\\CLSID\\{6D9E3F7A-2C8B-4E5D-A1F0-3B7C9D2E6F4A}";
 
 STDAPI DllRegisterServer()
 {
