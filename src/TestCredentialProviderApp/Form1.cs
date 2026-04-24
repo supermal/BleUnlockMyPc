@@ -12,6 +12,7 @@ public partial class Form1 : Form
         @"SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{6D9E3F7A-2C8B-4E5D-A1F0-3B7C9D2E6F4A}";
 
     private readonly CancellationTokenSource _pipeCts = new();
+    private DateTime? _unlockAt;
 
     public Form1()
     {
@@ -56,19 +57,25 @@ public partial class Form1 : Form
                 await pipe.WaitForConnectionAsync(ct);
                 Log("凭据提供程序已连接到管道");
 
+                if (_unlockAt is null)
+                {
+                    Log("非测试触发的锁屏，已忽略连接");
+                    pipe.Disconnect();
+                    continue;
+                }
+
+                // 等到预定解锁时间
+                var delay = _unlockAt.Value - DateTime.Now;
+                if (delay > TimeSpan.Zero)
+                    await Task.Delay(delay, ct);
+                _unlockAt = null;
+
                 string username = string.Empty, password = string.Empty;
                 Invoke(() =>
                 {
                     username = txtUserName.Text.Trim();
                     password = txtPassword.Text;
                 });
-
-                if (string.IsNullOrEmpty(username))
-                {
-                    Log("⚠ 用户名为空，已拒绝连接，请先填写凭据");
-                    pipe.Disconnect();
-                    continue;
-                }
 
                 byte[] payload = Encoding.UTF8.GetBytes($"{username}\n{password}\n");
                 await pipe.WriteAsync(payload, ct);
@@ -107,8 +114,20 @@ public partial class Form1 : Form
                 "未填写凭据", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
-        Log("执行锁屏，等待凭据提供程序连接…");
+        _unlockAt = DateTime.Now.AddSeconds(5);
+        Log("锁屏中，5 秒后自动解锁…");
+        _ = CountdownAsync(5, _pipeCts.Token);
         NativeMethods.LockWorkStation();
+    }
+
+    private async Task CountdownAsync(int seconds, CancellationToken ct)
+    {
+        for (int i = seconds; i > 0; i--)
+        {
+            Log($"倒计时 {i}…");
+            try { await Task.Delay(1000, ct); }
+            catch (OperationCanceledException) { return; }
+        }
     }
 
     private void btnInstall_Click(object sender, EventArgs e)
