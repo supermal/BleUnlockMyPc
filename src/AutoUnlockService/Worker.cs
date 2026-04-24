@@ -117,7 +117,11 @@ public sealed class Worker : BackgroundService
 
             using (hDup)
             {
-                var si = new Win32.STARTUPINFO { cb = Marshal.SizeOf<Win32.STARTUPINFO>() };
+                var si = new Win32.STARTUPINFO
+                {
+                    cb = Marshal.SizeOf<Win32.STARTUPINFO>(),
+                    lpDesktop = "WinSta0\\Default"
+                };
                 string cmd = "rundll32.exe user32.dll,LockWorkStation";
 
                 if (!Win32.CreateProcessAsUser(hDup, null, cmd,

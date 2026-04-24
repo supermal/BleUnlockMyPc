@@ -36,6 +36,7 @@ public sealed class CredentialStore
                 var blob = new byte[cred.CredentialBlobSize];
                 Marshal.Copy(cred.CredentialBlob, blob, 0, cred.CredentialBlobSize);
                 password = Encoding.Unicode.GetString(blob);
+                Array.Clear(blob, 0, blob.Length);
             }
 
             return (username, password);

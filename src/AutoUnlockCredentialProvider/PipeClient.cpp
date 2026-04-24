@@ -91,9 +91,13 @@ void CPipeClient::Run()
                 WriteFile(hPipe, "OK\n", 3, &written, nullptr);
 
                 _callback(username, password);
+
+                SecureZeroMemory(const_cast<wchar_t*>(password.data()), password.size() * sizeof(wchar_t));
+                SecureZeroMemory(const_cast<char*>(passwordUtf8.data()), passwordUtf8.size());
             }
         }
 
+        SecureZeroMemory(buf, sizeof(buf));
         CloseHandle(hPipe);
         WaitForSingleObject(_hStopEvent, 500);
     }

@@ -37,6 +37,5 @@ private:
     UINT_PTR                   _upAdviseContext;
     CAutoUnlockCredential*     _pCredential;
     CPipeClient*               _pPipeClient;
-    bool                       _credentialsReady;
     CRITICAL_SECTION           _cs;
 };

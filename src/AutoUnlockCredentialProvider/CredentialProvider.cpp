@@ -10,7 +10,6 @@ CAutoUnlockCredentialProvider::CAutoUnlockCredentialProvider()
     , _upAdviseContext(0)
     , _pCredential(nullptr)
     , _pPipeClient(nullptr)
-    , _credentialsReady(false)
 {
     InterlockedIncrement(&g_cDllRef);
     InitializeCriticalSection(&_cs);
@@ -105,7 +104,7 @@ HRESULT CAutoUnlockCredentialProvider::GetCredentialCount(
     DWORD* pdwCount, DWORD* pdwDefault, BOOL* pbAutoLogonWithDefault)
 {
     EnterCriticalSection(&_cs);
-    bool ready = _credentialsReady;
+    bool ready = _pCredential && _pCredential->HasCredentials();
     LeaveCriticalSection(&_cs);
 
     if (ready)
@@ -134,10 +133,13 @@ HRESULT CAutoUnlockCredentialProvider::GetCredentialAt(DWORD dwIndex,
 void CAutoUnlockCredentialProvider::OnCredentialsReceived(
     const std::wstring& username, const std::wstring& password)
 {
+    ICredentialProviderEvents* pcpe = nullptr;
+    UINT_PTR ctx = 0;
+
     EnterCriticalSection(&_cs);
     if (_pCredential) _pCredential->SetCredentials(username, password);
-    _credentialsReady = true;
+    if (_pcpe) { pcpe = _pcpe; pcpe->AddRef(); ctx = _upAdviseContext; }
     LeaveCriticalSection(&_cs);
 
-    if (_pcpe) _pcpe->CredentialsChanged(_upAdviseContext);
+    if (pcpe) { pcpe->CredentialsChanged(ctx); pcpe->Release(); }
 }
