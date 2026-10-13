@@ -10,11 +10,22 @@ CAutoUnlockCredentialProvider::CAutoUnlockCredentialProvider()
     , _upAdviseContext(0)
     , _pCredential(nullptr)
     , _pPipeClient(nullptr)
+    , _authFailed(false)
 {
     InterlockedIncrement(&g_cDllRef);
     InitializeCriticalSection(&_cs);
 
     _pCredential = new (std::nothrow) CAutoUnlockCredential();
+
+    if (_pCredential)
+    {
+        _pCredential->SetAuthFailCallback([this]()
+        {
+            EnterCriticalSection(&_cs);
+            _authFailed = true;
+            LeaveCriticalSection(&_cs);
+        });
+    }
 
     _pPipeClient = new (std::nothrow) CPipeClient(
         [this](const std::wstring& u, const std::wstring& p)
@@ -74,6 +85,10 @@ HRESULT CAutoUnlockCredentialProvider::SetSerialization(
 
 HRESULT CAutoUnlockCredentialProvider::Advise(ICredentialProviderEvents* pcpe, UINT_PTR upAdviseContext)
 {
+    EnterCriticalSection(&_cs);
+    _authFailed = false;
+    LeaveCriticalSection(&_cs);
+
     if (_pcpe) _pcpe->Release();
     _pcpe = pcpe;
     if (_pcpe) _pcpe->AddRef();
@@ -137,8 +152,11 @@ void CAutoUnlockCredentialProvider::OnCredentialsReceived(
     UINT_PTR ctx = 0;
 
     EnterCriticalSection(&_cs);
-    if (_pCredential) _pCredential->SetCredentials(username, password);
-    if (_pcpe) { pcpe = _pcpe; pcpe->AddRef(); ctx = _upAdviseContext; }
+    if (!_authFailed && _pCredential)
+    {
+        _pCredential->SetCredentials(username, password);
+        if (_pcpe) { pcpe = _pcpe; pcpe->AddRef(); ctx = _upAdviseContext; }
+    }
     LeaveCriticalSection(&_cs);
 
     if (pcpe) { pcpe->CredentialsChanged(ctx); pcpe->Release(); }

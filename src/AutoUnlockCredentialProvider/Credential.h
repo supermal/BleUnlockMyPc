@@ -2,6 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <credentialprovider.h>
+#include <functional>
 #include <string>
 
 class CAutoUnlockCredential : public ICredentialProviderCredential2
@@ -48,10 +49,14 @@ public:
     void SetCredentials(const std::wstring& username, const std::wstring& password);
     bool HasCredentials() const { return _hasCredentials; }
 
+    using AuthFailCallback = std::function<void()>;
+    void SetAuthFailCallback(AuthFailCallback cb);
+
 private:
     LONG        _cRef;
     std::wstring _username;
     std::wstring _password;
     bool        _hasCredentials;
     ICredentialProviderCredentialEvents* _pcpce;
+    AuthFailCallback _authFailCb;
 };

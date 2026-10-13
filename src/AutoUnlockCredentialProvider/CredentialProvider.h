@@ -38,4 +38,5 @@ private:
     CAutoUnlockCredential*     _pCredential;
     CPipeClient*               _pPipeClient;
     CRITICAL_SECTION           _cs;
+    bool                       _authFailed;
 };

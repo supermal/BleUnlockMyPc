@@ -2,6 +2,10 @@
 #include "Serialization.h"
 #include <wincred.h>
 
+#ifndef STATUS_SUCCESS
+#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
+#endif
+
 CAutoUnlockCredential::CAutoUnlockCredential()
     : _cRef(1)
     , _hasCredentials(false)
@@ -36,6 +40,11 @@ HRESULT CAutoUnlockCredential::QueryInterface(REFIID riid, void** ppv)
     }
     *ppv = nullptr;
     return E_NOINTERFACE;
+}
+
+void CAutoUnlockCredential::SetAuthFailCallback(AuthFailCallback cb)
+{
+    _authFailCb = std::move(cb);
 }
 
 void CAutoUnlockCredential::SetCredentials(const std::wstring& username, const std::wstring& password)
@@ -123,10 +132,12 @@ HRESULT CAutoUnlockCredential::GetSerialization(
     return hr;
 }
 
-HRESULT CAutoUnlockCredential::ReportResult(NTSTATUS, NTSTATUS, PWSTR* ppwsz,
+HRESULT CAutoUnlockCredential::ReportResult(NTSTATUS ntsStatus, NTSTATUS, PWSTR* ppwsz,
     CREDENTIAL_PROVIDER_STATUS_ICON* pcpsi)
 {
     *ppwsz  = nullptr;
     *pcpsi  = CPSI_NONE;
+    if (ntsStatus != STATUS_SUCCESS && _authFailCb)
+        _authFailCb();
     return S_OK;
 }
