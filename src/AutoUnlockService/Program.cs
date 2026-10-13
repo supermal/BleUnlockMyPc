@@ -1,3 +1,4 @@
+using AutoUnlockService.Ble;
 using Serilog;
 using Serilog.Events;
 
@@ -14,7 +15,7 @@ public static class Program
         Directory.CreateDirectory(Path.Combine(DataDir, "logs"));
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Debug()
             .WriteTo.File(
                 Path.Combine(DataDir, "logs", "autounlock-.log"),
                 rollingInterval: RollingInterval.Day,
@@ -32,8 +33,11 @@ public static class Program
             builder.Configuration.AddJsonFile(
                 Path.Combine(DataDir, "appsettings.json"), optional: false, reloadOnChange: true);
             builder.Services.AddWindowsService(o => o.ServiceName = "AutoUnlockService");
+            // Serilog decide el nivel; el filtro de Microsoft.Extensions.Logging no debe recortarlo
+            builder.Logging.SetMinimumLevel(LogLevel.Trace);
             builder.Services.AddSerilog();
             builder.Services.AddSingleton(TimeProvider.System);
+            builder.Services.AddSingleton<IRssiSource, BleScanner>();
             builder.Services.AddHostedService<Worker>();
 
             builder.Build().Run();
