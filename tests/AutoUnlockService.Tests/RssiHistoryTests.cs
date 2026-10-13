@@ -74,27 +74,38 @@ public class RssiHistoryTests
     public void Add_descarta_muestras_mas_viejas_que_la_retencion()
     {
         var h = new RssiHistory(TimeSpan.FromSeconds(30));
-        // Suficientes muestras antiguas para disparar la poda
-        for (int i = 0; i < 20; i++) h.Add(-50, T0.AddSeconds(-300 - i));
         h.Add(-50, T0);
+        // Muestras caducadas que llegan despues de la reciente; la 16a supera el umbral de poda
+        for (int i = 0; i < 16; i++) h.Add(-50, T0.AddSeconds(-300 - i));
 
-        // Una ventana enorme solo debe ver la muestra que sobrevivio a la poda
+        // Justo tras disparar la poda solo debe quedar la reciente
         Assert.Equal(1, h.InWindow(T0, TimeSpan.FromSeconds(600)).Count);
     }
 
     [Fact]
-    public void Add_muestra_tardia_no_borra_historico_valido_al_podar()
+    public void Add_poda_respecto_a_la_marca_mas_reciente_vista_y_no_a_la_recien_anadida()
     {
         var h = new RssiHistory(TimeSpan.FromSeconds(30));
-        // Supera el umbral de poda con muestras recientes y validas
         for (int i = 0; i < 20; i++) h.Add(-50, T0.AddSeconds(-i));
 
         h.Add(-90, T0.AddSeconds(-100));   // llega tarde y ya esta fuera de la retencion
-        h.Add(-60, T0.AddSeconds(-25));    // llega tarde pero sigue dentro de la retencion
+        // Si la poda usara la marca recien anadida, la caducada seguiria aqui
+        Assert.Equal(20, h.InWindow(T0, TimeSpan.FromSeconds(600)).Count);
 
-        // La poda es relativa a la mas reciente vista (T0): se conservan las 20 validas
-        // y la tardia valida; la caducada se descarta
+        h.Add(-60, T0.AddSeconds(-25));    // llega tarde pero dentro de la retencion: se conserva
         Assert.Equal(21, h.InWindow(T0, TimeSpan.FromSeconds(600)).Count);
+    }
+
+    [Fact]
+    public void Add_marca_futura_atipica_no_provoca_la_poda_de_muestras_normales_posteriores()
+    {
+        var h = new RssiHistory(TimeSpan.FromSeconds(30));
+        for (int i = 0; i < 20; i++) h.Add(-50, T0.AddSeconds(-i));
+
+        h.Add(-30, T0.AddSeconds(1000));   // desfase de reloj: muy adelantada
+        for (int i = 1; i <= 5; i++) h.Add(-50, T0.AddSeconds(i));
+
+        Assert.Equal(25, h.InWindow(T0.AddSeconds(5), TimeSpan.FromSeconds(60)).Count);
     }
 
     [Fact]

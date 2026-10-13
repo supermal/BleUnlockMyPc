@@ -19,6 +19,12 @@ public sealed class RssiHistory(TimeSpan retention)
         lock (_lock)
         {
             HasEverSeenDevice = true;
+
+            // Una marca muy adelantada respecto a la mas reciente vista (desfase de reloj del
+            // stack BLE o salto atras del reloj del sistema) no se guarda: InWindow ya la
+            // ignoraria y, si fijara _newestSeen, la poda borraria todas las muestras reales
+            if (_newestSeen != DateTimeOffset.MinValue && at - _newestSeen > retention) return;
+
             _points.Add((at, rssi));
             if (at > _newestSeen) _newestSeen = at;
 
