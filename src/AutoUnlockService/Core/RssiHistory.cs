@@ -4,13 +4,12 @@ public readonly record struct WindowStats(int Count, double Average);
 
 // Cola de muestras con poda por antiguedad. No asume que las marcas de tiempo
 // lleguen ordenadas: el callback de WinRT no lo garantiza
-public sealed class RssiHistory(TimeSpan retention)
+public sealed class RssiHistory(TimeSpan retention, TimeProvider time)
 {
     private const int PruneThreshold = 16;
 
     private readonly List<(DateTimeOffset Time, short Rssi)> _points = [];
     private readonly object _lock = new();
-    private DateTimeOffset _newestSeen = DateTimeOffset.MinValue;
 
     public bool HasEverSeenDevice { get; private set; }
 
@@ -20,20 +19,15 @@ public sealed class RssiHistory(TimeSpan retention)
         {
             HasEverSeenDevice = true;
 
-            // Una marca muy adelantada respecto a la mas reciente vista (desfase de reloj del
-            // stack BLE o salto atras del reloj del sistema) no se guarda: InWindow ya la
-            // ignoraria y, si fijara _newestSeen, la poda borraria todas las muestras reales
-            if (_newestSeen != DateTimeOffset.MinValue && at - _newestSeen > retention) return;
-
             _points.Add((at, rssi));
-            if (at > _newestSeen) _newestSeen = at;
 
-            // La poda es relativa a la muestra mas reciente vista, no a la recien anadida:
-            // asi una muestra desordenada no borra el historico valido.
+            // La poda es relativa al reloj actual, no a las marcas de las muestras: un hueco
+            // largo sin emisiones o una marca adelantada no pueden envenenar la base de poda,
+            // y una muestra desordenada no borra historico valido.
             // El umbral evita recorrer la lista en cada emision recibida
             if (_points.Count > PruneThreshold)
             {
-                var cutoff = _newestSeen - retention;
+                var cutoff = time.GetUtcNow() - retention;
                 _points.RemoveAll(p => p.Time < cutoff);
             }
         }
@@ -67,7 +61,6 @@ public sealed class RssiHistory(TimeSpan retention)
         lock (_lock)
         {
             _points.Clear();
-            _newestSeen = DateTimeOffset.MinValue;
         }
     }
 
@@ -77,7 +70,6 @@ public sealed class RssiHistory(TimeSpan retention)
         lock (_lock)
         {
             _points.Clear();
-            _newestSeen = DateTimeOffset.MinValue;
             HasEverSeenDevice = false;
         }
     }
