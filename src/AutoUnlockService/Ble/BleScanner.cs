@@ -12,7 +12,11 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
     private static readonly TimeSpan StableRunTime = TimeSpan.FromSeconds(30);
 
     private BluetoothLEAdvertisementWatcher? _watcher;
+    private static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(5);
+
+    private readonly object _gate = new();
     private CancellationTokenSource? _cts;
+    private Task? _runTask;
     private int _consecutiveFailures;
 
     // Senal que OnStopped completa para despertar el bucle de reintento
@@ -29,49 +33,87 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
     public Task StartAsync(CancellationToken ct)
     {
         _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        _ = RunAsync(_cts.Token);
+        var token = _cts.Token;
+        _runTask = Task.Run(() => RunAsync(token), CancellationToken.None);
         return Task.CompletedTask;
     }
 
-    public Task StopAsync()
+    public async Task StopAsync()
     {
-        _cts?.Cancel();
+        var cts = _cts;
+        var runTask = _runTask;
+        cts?.Cancel();
+
+        // Esperamos al bucle con limite para que el apagado nunca se cuelgue
+        var finished = true;
+        if (runTask is not null)
+        {
+            try { await runTask.WaitAsync(StopTimeout); }
+            catch (TimeoutException)
+            {
+                finished = false;
+                log.LogWarning("BLE 扫描循环未在 {Seconds} 秒内退出", StopTimeout.TotalSeconds);
+            }
+            catch (Exception ex) { log.LogError(ex, "BLE 扫描循环退出时出错"); }
+        }
+
+        // Tras cancelar, ningun arranque nuevo puede crear un watcher (ver TryStartWatcherAsync),
+        // asi que este paso deja el estado definitivamente detenido
         StopWatcher();
-        return Task.CompletedTask;
+
+        if (finished) cts?.Dispose();
     }
 
     private async Task RunAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
-            // Nueva senal antes de arrancar, para no perder una parada ocurrida justo despues del Start
-            var signal = NewSignal();
-            _stoppedSignal = signal;
-
-            if (await TryStartWatcherAsync())
+            try
             {
-                // Si el watcher se detiene pronto cuenta como fallo consecutivo; solo se reinicia el
-                // contador cuando estuvo vivo un tiempo razonable
-                var startedAt = time.GetTimestamp();
-                try { await signal.Task.WaitAsync(ct); }
-                catch (OperationCanceledException) { break; }
-                if (time.GetElapsedTime(startedAt) >= StableRunTime) _consecutiveFailures = 0;
-                log.LogWarning("BLE Watcher 已停止，准备重新启动");
+                // Nueva senal antes de arrancar, para no perder una parada ocurrida justo despues del Start
+                var signal = NewSignal();
+                _stoppedSignal = signal;
+
+                if (await TryStartWatcherAsync(ct))
+                {
+                    // Si el watcher se detiene pronto cuenta como fallo consecutivo; solo se reinicia el
+                    // contador cuando estuvo vivo un tiempo razonable
+                    var startedAt = time.GetTimestamp();
+                    await signal.Task.WaitAsync(ct);
+                    if (time.GetElapsedTime(startedAt) >= StableRunTime) _consecutiveFailures = 0;
+                    log.LogWarning("BLE Watcher 已停止，准备重新启动");
+                }
+
+                if (ct.IsCancellationRequested) break;
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                // Un fallo inesperado no debe matar el bucle de reintento
+                try { log.LogError(ex, "BLE 扫描循环发生意外错误"); } catch { /* el log no debe romper el bucle */ }
             }
 
             _consecutiveFailures++;
             var delay = _consecutiveFailures <= MaxFastRetries ? FastRetryDelay : SlowRetryDelay;
-            log.LogWarning("BLE 扫描不可用（第 {Count} 次），{Delay} 秒后重试", _consecutiveFailures, delay.TotalSeconds);
-            try { await Task.Delay(delay, time, ct); }
+            try
+            {
+                log.LogWarning("BLE 扫描不可用（第 {Count} 次），{Delay} 秒后重试", _consecutiveFailures, delay.TotalSeconds);
+                await Task.Delay(delay, time, ct);
+            }
             catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                try { log.LogError(ex, "BLE 重试等待出错"); } catch { /* ignorado */ }
+            }
         }
     }
 
-    private async Task<bool> TryStartWatcherAsync()
+    private async Task<bool> TryStartWatcherAsync(CancellationToken ct)
     {
         try
         {
             var adapter = await BluetoothAdapter.GetDefaultAsync();
+            ct.ThrowIfCancellationRequested();
             if (adapter is null || !adapter.IsLowEnergySupported)
             {
                 SetUnavailable("未找到支持 BLE 的蓝牙适配器");
@@ -79,25 +121,37 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
             }
 
             var radio = await adapter.GetRadioAsync();
+            ct.ThrowIfCancellationRequested();
             if (radio is null || radio.State != RadioState.On)
             {
                 SetUnavailable("蓝牙已关闭");
                 return false;
             }
 
-            StopWatcher();
-            _watcher = new BluetoothLEAdvertisementWatcher
+            // StopAsync cancela el token ANTES de tomar este cerrojo: si aqui el token sigue vivo,
+            // el StopWatcher posterior esperara al cerrojo y detendra este watcher
+            lock (_gate)
             {
-                ScanningMode = BluetoothLEScanningMode.Active
-            };
-            _watcher.Received += OnReceived;
-            _watcher.Stopped += OnStopped;
-            _watcher.Start();
+                ct.ThrowIfCancellationRequested();
+                StopWatcherLocked();
+                var watcher = new BluetoothLEAdvertisementWatcher
+                {
+                    ScanningMode = BluetoothLEScanningMode.Active
+                };
+                watcher.Received += OnReceived;
+                watcher.Stopped += OnStopped;
+                _watcher = watcher;
+                watcher.Start();
+            }
 
             IsAvailable = true;
             StatusChanged?.Invoke("BLE 扫描已启动");
             log.LogInformation("BLE 扫描已启动");
             return true;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return false;
         }
         catch (Exception ex)
         {
@@ -115,11 +169,18 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
 
     private void StopWatcher()
     {
-        if (_watcher is null) return;
-        _watcher.Received -= OnReceived;
-        _watcher.Stopped -= OnStopped;
-        try { _watcher.Stop(); } catch { /* ya detenido */ }
+        lock (_gate) { StopWatcherLocked(); }
+    }
+
+    // Debe llamarse con _gate tomado
+    private void StopWatcherLocked()
+    {
+        var watcher = _watcher;
+        if (watcher is null) return;
         _watcher = null;
+        watcher.Received -= OnReceived;
+        watcher.Stopped -= OnStopped;
+        try { watcher.Stop(); } catch { /* ya detenido */ }
         IsAvailable = false;
     }
 
