@@ -15,7 +15,7 @@ public static class Program
         Directory.CreateDirectory(Path.Combine(DataDir, "logs"));
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.Information()
             .WriteTo.File(
                 Path.Combine(DataDir, "logs", "autounlock-.log"),
                 rollingInterval: RollingInterval.Day,
