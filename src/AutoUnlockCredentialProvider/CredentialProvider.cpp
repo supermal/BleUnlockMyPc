@@ -39,17 +39,23 @@ CAutoUnlockCredentialProvider::~CAutoUnlockCredentialProvider()
     // callback que apunta a este objeto antes de liberar nada
     if (_pCredential) _pCredential->SetAuthResultCallback(nullptr);
 
+    bool leakedClient = false;
     if (_pPipeClient)
     {
         // Stop() solo devuelve true con el hilo ya terminado; si no, se filtra el objeto
-        // a proposito (el callback ya esta anulado) en lugar de liberarlo con el hilo vivo
+        // a proposito en lugar de liberarlo con el hilo vivo
         if (_pPipeClient->Stop()) delete _pPipeClient;
+        else leakedClient = true;
         _pPipeClient = nullptr;
     }
     if (_pCredential) _pCredential->Release();
     if (_pcpe)        _pcpe->Release();
     DeleteCriticalSection(&_cs);
-    InterlockedDecrement(&g_cDllRef);
+
+    // ASIMETRIA INTENCIONADA: si se filtro el cliente, su hilo sigue ejecutando codigo de esta
+    // DLL, asi que NO se decrementa g_cDllRef y el modulo queda fijado hasta que acabe el
+    // proceso. No "arreglar": descargar la DLL con el hilo vivo tumbaria winlogon
+    if (!leakedClient) InterlockedDecrement(&g_cDllRef);
 }
 
 ULONG CAutoUnlockCredentialProvider::AddRef()

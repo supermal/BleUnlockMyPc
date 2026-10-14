@@ -45,8 +45,27 @@ void CPipeClient::Start()
 
 bool CPipeClient::Stop()
 {
-    // 1. El hilo ya no podra llamar al propietario (espera a un callback en curso)
-    EnterCriticalSection(&_cbLock);
+    // Un unico plazo cubre candado y join: nunca se espera sin limite en la ruta de logon
+    ULONGLONG deadline = GetTickCount64() + STOP_JOIN_TIMEOUT_MS;
+
+    // 1. El hilo ya no podra llamar al propietario. El candado se adquiere con plazo: el hilo
+    //    puede estar dentro del callback (CredentialsChanged) esperando al hilo de LogonUI,
+    //    que es quien esta aqui
+    bool locked = false;
+    while (!(locked = TryEnterCriticalSection(&_cbLock) != FALSE))
+    {
+        if (GetTickCount64() >= deadline) break;
+        Sleep(10);
+    }
+
+    if (!locked)
+    {
+        // No se toca _callback (no se pudo bloquear). Solo se senala la parada, que es seguro:
+        // el evento pertenece a este objeto, que el llamador va a filtrar. El hilo vera la
+        // parada antes de invocar de nuevo el callback
+        if (_hStopEvent) SetEvent(_hStopEvent);
+        return false;
+    }
     _callback = nullptr;
     LeaveCriticalSection(&_cbLock);
 
@@ -56,7 +75,9 @@ bool CPipeClient::Stop()
     // 3. Join: nada se cierra ni se libera hasta que el hilo haya salido
     if (_hThread)
     {
-        if (WaitForSingleObject(_hThread, STOP_JOIN_TIMEOUT_MS) != WAIT_OBJECT_0)
+        ULONGLONG now = GetTickCount64();
+        DWORD remaining = (now >= deadline) ? 0 : static_cast<DWORD>(deadline - now);
+        if (WaitForSingleObject(_hThread, remaining) != WAIT_OBJECT_0)
             return false;
         CloseHandle(_hThread);
         _hThread = nullptr;
@@ -345,8 +366,17 @@ bool CPipeClient::HandleConnection(HANDLE hPipe)
             InterlockedExchange(&_awaiting, 1);
 
             EnterCriticalSection(&_cbLock);
-            if (_callback) _callback(username, password);
+            // Si Stop() no pudo anular el callback (plazo vencido), la parada senalada impide
+            // volver a invocar un callback cuyo propietario ya pudo haberse liberado
+            bool stopping = WaitForSingleObject(_hStopEvent, 0) == WAIT_OBJECT_0;
+            if (!stopping && _callback) _callback(username, password);
             LeaveCriticalSection(&_cbLock);
+            if (stopping)
+            {
+                WipeWide(password);
+                WipeWide(username);
+                return false;
+            }
 
             // Las copias locales se borran tras cada mensaje (el buffer se reutiliza)
             WipeWide(password);
