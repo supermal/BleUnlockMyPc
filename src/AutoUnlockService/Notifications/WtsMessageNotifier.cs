@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 using AutoUnlockService.Session;
 
 namespace AutoUnlockService.Notifications;
@@ -11,6 +12,7 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
     private const uint MbYesNo = 0x00000004;
     private const uint MbIconExclamation = 0x00000030;
     private const uint MbSystemModal = 0x00001000;
+    public const uint NoticeTimeoutSeconds = 60;
     private const uint IdYes = 6;
     private const uint IdNo = 7;
 
@@ -52,7 +54,9 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
 
             if (!ok)
             {
-                log.LogWarning("WTSSendMessage 调用失败，按超时处理");
+                // Sin dialogo el usuario no ha sido avisado: se bloqueara igualmente al vencer el plazo
+                log.LogError("WTSSendMessage 调用失败（错误码 {Error}），用户未收到任何提示，将按超时处理并直接锁屏",
+                    Marshal.GetLastWin32Error());
                 return PromptOutcome.Timeout;
             }
 
@@ -76,11 +80,15 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
 
         const string title = "AutoUnlock";
         const uint mbOk = 0x00000000;
-        WtsNative.WTSSendMessage(
+        // Plazo acotado: con 0 el dialogo no caduca nunca y los avisos se acumularian
+        bool ok = WtsNative.WTSSendMessage(
             WtsNative.CurrentServer, sessionId,
             title, (uint)(title.Length * 2),
             message, (uint)(message.Length * 2),
-            mbOk | MbIconExclamation, 0, out _, bWait: false);
+            mbOk | MbIconExclamation, NoticeTimeoutSeconds, out _, bWait: false);
+        if (!ok)
+            log.LogError("WTSSendMessage 调用失败（错误码 {Error}），用户未收到通知：{Message}",
+                Marshal.GetLastWin32Error(), message);
 
         return Task.CompletedTask;
     }

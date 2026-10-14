@@ -33,10 +33,19 @@ public class ResilientNotifierTests
             return Outcome;
         }
 
-        public Task CancelAsync() { CancelCalls++; return Task.CompletedTask; }
+        public Exception? NotifyThrows { get; set; }
+        public Exception? CancelThrows { get; set; }
+
+        public Task CancelAsync()
+        {
+            CancelCalls++;
+            if (CancelThrows is not null) throw CancelThrows;
+            return Task.CompletedTask;
+        }
 
         public Task NotifyAsync(string message, CancellationToken ct)
         {
+            if (NotifyThrows is not null) throw NotifyThrows;
             Notifications.Add(message);
             return Task.CompletedTask;
         }
@@ -100,7 +109,68 @@ public class ResilientNotifierTests
 
         await n.PromptAsync(TimeSpan.FromSeconds(15), 5, default);
 
-        Assert.True(fallback.LastTimeout >= TimeSpan.FromSeconds(1));
+        Assert.Equal(ResilientNotifier.MinimumFallbackTimeout, fallback.LastTimeout);
+        Assert.Equal(TimeSpan.FromSeconds(5), ResilientNotifier.MinimumFallbackTimeout);
+    }
+
+    [Fact]
+    public async Task El_suelo_amplia_tambien_un_plazo_original_mas_corto()
+    {
+        var (n, primary, fallback, _) = Build();
+        primary.Throws = new HelperUnavailableException("ayudante caido");
+
+        await n.PromptAsync(TimeSpan.FromSeconds(3), 5, default);
+
+        Assert.Equal(TimeSpan.FromSeconds(5), fallback.LastTimeout);
+    }
+
+    [Fact]
+    public async Task Notify_con_ayudante_caido_degrada_y_reenvia_por_el_respaldo()
+    {
+        var (n, primary, fallback, _) = Build();
+        primary.NotifyThrows = new HelperUnavailableException("ayudante caido");
+
+        await n.NotifyAsync("suspendido", default);
+
+        Assert.True(n.UsingFallback);
+        Assert.Equal(["suspendido"], fallback.Notifications);
+    }
+
+    [Fact]
+    public async Task Cancel_con_ayudante_caido_degrada_sin_lanzar()
+    {
+        var (n, primary, fallback, _) = Build();
+        primary.CancelThrows = new HelperUnavailableException("ayudante caido");
+
+        await n.CancelAsync();
+
+        Assert.True(n.UsingFallback);
+        Assert.Equal(1, fallback.CancelCalls);
+    }
+
+    [Fact]
+    public async Task Una_cancelacion_no_degrada_de_forma_permanente()
+    {
+        var (n, primary, fallback, _) = Build();
+        primary.Throws = new HelperUnavailableException("ayudante caido");
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => n.PromptAsync(TimeSpan.FromSeconds(15), 5, cts.Token));
+
+        Assert.False(n.UsingFallback);
+        Assert.Equal(0, fallback.PromptCalls);
+    }
+
+    [Fact]
+    public void Degradar_desde_fuera_retira_lo_pendiente_del_primario()
+    {
+        var (n, primary, _, _) = Build();
+
+        n.Degrade("config");
+
+        Assert.Equal(1, primary.CancelCalls);
     }
 
     [Fact]
