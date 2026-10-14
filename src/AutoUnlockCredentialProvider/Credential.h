@@ -58,5 +58,6 @@ private:
     std::wstring _password;
     bool        _hasCredentials;
     ICredentialProviderCredentialEvents* _pcpce;
-    AuthResultCallback _authResultCb;
+    AuthResultCallback _authResultCb;   // protegido por _cbLock
+    CRITICAL_SECTION   _cbLock;
 };

@@ -11,6 +11,7 @@ CAutoUnlockCredential::CAutoUnlockCredential()
     , _hasCredentials(false)
     , _pcpce(nullptr)
 {
+    InitializeCriticalSection(&_cbLock);
 }
 
 CAutoUnlockCredential::~CAutoUnlockCredential()
@@ -18,6 +19,7 @@ CAutoUnlockCredential::~CAutoUnlockCredential()
     if (!_password.empty())
         SecureZeroMemory(_password.data(), _password.size() * sizeof(WCHAR));
     if (_pcpce) _pcpce->Release();
+    DeleteCriticalSection(&_cbLock);
 }
 
 ULONG CAutoUnlockCredential::AddRef()  { return InterlockedIncrement(&_cRef); }
@@ -44,7 +46,9 @@ HRESULT CAutoUnlockCredential::QueryInterface(REFIID riid, void** ppv)
 
 void CAutoUnlockCredential::SetAuthResultCallback(AuthResultCallback cb)
 {
+    EnterCriticalSection(&_cbLock);
     _authResultCb = std::move(cb);
+    LeaveCriticalSection(&_cbLock);
 }
 
 void CAutoUnlockCredential::SetCredentials(const std::wstring& username, const std::wstring& password)
@@ -141,7 +145,10 @@ HRESULT CAutoUnlockCredential::ReportResult(NTSTATUS ntsStatus, NTSTATUS, PWSTR*
     *pcpsi = CPSI_NONE;
 
     // El servicio decide que hacer con el resultado; aqui solo se informa
+    // Bajo candado: el proveedor puede anular el callback mientras LogonUI conserva la credencial
+    EnterCriticalSection(&_cbLock);
     if (_authResultCb) _authResultCb(ntsStatus);
+    LeaveCriticalSection(&_cbLock);
 
     return S_OK;
 }

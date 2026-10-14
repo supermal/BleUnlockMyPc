@@ -35,7 +35,17 @@ CAutoUnlockCredentialProvider::CAutoUnlockCredentialProvider()
 
 CAutoUnlockCredentialProvider::~CAutoUnlockCredentialProvider()
 {
-    if (_pPipeClient) { _pPipeClient->Stop(); delete _pPipeClient; }
+    // LogonUI puede conservar la credencial tras destruir el proveedor: se corta el
+    // callback que apunta a este objeto antes de liberar nada
+    if (_pCredential) _pCredential->SetAuthResultCallback(nullptr);
+
+    if (_pPipeClient)
+    {
+        // Stop() solo devuelve true con el hilo ya terminado; si no, se filtra el objeto
+        // a proposito (el callback ya esta anulado) en lugar de liberarlo con el hilo vivo
+        if (_pPipeClient->Stop()) delete _pPipeClient;
+        _pPipeClient = nullptr;
+    }
     if (_pCredential) _pCredential->Release();
     if (_pcpe)        _pcpe->Release();
     DeleteCriticalSection(&_cs);
