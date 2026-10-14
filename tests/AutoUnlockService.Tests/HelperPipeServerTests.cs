@@ -8,8 +8,13 @@ namespace AutoUnlockService.Tests;
 
 // Usa tuberias con nombre reales (nombre unico por prueba): ademas de la logica, comprueba
 // que la DACL deja entrar al usuario interactivo, que es bajo el que corre esta prueba
-public class HelperPipeServerTests
+public class HelperPipeServerTests : IDisposable
 {
+    private readonly TestGuard _guard = new();
+    private CancellationToken Guard => _guard.Token;
+
+    public void Dispose() => _guard.Dispose();
+
     private static HelperPipeServer NewServer(string name, TimeProvider? time = null)
     {
         var server = new HelperPipeServer(NullLogger<HelperPipeServer>.Instance, time, name);
@@ -33,7 +38,7 @@ public class HelperPipeServerTests
 
         await using var client = await FakeHelperClient.ConnectAsync(name, sessionId: 7);
 
-        Assert.Equal(7, await connected.WaitAsync(TestSupport.Guard()));
+        Assert.Equal(7, await connected.WaitAsync(Guard));
         Assert.True(server.IsConnected);
     }
 
@@ -47,7 +52,7 @@ public class HelperPipeServerTests
         await using var client = await FakeHelperClient.ConnectAsync(name);
         await client.SendAsync(HelperProtocol.BuildResponse(42, PromptOutcome.Snooze));
 
-        Assert.Equal((42, PromptOutcome.Snooze), await response.WaitAsync(TestSupport.Guard()));
+        Assert.Equal((42, PromptOutcome.Snooze), await response.WaitAsync(Guard));
     }
 
     [Fact]
@@ -59,10 +64,10 @@ public class HelperPipeServerTests
         var disconnected = FirstEvent<bool>(a => server.Disconnected += () => a(true));
 
         var client = await FakeHelperClient.ConnectAsync(name);
-        await connected.WaitAsync(TestSupport.Guard());
+        await connected.WaitAsync(Guard);
         await client.DisposeAsync();
 
-        await disconnected.WaitAsync(TestSupport.Guard());
+        await disconnected.WaitAsync(Guard);
         Assert.False(server.IsConnected);
     }
 
@@ -75,18 +80,18 @@ public class HelperPipeServerTests
         server.Connected += s => sessions.Add(s);
 
         var first = await FakeHelperClient.ConnectAsync(name, 1);
-        Assert.Equal(1, sessions.Take(TestSupport.Guard()));
+        Assert.Equal(1, sessions.Take(Guard));
         await first.DisposeAsync();
 
         await using var second = await FakeHelperClient.ConnectAsync(name, 2);
-        Assert.Equal(2, sessions.Take(TestSupport.Guard()));
+        Assert.Equal(2, sessions.Take(Guard));
     }
 
     [Fact]
     public async Task SendAsync_sin_conexion_devuelve_falso()
     {
         await using var server = NewServer(TestSupport.UniquePipeName());
-        Assert.False(await server.SendAsync("NOTIFY x\n", TestSupport.Guard()));
+        Assert.False(await server.SendAsync("NOTIFY x\n", Guard));
     }
 
     [Fact]
@@ -96,11 +101,11 @@ public class HelperPipeServerTests
         await using var server = NewServer(name);
         var connected = FirstEvent<int>(a => server.Connected += a);
         await using var client = await FakeHelperClient.ConnectAsync(name);
-        await connected.WaitAsync(TestSupport.Guard());
+        await connected.WaitAsync(Guard);
 
-        Assert.True(await server.SendAsync(HelperProtocol.BuildNotify("hola"), TestSupport.Guard()));
+        Assert.True(await server.SendAsync(HelperProtocol.BuildNotify("hola"), Guard));
 
-        var command = await client.ReadCommandAsync(TestSupport.Guard());
+        var command = await client.ReadCommandAsync(Guard);
         Assert.Equal(new HelperCommand.Notify("hola"), command);
     }
 
@@ -111,14 +116,14 @@ public class HelperPipeServerTests
         await using var server = NewServer(name);
         var connected = FirstEvent<int>(a => server.Connected += a);
         await using var client = await FakeHelperClient.ConnectAsync(name);
-        await connected.WaitAsync(TestSupport.Guard());
+        await connected.WaitAsync(Guard);
 
         // El cliente de prueba solo confirma: no hay ningun ayudante real ni se bloquea nada
-        Assert.True(await server.SendAsync(HelperProtocol.BuildLock(), TestSupport.Guard()));
-        Assert.IsType<HelperCommand.Lock>(await client.ReadCommandAsync(TestSupport.Guard()));
+        Assert.True(await server.SendAsync(HelperProtocol.BuildLock(), Guard));
+        Assert.IsType<HelperCommand.Lock>(await client.ReadCommandAsync(Guard));
         await client.SendAsync(HelperProtocol.BuildLocked());
 
-        Assert.True(await server.WaitForLockedAsync(TimeSpan.FromSeconds(30), TestSupport.Guard()));
+        Assert.True(await server.WaitForLockedAsync(TimeSpan.FromSeconds(30), Guard));
     }
 
     [Fact]
@@ -129,10 +134,10 @@ public class HelperPipeServerTests
         await using var server = NewServer(name, time);
         var connected = FirstEvent<int>(a => server.Connected += a);
         await using var client = await FakeHelperClient.ConnectAsync(name);
-        await connected.WaitAsync(TestSupport.Guard());
+        await connected.WaitAsync(Guard);
 
-        Assert.True(await server.SendAsync(HelperProtocol.BuildLock(), TestSupport.Guard()));
-        var wait = server.WaitForLockedAsync(TimeSpan.FromSeconds(5), TestSupport.Guard());
+        Assert.True(await server.SendAsync(HelperProtocol.BuildLock(), Guard));
+        var wait = server.WaitForLockedAsync(TimeSpan.FromSeconds(5), Guard);
 
         await TestSupport.AdvanceUntilAsync(time, () => wait.IsCompleted);
         Assert.False(await wait);
@@ -145,13 +150,13 @@ public class HelperPipeServerTests
         await using var server = NewServer(name);
         var connected = FirstEvent<int>(a => server.Connected += a);
         var client = await FakeHelperClient.ConnectAsync(name);
-        await connected.WaitAsync(TestSupport.Guard());
+        await connected.WaitAsync(Guard);
 
-        Assert.True(await server.SendAsync(HelperProtocol.BuildLock(), TestSupport.Guard()));
-        var wait = server.WaitForLockedAsync(TimeSpan.FromMinutes(10), TestSupport.Guard());
+        Assert.True(await server.SendAsync(HelperProtocol.BuildLock(), Guard));
+        var wait = server.WaitForLockedAsync(TimeSpan.FromMinutes(10), Guard);
         await client.DisposeAsync();
 
-        Assert.False(await wait.WaitAsync(TestSupport.Guard()));
+        Assert.False(await wait.WaitAsync(Guard));
     }
 
     [Fact]
@@ -165,6 +170,6 @@ public class HelperPipeServerTests
         await client.SendAsync("BASURA 1 2 3\n");
         await client.SendAsync(HelperProtocol.BuildResponse(1, PromptOutcome.Reject));
 
-        Assert.Equal((1, PromptOutcome.Reject), await response.WaitAsync(TestSupport.Guard()));
+        Assert.Equal((1, PromptOutcome.Reject), await response.WaitAsync(Guard));
     }
 }

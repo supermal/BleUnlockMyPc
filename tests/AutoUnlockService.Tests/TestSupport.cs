@@ -20,9 +20,13 @@ internal static class TestSupport
     }
 
     public static string UniquePipeName() => $"AutoUnlockTest-{Guid.NewGuid():N}";
+}
 
-    // Plazo de seguridad real compartido (una sola fuente, sin fuga por llamada): solo se agota si algo se cuelga
-    private static readonly CancellationTokenSource GuardSource = new(TimeSpan.FromSeconds(120));
-
-    public static CancellationToken Guard() => GuardSource.Token;
+// Plazo de seguridad real por prueba: solo se agota si el codigo bajo prueba se cuelga.
+// Cada prueba tiene el suyo y lo libera al terminar, asi un cuelgue no contamina a las demas
+internal sealed class TestGuard(int seconds = 30) : IDisposable
+{
+    private readonly CancellationTokenSource _cts = new(TimeSpan.FromSeconds(seconds));
+    public CancellationToken Token => _cts.Token;
+    public void Dispose() => _cts.Dispose();
 }

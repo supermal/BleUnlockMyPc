@@ -229,6 +229,66 @@ public class ResilientNotifierTests
         Assert.Equal(0, primary.PromptCalls);
         Assert.Equal(1, fallback.PromptCalls);
     }
+
+    // Primario que se queda esperando y, como HelperNotifier, termina cancelado cuando se le retira el aviso
+    private sealed class BlockingPrimary : INotifier
+    {
+        private readonly TaskCompletionSource<PromptOutcome> _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public Task Started => _started.Task;
+
+        public Task<PromptOutcome> PromptAsync(TimeSpan timeout, double snoozeMinutes, CancellationToken ct)
+        {
+            ct.Register(() => _tcs.TrySetCanceled(ct));
+            _started.TrySetResult();
+            return _tcs.Task;
+        }
+
+        public Task CancelAsync()
+        {
+            _tcs.TrySetCanceled();
+            return Task.CompletedTask;
+        }
+
+        public Task NotifyAsync(string message, CancellationToken ct) => Task.CompletedTask;
+    }
+
+    [Fact]
+    public async Task Degrade_externo_con_aviso_pendiente_pregunta_por_el_respaldo_con_el_plazo_restante()
+    {
+        var time = new FakeTimeProvider();
+        var primary = new BlockingPrimary();
+        var fallback = new FakeNotifier { Outcome = PromptOutcome.Snooze };
+        var n = new ResilientNotifier(primary, fallback, NullLogger<ResilientNotifier>.Instance, time);
+
+        var prompt = n.PromptAsync(TimeSpan.FromSeconds(30), 5, default);
+        await primary.Started;
+        time.Advance(TimeSpan.FromSeconds(10));
+        n.Degrade("el lanzador se rindio");
+
+        Assert.Equal(PromptOutcome.Snooze, await prompt.WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.Equal(1, fallback.PromptCalls);
+        Assert.Equal(TimeSpan.FromSeconds(20), fallback.LastTimeout);
+        Assert.True(n.UsingFallback);
+    }
+
+    [Fact]
+    public async Task Cancelar_el_orquestador_un_aviso_pendiente_se_propaga_y_no_degrada()
+    {
+        var time = new FakeTimeProvider();
+        var primary = new BlockingPrimary();
+        var fallback = new FakeNotifier();
+        var n = new ResilientNotifier(primary, fallback, NullLogger<ResilientNotifier>.Instance, time);
+
+        var prompt = n.PromptAsync(TimeSpan.FromSeconds(30), 5, default);
+        await primary.Started;
+        await n.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => prompt.WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.True(prompt.IsCanceled);
+        Assert.False(n.UsingFallback);
+        Assert.Equal(0, fallback.PromptCalls);
+    }
 }
 
 public class WtsMessageNotifierTests

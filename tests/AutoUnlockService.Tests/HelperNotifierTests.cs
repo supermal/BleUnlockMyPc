@@ -14,6 +14,8 @@ public class HelperNotifierTests
         public string PipeName { get; } = TestSupport.UniquePipeName();
         public HelperPipeServer Server { get; }
         public HelperNotifier Notifier { get; }
+        private readonly TestGuard _guard = new();
+        public CancellationToken Guard => _guard.Token;
 
         public Rig(TimeProvider? notifierTime = null)
         {
@@ -27,11 +29,25 @@ public class HelperNotifierTests
             var connected = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
             Server.Connected += s => connected.TrySetResult(s);
             var client = await FakeHelperClient.ConnectAsync(PipeName);
-            await connected.Task.WaitAsync(TestSupport.Guard());
+            await connected.Task.WaitAsync(Guard);
             return client;
         }
 
-        public ValueTask DisposeAsync() => Server.DisposeAsync();
+        public async ValueTask DisposeAsync()
+        {
+            await Server.DisposeAsync();
+            _guard.Dispose();
+        }
+    }
+
+    // Inspecciona el estado de la tarea en vez de esperarla con el guardian: si el guardian vence,
+    // la tarea sigue pendiente y la asercion falla por la razon correcta (un OperationCanceled del
+    // propio guardian seria indistinguible del que se quiere comprobar)
+    private static async Task AssertCanceledAsync(Task prompt, CancellationToken guard)
+    {
+        await Task.WhenAny(prompt, Task.Delay(Timeout.Infinite, guard));
+        Assert.True(prompt.IsCompleted, "El Prompt sigue pendiente (colgado)");
+        Assert.True(prompt.IsCanceled, $"El Prompt debia terminar cancelado, estado: {prompt.Status}");
     }
 
     [Fact]
@@ -57,10 +73,10 @@ public class HelperNotifierTests
         await using var helper = await rig.ConnectHelperAsync();
 
         var prompt = rig.Notifier.PromptAsync(TimeSpan.FromSeconds(30), 5, CancellationToken.None);
-        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(rig.Guard));
         await helper.SendAsync(HelperProtocol.BuildResponse(command.Id, PromptOutcome.Snooze));
 
-        Assert.Equal(PromptOutcome.Snooze, await prompt.WaitAsync(TestSupport.Guard()));
+        Assert.Equal(PromptOutcome.Snooze, await prompt.WaitAsync(rig.Guard));
     }
 
     [Fact]
@@ -70,10 +86,10 @@ public class HelperNotifierTests
         await using var helper = await rig.ConnectHelperAsync();
 
         var prompt = rig.Notifier.PromptAsync(TimeSpan.FromSeconds(30), 5, CancellationToken.None);
-        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(rig.Guard));
         await helper.SendAsync(HelperProtocol.BuildResponse(command.Id, PromptOutcome.Timeout));
 
-        Assert.Equal(PromptOutcome.Timeout, await prompt.WaitAsync(TestSupport.Guard()));
+        Assert.Equal(PromptOutcome.Timeout, await prompt.WaitAsync(rig.Guard));
     }
 
     [Fact]
@@ -83,11 +99,11 @@ public class HelperNotifierTests
         await using var helper = await rig.ConnectHelperAsync();
 
         var prompt = rig.Notifier.PromptAsync(TimeSpan.FromSeconds(30), 5, CancellationToken.None);
-        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(rig.Guard));
         await helper.SendAsync(HelperProtocol.BuildResponse(command.Id + 100, PromptOutcome.Reject));
         await helper.SendAsync(HelperProtocol.BuildResponse(command.Id, PromptOutcome.Dismissed));
 
-        Assert.Equal(PromptOutcome.Dismissed, await prompt.WaitAsync(TestSupport.Guard()));
+        Assert.Equal(PromptOutcome.Dismissed, await prompt.WaitAsync(rig.Guard));
     }
 
     [Fact]
@@ -98,10 +114,10 @@ public class HelperNotifierTests
 
         // Plazo largo: si la excepcion dependiera del plazo la prueba se colgaria
         var prompt = rig.Notifier.PromptAsync(TimeSpan.FromMinutes(5), 5, CancellationToken.None);
-        await helper.ReadCommandAsync(TestSupport.Guard());
+        await helper.ReadCommandAsync(rig.Guard);
         await helper.DisposeAsync();
 
-        await Assert.ThrowsAsync<HelperUnavailableException>(() => prompt.WaitAsync(TestSupport.Guard()));
+        await Assert.ThrowsAsync<HelperUnavailableException>(() => prompt.WaitAsync(rig.Guard));
     }
 
     [Fact]
@@ -112,11 +128,11 @@ public class HelperNotifierTests
         using var cts = new CancellationTokenSource();
 
         var prompt = rig.Notifier.PromptAsync(TimeSpan.FromSeconds(30), 5, cts.Token);
-        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(rig.Guard));
         cts.Cancel();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => prompt.WaitAsync(TestSupport.Guard()));
-        var cancel = Assert.IsType<HelperCommand.Cancel>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        await AssertCanceledAsync(prompt, rig.Guard);
+        var cancel = Assert.IsType<HelperCommand.Cancel>(await helper.ReadCommandAsync(rig.Guard));
         Assert.Equal(command.Id, cancel.Id);
     }
 
@@ -128,9 +144,9 @@ public class HelperNotifierTests
         using var cts = new CancellationTokenSource();
 
         var prompt = rig.Notifier.PromptAsync(TimeSpan.FromHours(2), 99999, cts.Token);
-        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(rig.Guard));
         cts.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => prompt.WaitAsync(TestSupport.Guard()));
+        await AssertCanceledAsync(prompt, rig.Guard);
 
         // Sin ajuste el ayudante descartaria la orden y el aviso no apareceria nunca
         Assert.Equal(HelperProtocol.MaxTimeoutSeconds, command.TimeoutSeconds);
@@ -145,7 +161,7 @@ public class HelperNotifierTests
         await using var helper = await rig.ConnectHelperAsync();
 
         var prompt = rig.Notifier.PromptAsync(TimeSpan.FromSeconds(30), 5, CancellationToken.None);
-        await helper.ReadCommandAsync(TestSupport.Guard());
+        await helper.ReadCommandAsync(rig.Guard);
 
         await TestSupport.AdvanceUntilAsync(time, () => prompt.IsCompleted);
         await Assert.ThrowsAsync<HelperUnavailableException>(() => prompt);
@@ -159,13 +175,12 @@ public class HelperNotifierTests
 
         // Plazo largo: si el Prompt quedara colgado la prueba solo acabaria por el guardian
         var prompt = rig.Notifier.PromptAsync(TimeSpan.FromMinutes(5), 5, CancellationToken.None);
-        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(rig.Guard));
         await rig.Notifier.CancelAsync();
 
         // Destino del Prompt: cancelado, nunca HelperUnavailable (no es una averia)
-        var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => prompt.WaitAsync(TestSupport.Guard()));
-        Assert.IsNotType<HelperUnavailableException>(ex);
-        var cancel = Assert.IsType<HelperCommand.Cancel>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        await AssertCanceledAsync(prompt, rig.Guard);
+        var cancel = Assert.IsType<HelperCommand.Cancel>(await helper.ReadCommandAsync(rig.Guard));
         Assert.Equal(command.Id, cancel.Id);
     }
 
@@ -179,19 +194,19 @@ public class HelperNotifierTests
             rig.Notifier, fallback, NullLogger<ResilientNotifier>.Instance, TimeProvider.System);
 
         var prompt = resilient.PromptAsync(TimeSpan.FromMinutes(5), 5, CancellationToken.None);
-        await helper.ReadCommandAsync(TestSupport.Guard());
+        await helper.ReadCommandAsync(rig.Guard);
         await resilient.CancelAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => prompt.WaitAsync(TestSupport.Guard()));
+        await AssertCanceledAsync(prompt, rig.Guard);
 
         Assert.False(resilient.UsingFallback);
         Assert.Equal(0, fallback.PromptCalls);
 
         // El siguiente aviso sigue yendo por el ayudante
-        await helper.ReadCommandAsync(TestSupport.Guard());   // CANCEL del anterior
+        await helper.ReadCommandAsync(rig.Guard);   // CANCEL del anterior
         var next = resilient.PromptAsync(TimeSpan.FromMinutes(5), 5, CancellationToken.None);
-        Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(rig.Guard));
         await resilient.CancelAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => next.WaitAsync(TestSupport.Guard()));
+        await AssertCanceledAsync(next, rig.Guard);
         Assert.False(resilient.UsingFallback);
     }
 
@@ -203,7 +218,7 @@ public class HelperNotifierTests
 
         await rig.Notifier.NotifyAsync("自动解锁已暂停", CancellationToken.None);
 
-        Assert.Equal(new HelperCommand.Notify("自动解锁已暂停"), await helper.ReadCommandAsync(TestSupport.Guard()));
+        Assert.Equal(new HelperCommand.Notify("自动解锁已暂停"), await helper.ReadCommandAsync(rig.Guard));
     }
 
     private sealed class RecordingFallback : INotifier
@@ -230,11 +245,29 @@ public class HelperNotifierTests
             rig.Notifier, fallback, NullLogger<ResilientNotifier>.Instance, TimeProvider.System);
 
         var prompt = resilient.PromptAsync(TimeSpan.FromMinutes(5), 5, CancellationToken.None);
-        await helper.ReadCommandAsync(TestSupport.Guard());
+        await helper.ReadCommandAsync(rig.Guard);
         await helper.DisposeAsync();
 
-        Assert.Equal(PromptOutcome.Reject, await prompt.WaitAsync(TestSupport.Guard()));
+        Assert.Equal(PromptOutcome.Reject, await prompt.WaitAsync(rig.Guard));
         Assert.Equal(1, fallback.PromptCalls);
         Assert.True(resilient.UsingFallback);
+    }
+
+    [Fact]
+    public async Task Degrade_externo_con_aviso_pendiente_pregunta_por_el_respaldo_y_retira_el_Toast()
+    {
+        await using var rig = new Rig();
+        await using var helper = await rig.ConnectHelperAsync();
+        var fallback = new RecordingFallback();
+        var resilient = new ResilientNotifier(
+            rig.Notifier, fallback, NullLogger<ResilientNotifier>.Instance, TimeProvider.System);
+
+        var prompt = resilient.PromptAsync(TimeSpan.FromMinutes(5), 5, CancellationToken.None);
+        await helper.ReadCommandAsync(rig.Guard);
+        resilient.Degrade("el lanzador se rindio");
+
+        Assert.Equal(PromptOutcome.Reject, await prompt.WaitAsync(rig.Guard));
+        Assert.Equal(1, fallback.PromptCalls);
+        Assert.IsType<HelperCommand.Cancel>(await helper.ReadCommandAsync(rig.Guard));
     }
 }
