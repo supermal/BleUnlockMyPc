@@ -29,6 +29,10 @@ internal sealed class ToastPrompt : IDisposable
 
     public void Show(int id, double timeoutSeconds, double snoozeMinutes)
     {
+        // El servicio ya paso al Prompt nuevo: el anterior se retira (sin responderlo) antes de
+        // construir nada, para que un fallo al montar el nuevo no deje el viejo activo
+        lock (_lock) RetractLocked();
+
         var xml = new XmlDocument();
         xml.LoadXml(string.Format(CultureInfo.InvariantCulture, """
             <toast scenario="reminder" launch="ignore">

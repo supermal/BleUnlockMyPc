@@ -45,7 +45,12 @@ internal static class Program
         {
             while (await reader.ReadLineAsync(Dead.Token) is { } line)
             {
-                if (!HelperProtocol.TryParseCommand(line, out var command)) continue;
+                if (!HelperProtocol.TryParseCommand(line, out var command))
+                {
+                    // Descartar en silencio seria indistinguible de un fallo: se deja constancia
+                    Log($"Comando descartado (mal formado o fuera de rango): {Truncate(line)}");
+                    continue;
+                }
 
                 // Un comando que falla no puede matar el proceso: se registra y se sigue sirviendo
                 try
@@ -114,13 +119,16 @@ internal static class Program
                 await writer.FlushAsync(cts.Token);
             }
         }
-        catch (Exception ex) when (ex is OperationCanceledException or IOException or ObjectDisposedException)
+        catch (Exception ex)
         {
-            // Escritura atascada o canal roto: se da por muerto y el bucle de lectura saldra
-            Log($"Canal de escritura muerto: {ex.GetType().Name}");
+            // Cualquier fallo del escritor (atasco, canal roto, error inesperado) es canal muerto:
+            // el bucle de lectura saldra y el servicio relanzara el ayudante
+            Log($"Canal de escritura muerto: {ex}");
             Dead.Cancel();
         }
     }
+
+    private static string Truncate(string s) => s.Length <= 200 ? s : s[..200] + "...";
 
     // Registro minimo en LOCALAPPDATA; el ayudante nunca maneja credenciales
     private static void Log(string message)

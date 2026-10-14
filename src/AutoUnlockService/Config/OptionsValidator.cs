@@ -1,4 +1,5 @@
 using System.Globalization;
+using AutoUnlockService.Session;
 
 namespace AutoUnlockService.Config;
 
@@ -71,9 +72,19 @@ public static class OptionsValidator
         if (p.MinSamples < 1)           errors.Add("Proximity.MinSamples 必须大于等于 1");
 
         var n = o.Notification;
-        if (n.PromptTimeoutSeconds <= 0) errors.Add("Notification.PromptTimeoutSeconds 必须为正数");
+        // Los maximos viven en HelperProtocol: el ayudante rechaza lo que los supere,
+        // y un aviso rechazado en silencio acabaria en bloqueo sin que el usuario lo viera
+        if (!(n.PromptTimeoutSeconds > 0))
+            errors.Add("Notification.PromptTimeoutSeconds 必须为正数");
+        else if (n.PromptTimeoutSeconds > HelperProtocol.MaxTimeoutSeconds)
+            errors.Add(string.Create(CultureInfo.InvariantCulture,
+                $"Notification.PromptTimeoutSeconds 不能超过 {HelperProtocol.MaxTimeoutSeconds:0} 秒"));
         if (n.RejectSnoozeSeconds <= 0)  errors.Add("Notification.RejectSnoozeSeconds 必须为正数");
-        if (n.SnoozeMinutes <= 0)        errors.Add("Notification.SnoozeMinutes 必须为正数");
+        if (!(n.SnoozeMinutes > 0))
+            errors.Add("Notification.SnoozeMinutes 必须为正数");
+        else if (n.SnoozeMinutes > HelperProtocol.MaxSnoozeMinutes)
+            errors.Add(string.Create(CultureInfo.InvariantCulture,
+                $"Notification.SnoozeMinutes 不能超过 {HelperProtocol.MaxSnoozeMinutes:0} 分钟"));
 
         return errors.Count == 0 ? ValidationResult.Ok() : ValidationResult.Invalid(errors);
     }

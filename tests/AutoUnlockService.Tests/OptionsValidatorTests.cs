@@ -1,4 +1,5 @@
 using AutoUnlockService.Config;
+using AutoUnlockService.Session;
 using Xunit;
 
 namespace AutoUnlockService.Tests;
@@ -142,6 +143,50 @@ public class OptionsValidatorTests
         var o = Valid();
         o.Device.Irk = "abc";
         o.Credentials.UserName = "";
+        Assert.True(OptionsValidator.Validate(o).Errors.Count >= 2);
+    }
+
+    [Fact]
+    public void PromptTimeout_por_encima_del_maximo_se_rechaza_nombrando_campo_y_limite()
+    {
+        var o = Valid();
+        o.Notification.PromptTimeoutSeconds = HelperProtocol.MaxTimeoutSeconds + 1;
+
+        var r = OptionsValidator.Validate(o);
+
+        Assert.False(r.IsValid);
+        Assert.Contains(r.Errors, e => e.Contains("Notification.PromptTimeoutSeconds") && e.Contains("600"));
+    }
+
+    [Fact]
+    public void SnoozeMinutes_por_encima_del_maximo_se_rechaza_nombrando_campo_y_limite()
+    {
+        var o = Valid();
+        o.Notification.SnoozeMinutes = HelperProtocol.MaxSnoozeMinutes + 1;
+
+        var r = OptionsValidator.Validate(o);
+
+        Assert.False(r.IsValid);
+        Assert.Contains(r.Errors, e => e.Contains("Notification.SnoozeMinutes") && e.Contains("240"));
+    }
+
+    [Fact]
+    public void Los_maximos_exactos_de_notificacion_se_aceptan()
+    {
+        var o = Valid();
+        o.Notification.PromptTimeoutSeconds = HelperProtocol.MaxTimeoutSeconds;
+        o.Notification.SnoozeMinutes = HelperProtocol.MaxSnoozeMinutes;
+
+        Assert.True(OptionsValidator.Validate(o).IsValid);
+    }
+
+    [Fact]
+    public void NaN_en_los_plazos_de_notificacion_se_rechaza()
+    {
+        var o = Valid();
+        o.Notification.PromptTimeoutSeconds = double.NaN;
+        o.Notification.SnoozeMinutes = double.NaN;
+
         Assert.True(OptionsValidator.Validate(o).Errors.Count >= 2);
     }
 }
