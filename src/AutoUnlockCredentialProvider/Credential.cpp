@@ -42,13 +42,15 @@ HRESULT CAutoUnlockCredential::QueryInterface(REFIID riid, void** ppv)
     return E_NOINTERFACE;
 }
 
-void CAutoUnlockCredential::SetAuthFailCallback(AuthFailCallback cb)
+void CAutoUnlockCredential::SetAuthResultCallback(AuthResultCallback cb)
 {
-    _authFailCb = std::move(cb);
+    _authResultCb = std::move(cb);
 }
 
 void CAutoUnlockCredential::SetCredentials(const std::wstring& username, const std::wstring& password)
 {
+    // Si quedaba una contrasena sin consumir, se borra antes de sustituirla
+    if (!_password.empty()) SecureZeroMemory(_password.data(), _password.size() * sizeof(WCHAR));
     _username = username;
     _password = password;
     _hasCredentials = true;
@@ -135,9 +137,11 @@ HRESULT CAutoUnlockCredential::GetSerialization(
 HRESULT CAutoUnlockCredential::ReportResult(NTSTATUS ntsStatus, NTSTATUS, PWSTR* ppwsz,
     CREDENTIAL_PROVIDER_STATUS_ICON* pcpsi)
 {
-    *ppwsz  = nullptr;
-    *pcpsi  = CPSI_NONE;
-    if (ntsStatus != STATUS_SUCCESS && _authFailCb)
-        _authFailCb();
+    *ppwsz = nullptr;
+    *pcpsi = CPSI_NONE;
+
+    // El servicio decide que hacer con el resultado; aqui solo se informa
+    if (_authResultCb) _authResultCb(ntsStatus);
+
     return S_OK;
 }

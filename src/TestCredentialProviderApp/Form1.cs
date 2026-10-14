@@ -173,16 +173,34 @@ public partial class Form1 : Form
             return;
         }
 
-        byte[] payload = Encoding.UTF8.GetBytes($"{username}\n{password}\n");
+        byte[] payload = Encoding.UTF8.GetBytes($"CREDS\n{username}\n{password}\n");
         await pipe.WriteAsync(payload, ct);
         _credSentAt = DateTime.Now;
         Log($"已发送凭据：{username} / {"*".PadRight(password.Length, '*')}");
-        Log($"若密码错误请修正后 {CooldownSeconds} 秒内重试无效，请等待冷却后再试");
 
-        byte[] buf = new byte[16];
-        int read = await pipe.ReadAsync(buf, ct);
-        string response = Encoding.UTF8.GetString(buf, 0, read).Trim();
-        Log($"收到响应：{response}");
+        // El CP responde ACK enseguida y RESULT cuando Windows ha resuelto la autenticacion
+        var reader = new StreamReader(pipe, Encoding.UTF8, leaveOpen: true);
+        string? ack = await reader.ReadLineAsync(ct);
+        Log($"收到确认：{ack}");
+
+        // El CP no escribe nada si ReportResult nunca llega: se acota la espera
+        using var resultCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        resultCts.CancelAfter(TimeSpan.FromSeconds(30));
+        string? result;
+        try { result = await reader.ReadLineAsync(resultCts.Token); }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            Log("等待认证结果超时（30 秒），CP 未回报结果");
+            return;
+        }
+        Log(result switch
+        {
+            "RESULT OK"                       => "✓ 认证成功",
+            not null when result.StartsWith("RESULT FAIL ") =>
+                $"✗ 认证失败，NTSTATUS 0x{result["RESULT FAIL ".Length..]}",
+            null                              => "连接已断开，未收到认证结果",
+            _                                 => $"收到未知响应：{result}"
+        });
     }
 
     private async Task CountdownAsync(int seconds, CancellationToken ct)

@@ -49,8 +49,8 @@ public:
     void SetCredentials(const std::wstring& username, const std::wstring& password);
     bool HasCredentials() const { return _hasCredentials; }
 
-    using AuthFailCallback = std::function<void()>;
-    void SetAuthFailCallback(AuthFailCallback cb);
+    using AuthResultCallback = std::function<void(NTSTATUS)>;
+    void SetAuthResultCallback(AuthResultCallback cb);
 
 private:
     LONG        _cRef;
@@ -58,5 +58,5 @@ private:
     std::wstring _password;
     bool        _hasCredentials;
     ICredentialProviderCredentialEvents* _pcpce;
-    AuthFailCallback _authFailCb;
+    AuthResultCallback _authResultCb;
 };
