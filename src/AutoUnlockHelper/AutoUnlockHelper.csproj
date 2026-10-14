@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AutoUnlockHelper</RootNamespace>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Registra solo el AUMID y el acceso directo del menu Inicio, que es lo que
+         Windows exige para mostrar Toasts desde una aplicacion sin empaquetar -->
+    <PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Se comparte el fichero en lugar de duplicarlo: una sola definicion del protocolo -->
+    <Compile Include="..\AutoUnlockService\Session\HelperProtocol.cs" Link="HelperProtocol.cs" />
+  </ItemGroup>
+
+</Project>
