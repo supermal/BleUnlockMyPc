@@ -10,7 +10,7 @@ namespace AutoUnlockService.Session;
 public sealed class HelperPipeServer(
     ILogger<HelperPipeServer> log,
     TimeProvider? time = null,
-    string pipeName = HelperPipeServer.DefaultPipeName) : IHelperLink, IAsyncDisposable
+    string pipeName = HelperPipeServer.DefaultPipeName) : IHelperLink, IHelperCommandChannel, IAsyncDisposable
 {
     public const string DefaultPipeName = "AutoUnlockHelper";
 

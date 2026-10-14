@@ -18,10 +18,15 @@ public sealed class HelperLauncher : IDisposable
     private readonly Func<string, (UserSessionStartResult Result, int Pid)> _launch;
     private readonly Action<int> _terminate;
 
+    // Tras degradar se sigue intentando, mas despacio: un arranque lento puntual (antivirus,
+    // arranque en frio) no puede desactivar el Toast hasta reiniciar el servicio
+    internal static readonly TimeSpan SlowRetryDelay = TimeSpan.FromSeconds(60);
+
     private CancellationTokenSource? _cts;
     private Task? _loop;
+    private int _started;
     private int _consecutiveFailures;
-    private TaskCompletionSource? _connectedSignal;
+    private int _helperPid;
 
     public HelperLauncher(HelperPipeServer pipe, ILogger<HelperLauncher> log, TimeProvider time)
         : this(pipe, log, time, launch: null, terminate: null) { }
@@ -41,6 +46,7 @@ public sealed class HelperLauncher : IDisposable
         });
         _terminate = terminate ?? TerminateProcess;
     }
+    private TaskCompletionSource? _connectedSignal;
 
     public event Action<string>? DegradeRequested;
 
@@ -48,6 +54,7 @@ public sealed class HelperLauncher : IDisposable
 
     public void Start(CancellationToken ct)
     {
+        if (Interlocked.Exchange(ref _started, 1) != 0) return;
         _link.Connected += OnConnected;
         _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         _loop = Task.Run(() => RunAsync(_cts.Token), CancellationToken.None);
@@ -69,16 +76,18 @@ public sealed class HelperLauncher : IDisposable
         {
             try
             {
-                if (!_link.IsConnected && ConsecutiveFailures < MaxConsecutiveFailures)
+                if (!_link.IsConnected)
                     await TryLaunchAsync($"\"{exePath}\"", ct);
 
-                if (!degradeRaised && ConsecutiveFailures >= MaxConsecutiveFailures)
+                int failures = ConsecutiveFailures;
+                if (failures == 0) degradeRaised = false;
+                else if (!degradeRaised && failures >= MaxConsecutiveFailures)
                 {
                     degradeRaised = true;
                     Raise($"助手连续 {MaxConsecutiveFailures} 次启动失败");
                 }
 
-                await Task.Delay(RelaunchDelay, _time, ct);
+                await Task.Delay(failures >= MaxConsecutiveFailures ? SlowRetryDelay : RelaunchDelay, _time, ct);
             }
             catch (OperationCanceledException) { break; }
             catch (Exception ex)
@@ -93,9 +102,13 @@ public sealed class HelperLauncher : IDisposable
 
     private async Task TryLaunchAsync(string commandLine, CancellationToken ct)
     {
+        // Como mucho un ayudante vivo: si la tuberia cayo pero el proceso anterior sigue ahi, se retira antes
+        RetireCurrentHelper();
+
         // La señal se crea antes de lanzar: el ayudante puede conectar antes de que se empiece a esperar
         var signal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _connectedSignal = signal;
+
         var (result, pid) = _launch(commandLine);
         switch (result)
         {
@@ -105,11 +118,12 @@ public sealed class HelperLauncher : IDisposable
                 return;
 
             case UserSessionStartResult.Failed:
-                var failures = Interlocked.Increment(ref _consecutiveFailures);
-                _log.LogWarning("启动助手失败（第 {Count} 次）", failures);
+                var failed = Interlocked.Increment(ref _consecutiveFailures);
+                _log.LogWarning("启动助手失败（第 {Count} 次）", failed);
                 return;
         }
 
+        Volatile.Write(ref _helperPid, pid);
         _log.LogInformation("助手进程已启动，等待连接");
         if (_link.IsConnected) return;
 
@@ -120,8 +134,14 @@ public sealed class HelperLauncher : IDisposable
             _log.LogWarning("助手已启动但未在 {Seconds} 秒内连接（第 {Count} 次）", ConnectGrace.TotalSeconds, failures);
 
             // Se retira el proceso que no conecto para no acumular ayudantes huerfanos
-            if (pid != 0) _terminate(pid);
+            RetireCurrentHelper();
         }
+    }
+
+    private void RetireCurrentHelper()
+    {
+        var pid = Interlocked.Exchange(ref _helperPid, 0);
+        if (pid != 0) _terminate(pid);
     }
 
     private void Raise(string reason)
@@ -147,6 +167,9 @@ public sealed class HelperLauncher : IDisposable
     {
         _link.Connected -= OnConnected;
         _cts?.Cancel();
+        // Se espera al bucle para no dejarlo ejecutandose tras liberar el token
+        try { _loop?.Wait(TimeSpan.FromSeconds(2)); }
+        catch (AggregateException) { }
         _cts?.Dispose();
     }
 }

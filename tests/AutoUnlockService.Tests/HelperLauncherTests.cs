@@ -15,8 +15,9 @@ public class HelperLauncherTests
 
         public void Connect()
         {
-            _connected = true;
+            // El evento va primero: asi quien vea IsConnected ya ve tambien el contador reiniciado
             Connected?.Invoke(1);
+            _connected = true;
         }
 
         public void Disconnect() => _connected = false;
@@ -38,17 +39,20 @@ public class HelperLauncherTests
         public int Degrades => Volatile.Read(ref _degrades);
         public int Terminated => Volatile.Read(ref _terminated);
         public List<int> TerminatedPids { get; } = [];
+        public List<string> Events { get; } = [];
 
         public Rig()
         {
             Launcher = new HelperLauncher(Link, NullLogger.Instance, Time, _ =>
             {
                 Interlocked.Increment(ref _launches);
+                lock (Events) Events.Add("launch");
                 if (_script.Count > 0) _last = _script.Dequeue();
                 return _last();
             }, pid =>
             {
                 lock (TerminatedPids) TerminatedPids.Add(pid);
+                lock (Events) Events.Add($"terminate:{pid}");
                 Interlocked.Increment(ref _terminated);
             });
             Launcher.DegradeRequested += _ => Interlocked.Increment(ref _degrades);
@@ -92,10 +96,37 @@ public class HelperLauncherTests
         rig.Start();
 
         await TestSupport.AdvanceUntilAsync(rig.Time, () => rig.Degrades >= 1);
-        await rig.AdvanceFixedAsync(200);
-
         Assert.Equal(3, rig.Launches);
+
+        await rig.AdvanceFixedAsync(200);
         Assert.Equal(1, rig.Degrades);
+    }
+
+    [Fact]
+    public async Task Tras_degradar_el_lanzador_sigue_reintentando_mas_despacio()
+    {
+        using var rig = new Rig().ThenFail();
+        rig.Start();
+        await TestSupport.AdvanceUntilAsync(rig.Time, () => rig.Degrades >= 1);
+        var atDegrade = rig.Launches;
+
+        // 600 s simulados: con el reintento lento (60 s) caben varios intentos, pero no cientos
+        await rig.AdvanceFixedAsync(600);
+
+        Assert.InRange(rig.Launches - atDegrade, 5, 15);
+        Assert.Equal(1, rig.Degrades);
+    }
+
+    [Fact]
+    public async Task Un_arranque_lento_puntual_no_desactiva_el_ayudante_para_siempre()
+    {
+        using var rig = new Rig().ThenFail().ThenFail().ThenFail().ThenFail().ThenStartedAndConnects();
+        rig.Start();
+
+        await TestSupport.AdvanceUntilAsync(rig.Time, () => rig.Link.IsConnected);
+
+        Assert.Equal(1, rig.Degrades);
+        Assert.Equal(0, rig.Launcher.ConsecutiveFailures);
     }
 
     [Fact]
@@ -105,11 +136,35 @@ public class HelperLauncherTests
         rig.Start();
 
         await TestSupport.AdvanceUntilAsync(rig.Time, () => rig.Degrades >= 1);
-        await rig.AdvanceFixedAsync(200);
 
         Assert.Equal(3, rig.Launches);
-        Assert.Equal(1, rig.Degrades);
         Assert.Equal(new[] { 4242, 4242, 4242 }, rig.TerminatedPids);
+    }
+
+    [Fact]
+    public async Task Si_la_tuberia_cae_pero_el_proceso_sigue_vivo_se_retira_antes_de_relanzar()
+    {
+        using var rig = new Rig().ThenStartedAndConnects();
+        rig.Start();
+        await TestSupport.AdvanceUntilAsync(rig.Time, () => rig.Link.IsConnected);
+
+        rig.Link.Disconnect();
+        await TestSupport.AdvanceUntilAsync(rig.Time, () => rig.Launches >= 2);
+
+        Assert.Equal(new[] { "launch", "terminate:100", "launch" }, rig.Events.Take(3));
+    }
+
+    [Fact]
+    public async Task Start_llamado_dos_veces_no_duplica_el_guardian()
+    {
+        using var rig = new Rig().ThenStartedAndConnects();
+        rig.Start();
+        rig.Start();
+
+        await TestSupport.AdvanceUntilAsync(rig.Time, () => rig.Link.IsConnected);
+        await rig.AdvanceFixedAsync(100);
+
+        Assert.Equal(1, rig.Launches);
     }
 
     [Fact]

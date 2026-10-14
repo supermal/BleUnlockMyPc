@@ -152,20 +152,47 @@ public class HelperNotifierTests
     }
 
     [Fact]
-    public async Task Cancel_envia_CANCEL_del_aviso_pendiente()
+    public async Task CancelAsync_termina_el_Prompt_en_curso_con_OperationCanceled_y_envia_CANCEL()
     {
         await using var rig = new Rig();
         await using var helper = await rig.ConnectHelperAsync();
-        using var cts = new CancellationTokenSource();
 
-        var prompt = rig.Notifier.PromptAsync(TimeSpan.FromSeconds(30), 5, cts.Token);
+        // Plazo largo: si el Prompt quedara colgado la prueba solo acabaria por el guardian
+        var prompt = rig.Notifier.PromptAsync(TimeSpan.FromMinutes(5), 5, CancellationToken.None);
         var command = Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(TestSupport.Guard()));
         await rig.Notifier.CancelAsync();
 
+        // Destino del Prompt: cancelado, nunca HelperUnavailable (no es una averia)
+        var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => prompt.WaitAsync(TestSupport.Guard()));
+        Assert.IsNotType<HelperUnavailableException>(ex);
         var cancel = Assert.IsType<HelperCommand.Cancel>(await helper.ReadCommandAsync(TestSupport.Guard()));
         Assert.Equal(command.Id, cancel.Id);
-        cts.Cancel();
+    }
+
+    [Fact]
+    public async Task Cancel_durante_un_aviso_no_deja_degradado_a_ResilientNotifier()
+    {
+        await using var rig = new Rig();
+        await using var helper = await rig.ConnectHelperAsync();
+        var fallback = new RecordingFallback();
+        var resilient = new ResilientNotifier(
+            rig.Notifier, fallback, NullLogger<ResilientNotifier>.Instance, TimeProvider.System);
+
+        var prompt = resilient.PromptAsync(TimeSpan.FromMinutes(5), 5, CancellationToken.None);
+        await helper.ReadCommandAsync(TestSupport.Guard());
+        await resilient.CancelAsync();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => prompt.WaitAsync(TestSupport.Guard()));
+
+        Assert.False(resilient.UsingFallback);
+        Assert.Equal(0, fallback.PromptCalls);
+
+        // El siguiente aviso sigue yendo por el ayudante
+        await helper.ReadCommandAsync(TestSupport.Guard());   // CANCEL del anterior
+        var next = resilient.PromptAsync(TimeSpan.FromMinutes(5), 5, CancellationToken.None);
+        Assert.IsType<HelperCommand.Prompt>(await helper.ReadCommandAsync(TestSupport.Guard()));
+        await resilient.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => next.WaitAsync(TestSupport.Guard()));
+        Assert.False(resilient.UsingFallback);
     }
 
     [Fact]

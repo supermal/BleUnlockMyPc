@@ -80,8 +80,8 @@ public sealed class HelperNotifier : INotifier
         }
         catch (OperationCanceledException)
         {
-            // El llamante cancela (p. ej. la señal volvio): retirar el Toast si sigue ahi
-            await RetractAsync(id);
+            // Si cancela el llamante hay que retirar el Toast; si fue CancelAsync, ya se envio el CANCEL
+            if (ct.IsCancellationRequested) await RetractAsync(id);
             throw;
         }
         finally
@@ -95,13 +95,21 @@ public sealed class HelperNotifier : INotifier
 
     public async Task CancelAsync()
     {
+        TaskCompletionSource<PromptOutcome> tcs;
         int id;
         lock (_lock)
         {
             if (_pending is null) return;
+            tcs = _pending;
             id = _pendingId;
             _pending = null;
         }
+
+        // Retirar el aviso es un desenlace normal ("la señal volvio"), no una averia del ayudante:
+        // el PromptAsync en curso termina con OperationCanceledException, que no degrada. No se
+        // resuelve con un PromptOutcome porque Dismissed/Timeout son respuestas reales del usuario
+        // y el consumidor podria actuar sobre ellas
+        tcs.TrySetCanceled();
         await _pipe.SendAsync(HelperProtocol.BuildCancel(id), CancellationToken.None);
     }
 
