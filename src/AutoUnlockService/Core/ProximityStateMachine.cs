@@ -1,4 +1,5 @@
 using AutoUnlockService.Config;
+using AutoUnlockService.Credentials;
 
 namespace AutoUnlockService.Core;
 
@@ -30,6 +31,8 @@ public enum SessionEvent { Lock, Unlock }
 public sealed record StateChange(
     ProximityState From, ProximityState To, ProximityAction Action, string Reason);
 
+public sealed record AuthResult(bool Success, uint NtStatus);
+
 // Toda la politica de bloqueo y desbloqueo vive aqui. No toca Windows ni la red:
 // devuelve la accion que el orquestador debe ejecutar
 public sealed class ProximityStateMachine
@@ -40,6 +43,7 @@ public sealed class ProximityStateMachine
     private DateTimeOffset _promptDeadline;
     // Se recuerda incluso en Suspended, para saber a que estado volver al reanudar
     private bool _screenLocked;
+    private DateTimeOffset _unlockSentAt;
 
     public ProximityStateMachine(
         TimeProvider time,
@@ -71,7 +75,10 @@ public sealed class ProximityStateMachine
             ProximityState.Unlocked    => EvaluateUnlocked(history, now),
             ProximityState.PendingLock => EvaluatePendingLock(history, now),
             ProximityState.Snoozed     => EvaluateSnoozed(now),
-            // Los estados de desbloqueo se implementan en la Task 8
+            ProximityState.LockedWaitingDeparture => EvaluateWaitingDeparture(history, now),
+            ProximityState.LockedArmed            => EvaluateArmed(history, now),
+            ProximityState.UnlockPending          => EvaluateUnlockPending(now),
+            // Suspended no reacciona a las muestras: solo lo saca un cambio de configuracion
             _ => null
         };
     }
@@ -113,6 +120,36 @@ public sealed class ProximityStateMachine
         now >= _snoozeUntil
             ? Transition(ProximityState.Unlocked, ProximityAction.None, "延期结束")
             : null;
+
+    private StateChange? EvaluateWaitingDeparture(RssiHistory history, DateTimeOffset now)
+    {
+        // Aqui NUNCA se envian credenciales, por fuerte que sea la senal: el usuario que
+        // pulsa Win+L sentado debe irse de verdad antes de que se arme el desbloqueo
+        var (far, reason) = IsFar(history, now);
+        return far
+            ? Transition(ProximityState.LockedArmed, ProximityAction.None, $"已确认离开：{reason}")
+            : null;
+    }
+
+    private StateChange? EvaluateArmed(RssiHistory history, DateTimeOffset now)
+    {
+        var (near, reason) = IsNear(history, now);
+        if (!near) return null;
+
+        _unlockSentAt = now;
+        return Transition(ProximityState.UnlockPending, ProximityAction.SendCredentials,
+            $"已确认靠近：{reason}");
+    }
+
+    private StateChange? EvaluateUnlockPending(DateTimeOffset now)
+    {
+        // ReportResult no esta garantizado: si LogonUI se destruye, el resultado nunca llega.
+        // Agotado el plazo volvemos a armar y reintentamos; esto NO es motivo para parar
+        var timeout = TimeSpan.FromSeconds(Proximity.UnlockPendingTimeoutSeconds);
+        return now - _unlockSentAt >= timeout
+            ? Transition(ProximityState.LockedArmed, ProximityAction.None, "等待认证结果超时，将重试")
+            : null;
+    }
 
     public StateChange? OnPromptResponse(PromptResponse response)
     {
@@ -168,6 +205,44 @@ public sealed class ProximityStateMachine
             ? ProximityAction.CancelLockPrompt
             : ProximityAction.None;
         return Transition(ProximityState.Unlocked, unlockAction, "屏幕已解锁");
+    }
+
+    public StateChange? OnAuthResult(AuthResult result)
+    {
+        if (State != ProximityState.UnlockPending) return null;
+
+        if (result.Success)
+        {
+            _screenLocked = false;
+            return Transition(ProximityState.Unlocked, ProximityAction.None, "自动解锁成功");
+        }
+
+        if (NtStatusPolicy.ShouldSuspend(result.NtStatus))
+            return Transition(ProximityState.Suspended, ProximityAction.NotifySuspended,
+                $"自动解锁已暂停：{NtStatusPolicy.Describe(result.NtStatus)}");
+
+        return Transition(ProximityState.LockedArmed, ProximityAction.None,
+            $"解锁失败将重试：{NtStatusPolicy.Describe(result.NtStatus)}");
+    }
+
+    // La llama el orquestador cuando cambian usuario o clave en el fichero,
+    // con el resultado de la prevalidacion LogonUser
+    public StateChange? OnCredentialsChanged(bool preValidationPassed)
+    {
+        if (!preValidationPassed)
+        {
+            return State == ProximityState.Suspended
+                ? null
+                : Transition(ProximityState.Suspended, ProximityAction.NotifySuspended,
+                    "凭据预验证失败，自动解锁已暂停");
+        }
+
+        if (State != ProximityState.Suspended) return null;
+
+        var target = _screenLocked
+            ? ProximityState.LockedWaitingDeparture
+            : ProximityState.Unlocked;
+        return Transition(target, ProximityAction.None, "凭据已更新且验证通过，自动解锁恢复");
     }
 
     // Tras despertar de suspension el reloj puede haber saltado horas. El orquestador
