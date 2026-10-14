@@ -51,6 +51,14 @@ public static class OptionsValidator
         if (string.IsNullOrWhiteSpace(o.Credentials.UserName))
             errors.Add("Credentials.UserName 不能为空");
 
+        // Un caracter de control (salto de linea, retorno de carro, tabulador...) rompe el encuadre
+        // por lineas del pipe hacia el CP.
+        // Los mensajes nombran el campo pero nunca incluyen su valor
+        if ((o.Credentials.UserName ?? "").Any(char.IsControl))
+            errors.Add("Credentials.UserName 不能包含控制字符（换行、回车、制表符等）");
+        if ((o.Credentials.Password ?? "").Any(char.IsControl))
+            errors.Add("Credentials.Password 不能包含控制字符（换行、回车、制表符等）");
+
         var p = o.Proximity;
         if (p.UnlockThresholdDbm <= p.LockThresholdDbm)
             errors.Add("Proximity.UnlockThresholdDbm 必须大于 LockThresholdDbm，否则死区为负");

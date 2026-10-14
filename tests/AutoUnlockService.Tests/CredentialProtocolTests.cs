@@ -37,10 +37,27 @@ public class CredentialProtocolTests
     [InlineData("Admin", "cla\nve")]
     public void BuildCreds_rechaza_saltos_de_linea_que_romperian_el_encuadre(string user, string password)
     {
-        var ex = Assert.Throws<ArgumentException>(() => CredentialProtocol.BuildCreds(user, password));
+        Assert.Throws<ArgumentException>(() => CredentialProtocol.BuildCreds(user, password));
+    }
 
-        // El mensaje nunca debe contener la clave
-        Assert.DoesNotContain(password, ex.Message);
+    [Fact]
+    public void BuildCreds_no_filtra_ni_usuario_ni_clave_en_la_excepcion()
+    {
+        // Valores centinela unicos que no coinciden con el texto fijo del mensaje
+        var secretUser = "USR-" + Guid.NewGuid().ToString("N");
+        var secretPass = "PWD-" + Guid.NewGuid().ToString("N");
+
+        // Fallo por el usuario (la clave es valida) y fallo por la clave (el usuario es valido)
+        var byUser = Assert.Throws<ArgumentException>(() => CredentialProtocol.BuildCreds(secretUser + "\n", secretPass));
+        var byPass = Assert.Throws<ArgumentException>(() => CredentialProtocol.BuildCreds(secretUser, secretPass + "\n"));
+
+        foreach (var ex in new[] { byUser, byPass })
+        {
+            // ToString incluye mensaje, nombre del parametro y traza
+            var text = ex.ToString();
+            Assert.DoesNotContain(secretUser, text);
+            Assert.DoesNotContain(secretPass, text);
+        }
     }
 
     [Fact]

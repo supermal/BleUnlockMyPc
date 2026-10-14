@@ -34,6 +34,39 @@ public class OptionsValidatorTests
         => Assert.True(OptionsValidator.Validate(Valid()).IsValid);
 
     [Fact]
+    public void Validate_rechaza_usuario_con_salto_de_linea()
+    {
+        var o = Valid();
+        o.Credentials.UserName = "Ad\nmin";
+        var r = OptionsValidator.Validate(o);
+        Assert.False(r.IsValid);
+        Assert.Contains(r.Errors, e => e.Contains("UserName") && e.Contains("控制字符"));
+    }
+
+    [Theory]
+    [InlineData("cla\nve")]
+    [InlineData("cla\rve")]
+    [InlineData("cla\tve")]
+    public void Validate_rechaza_clave_con_caracteres_de_control(string password)
+    {
+        var o = Valid();
+        o.Credentials.Password = password;
+        var r = OptionsValidator.Validate(o);
+        Assert.False(r.IsValid);
+        Assert.Contains(r.Errors, e => e.Contains("Password") && e.Contains("控制字符"));
+        // El error nombra el campo, nunca el valor
+        Assert.DoesNotContain(r.Errors, e => e.Contains(password));
+    }
+
+    [Fact]
+    public void Validate_acepta_clave_con_puntuacion_y_no_ascii()
+    {
+        var o = Valid();
+        o.Credentials.Password = "P@ss w0rd!#$%^&*()_+-=[]{};:'\",.<>/?|~`contraseña密码😀";
+        Assert.True(OptionsValidator.Validate(o).IsValid);
+    }
+
+    [Fact]
     public void Validate_rechaza_irk_invalido()
     {
         var o = Valid();

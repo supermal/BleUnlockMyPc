@@ -123,7 +123,8 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
         try { payload = CredentialProtocol.BuildCreds(userName, password); }
         catch (ArgumentException)
         {
-            // Mensaje fijo: no se vuelca ningun valor
+            // Defensa en profundidad: la comprobacion principal esta en OptionsValidator.Validate
+            // (rechaza caracteres de control al guardar la configuracion). Mensaje fijo: sin valores
             log.LogWarning("凭据包含换行符，无法按协议发送，本次放弃");
             return false;
         }
@@ -197,7 +198,7 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
         if (_loop is not null)
         {
             // Con plazo: un cierre de servicio nunca debe colgarse esperando al bucle
-            try { await _loop.WaitAsync(DisposeJoinTimeout); }
+            try { await _loop.WaitAsync(DisposeJoinTimeout, _time); }
             catch (Exception ex) when (ex is TimeoutException or OperationCanceledException)
             {
                 log.LogWarning("凭据管道循环未在期限内退出");
