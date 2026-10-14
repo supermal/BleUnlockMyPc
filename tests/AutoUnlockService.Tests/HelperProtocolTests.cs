@@ -1,3 +1,4 @@
+using System.Globalization;
 using AutoUnlockService.Session;
 using Xunit;
 
@@ -53,11 +54,29 @@ public class HelperProtocolTests
     [Fact]
     public void Los_numeros_usan_formato_invariante()
     {
-        // En una maquina con coma decimal esto rompería si no se fijara la cultura
-        var line = HelperProtocol.BuildPrompt(1, 12.5, 2.5);
+        // Con coma decimal (es-ES) romperia si no se fijara la cultura invariante;
+        // se fuerza aqui para que la prueba signifique algo en cualquier maquina
+        var previous = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = new CultureInfo("es-ES");
+        try
+        {
+            var line = HelperProtocol.BuildPrompt(1, 12.5, 2.5);
 
-        Assert.Contains("12.5", line);
-        Assert.True(HelperProtocol.TryParseCommand(line, out _));
+            Assert.Contains("12.5", line);
+            Assert.True(HelperProtocol.TryParseCommand(line, out var cmd));
+            Assert.Equal(12.5, Assert.IsType<HelperCommand.Prompt>(cmd).TimeoutSeconds);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+        }
+    }
+
+    [Fact]
+    public void Los_maximos_exactos_se_aceptan()
+    {
+        Assert.True(HelperProtocol.TryParseCommand(
+            HelperProtocol.BuildPrompt(1, HelperProtocol.MaxTimeoutSeconds, HelperProtocol.MaxSnoozeMinutes), out _));
     }
 
     [Theory]
@@ -80,6 +99,9 @@ public class HelperProtocolTests
     [InlineData("PROMPT a b c")]
     [InlineData("PROMPT 1 NaN 5")]
     [InlineData("PROMPT 1 -3 5")]
+    [InlineData("PROMPT 1 1e300 5")]
+    [InlineData("PROMPT 1 601 5")]
+    [InlineData("PROMPT 1 15 241")]
     [InlineData("QUE_ES_ESTO 1")]
     public void TryParseCommand_rechaza_basura(string line)
         => Assert.False(HelperProtocol.TryParseCommand(line, out _));

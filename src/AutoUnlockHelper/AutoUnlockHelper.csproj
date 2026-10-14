@@ -15,6 +15,8 @@
     <!-- Registra solo el AUMID y el acceso directo del menu Inicio, que es lo que
          Windows exige para mostrar Toasts desde una aplicacion sin empaquetar -->
     <PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
+    <!-- El Toolkit arrastra System.Drawing.Common 4.7.0 (NU1904, critico): se fija una version parcheada -->
+    <PackageReference Include="System.Drawing.Common" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>

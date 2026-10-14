@@ -56,12 +56,33 @@ internal sealed class ToastPrompt : IDisposable
             _current = toast;
             _currentId = id;
             _answered = false;
-            // El ayudante vigila tambien el plazo; el servicio tiene ademas el suyo
+            // El ayudante vigila tambien el plazo; el servicio tiene ademas el suyo.
+            // El temporizador nace desarmado: se arma despues de mostrar el Toast para que,
+            // con plazo 0, no pueda disparar antes de que el Toast exista
             _timer = _time.CreateTimer(_ => Answer(toast, PromptOutcome.Timeout),
-                null, TimeSpan.FromSeconds(timeoutSeconds), Timeout.InfiniteTimeSpan);
+                null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
 
-        _notifier.Show(toast);
+        try
+        {
+            _notifier.Show(toast);
+        }
+        catch
+        {
+            // Si el Toast no se pudo mostrar no queda Prompt pendiente
+            lock (_lock)
+            {
+                if (ReferenceEquals(_current, toast)) RetractLocked();
+            }
+            throw;
+        }
+
+        lock (_lock)
+        {
+            // Puede haberse respondido o sustituido mientras se mostraba
+            if (ReferenceEquals(_current, toast))
+                _timer?.Change(TimeSpan.FromSeconds(timeoutSeconds), Timeout.InfiniteTimeSpan);
+        }
     }
 
     // CANCEL del servicio: se retira el Toast y no se responde nada

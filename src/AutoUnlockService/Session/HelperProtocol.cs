@@ -18,6 +18,10 @@ public static class HelperProtocol
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
+    // Limites razonables: un plazo mayor es un error del emisor, no una orden valida
+    public const double MaxTimeoutSeconds = 600;
+    public const double MaxSnoozeMinutes = 240;
+
     public static string BuildPrompt(int id, double timeoutSeconds, double snoozeMinutes) =>
         string.Create(Inv, $"PROMPT {id} {timeoutSeconds} {snoozeMinutes}\n");
 
@@ -61,9 +65,9 @@ public static class HelperProtocol
                 if (!int.TryParse(args[0], NumberStyles.Integer, Inv, out var id)) return false;
                 if (!double.TryParse(args[1], NumberStyles.Float, Inv, out var timeout)) return false;
                 if (!double.TryParse(args[2], NumberStyles.Float, Inv, out var snooze)) return false;
-                // NaN, infinito o negativo no son plazos validos
-                if (!double.IsFinite(timeout) || timeout < 0) return false;
-                if (!double.IsFinite(snooze) || snooze < 0) return false;
+                // NaN, infinito, negativo o por encima del maximo no son plazos validos
+                if (!double.IsFinite(timeout) || timeout < 0 || timeout > MaxTimeoutSeconds) return false;
+                if (!double.IsFinite(snooze) || snooze < 0 || snooze > MaxSnoozeMinutes) return false;
                 command = new HelperCommand.Prompt(id, timeout, snooze);
                 return true;
 
