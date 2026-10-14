@@ -161,46 +161,61 @@ public sealed class ProximityStateMachine
         }
 
         _screenLocked = false;
-        return State == ProximityState.Unlocked
-            ? null
-            : Transition(ProximityState.Unlocked, ProximityAction.None, "屏幕已解锁");
+        if (State == ProximityState.Unlocked) return null;
+
+        // Si el aviso seguia en pantalla hay que retirarlo, o quedaria con botones activos
+        var unlockAction = State == ProximityState.PendingLock
+            ? ProximityAction.CancelLockPrompt
+            : ProximityAction.None;
+        return Transition(ProximityState.Unlocked, unlockAction, "屏幕已解锁");
     }
 
     // Tras despertar de suspension el reloj puede haber saltado horas. El orquestador
     // vacia el historico y aqui se vuelve a conceder el periodo de gracia, para no
     // bloquear la pantalla en el instante de abrir la tapa
-    public void OnResume()
+    public StateChange? OnResume()
     {
-        _graceUntil = _time.GetUtcNow() + TimeSpan.FromSeconds(Proximity.StartupGraceSeconds);
+        var proximity = Proximity;
+        _graceUntil = _time.GetUtcNow() + TimeSpan.FromSeconds(proximity.StartupGraceSeconds);
+
+        // PendingLock no consulta la gracia: el aviso que el usuario nunca vio esta caducado
+        // y su plazo ya vencio, asi que se retira y se reevalua desde cero
+        return State == ProximityState.PendingLock
+            ? Transition(ProximityState.Unlocked, ProximityAction.CancelLockPrompt, "系统从睡眠恢复，旧的锁屏提示已作废")
+            : null;
     }
 
     private (bool Far, string Reason) IsFar(RssiHistory history, DateTimeOffset now)
     {
-        var window = TimeSpan.FromSeconds(Proximity.LockWindowSeconds);
+        // Copia local: la recarga en caliente puede sustituir Proximity en mitad de la evaluacion
+        var proximity = Proximity;
+        var window = TimeSpan.FromSeconds(proximity.LockWindowSeconds);
         var stats = history.InWindow(now, window);
 
         if (stats.Count == 0)
-            return (true, $"{Proximity.LockWindowSeconds:0} 秒内无信号");
+            return (true, $"{proximity.LockWindowSeconds:0} 秒内无信号");
 
-        if (stats.Count < Proximity.MinSamples) return (false, "");
+        if (stats.Count < proximity.MinSamples) return (false, "");
 
-        return stats.Average < Proximity.LockThresholdDbm
-            ? (true, $"{Proximity.LockWindowSeconds:0} 秒内平均 {stats.Average:0.0} dBm" +
-                     $"（{stats.Count} 个读数）< {Proximity.LockThresholdDbm:0}")
+        return stats.Average < proximity.LockThresholdDbm
+            ? (true, $"{proximity.LockWindowSeconds:0} 秒内平均 {stats.Average:0.0} dBm" +
+                     $"（{stats.Count} 个读数）< {proximity.LockThresholdDbm:0}")
             : (false, "");
     }
 
     private (bool Near, string Reason) IsNear(RssiHistory history, DateTimeOffset now)
     {
-        var window = TimeSpan.FromSeconds(Proximity.UnlockWindowSeconds);
+        // Copia local: la recarga en caliente puede sustituir Proximity en mitad de la evaluacion
+        var proximity = Proximity;
+        var window = TimeSpan.FromSeconds(proximity.UnlockWindowSeconds);
         var stats = history.InWindow(now, window);
 
         // Sin señal nunca es "cerca": el desbloqueo jamas se basa en una suposicion
-        if (stats.Count < Proximity.MinSamples) return (false, "");
+        if (stats.Count < proximity.MinSamples) return (false, "");
 
-        return stats.Average > Proximity.UnlockThresholdDbm
-            ? (true, $"{Proximity.UnlockWindowSeconds:0} 秒内平均 {stats.Average:0.0} dBm" +
-                     $"（{stats.Count} 个读数）> {Proximity.UnlockThresholdDbm:0}")
+        return stats.Average > proximity.UnlockThresholdDbm
+            ? (true, $"{proximity.UnlockWindowSeconds:0} 秒内平均 {stats.Average:0.0} dBm" +
+                     $"（{stats.Count} 个读数）> {proximity.UnlockThresholdDbm:0}")
             : (false, "");
     }
 

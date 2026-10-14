@@ -240,4 +240,71 @@ public class ProximityStateMachineLockTests
         time.Advance(TimeSpan.FromSeconds(16));
         Assert.Equal(ProximityState.PendingLock, sm.Evaluate(history)?.To);
     }
+
+    // Deja la maquina en PendingLock con la ventana de desbloqueo vacia
+    private static (ProximityStateMachine Sm, FakeTimeProvider Time, RssiHistory History) BuildPending()
+    {
+        var b = Build();
+        b.History.Add(-50, T0);
+        b.Time.Advance(TimeSpan.FromSeconds(30));
+        b.Sm.Evaluate(b.History);
+        Assert.Equal(ProximityState.PendingLock, b.Sm.State);
+        return b;
+    }
+
+    [Fact]
+    public void Una_ventana_vacia_no_cancela_el_aviso_pendiente()
+    {
+        var (sm, time, history) = BuildPending();
+        time.Advance(TimeSpan.FromSeconds(2));     // dentro del plazo, sin muestras nuevas
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.PendingLock, sm.State);
+    }
+
+    [Fact]
+    public void Menos_muestras_que_el_minimo_no_cancelan_el_aviso_aunque_sean_fuertes()
+    {
+        var (sm, time, history) = BuildPending();
+        time.Advance(TimeSpan.FromSeconds(2));
+        Fill(history, time, -30, 2);               // muy por encima de -45, pero MinSamples = 3
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.PendingLock, sm.State);
+    }
+
+    [Fact]
+    public void OnResume_en_PendingLock_cancela_el_aviso_y_reabre_la_gracia()
+    {
+        var (sm, time, history) = BuildPending();
+
+        time.Advance(TimeSpan.FromHours(3));       // el plazo del aviso ya vencio de largo
+        history.Clear();
+        var change = sm.OnResume();
+
+        Assert.Equal(ProximityState.Unlocked, change?.To);
+        Assert.Equal(ProximityAction.CancelLockPrompt, change!.Action);
+        Assert.Equal(ProximityState.Unlocked, sm.State);
+
+        Assert.Null(sm.Evaluate(history));         // la gracia vuelve a regir: no bloquea
+        Assert.Equal(ProximityState.Unlocked, sm.State);
+    }
+
+    [Fact]
+    public void OnResume_fuera_de_PendingLock_no_cambia_el_estado()
+    {
+        var (sm, _, _) = Build();
+        Assert.Null(sm.OnResume());
+    }
+
+    [Fact]
+    public void Un_desbloqueo_manual_desde_PendingLock_retira_el_aviso()
+    {
+        var (sm, _, _) = BuildPending();
+
+        var change = sm.OnSessionEvent(SessionEvent.Unlock);
+
+        Assert.Equal(ProximityState.Unlocked, change?.To);
+        Assert.Equal(ProximityAction.CancelLockPrompt, change!.Action);
+    }
 }
