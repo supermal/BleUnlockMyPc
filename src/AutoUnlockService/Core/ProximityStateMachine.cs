@@ -21,7 +21,9 @@ public enum ProximityAction
     CancelLockPrompt,
     LockScreen,
     SendCredentials,
-    NotifySuspended
+    NotifySuspended,
+    // Suspension desde PendingLock: hay que retirar el aviso Y notificar la suspension
+    CancelLockPromptAndNotifySuspended
 }
 
 public enum PromptResponse { Reject, Snooze, Timeout, Dismissed }
@@ -125,6 +127,11 @@ public sealed class ProximityStateMachine
     {
         // Aqui NUNCA se envian credenciales, por fuerte que sea la senal: el usuario que
         // pulsa Win+L sentado debe irse de verdad antes de que se arme el desbloqueo
+        // La gracia de arranque/reanudacion tambien cuenta aqui: tras vaciar el historico,
+        // una ventana vacia significa "aun sin datos", no "el usuario se fue". Sin esto,
+        // Win+L sentado + suspension de pantalla + despertar desbloquearia sin haberse ido
+        if (now < _graceUntil) return null;
+
         var (far, reason) = IsFar(history, now);
         return far
             ? Transition(ProximityState.LockedArmed, ProximityAction.None, $"已确认离开：{reason}")
@@ -231,10 +238,13 @@ public sealed class ProximityStateMachine
     {
         if (!preValidationPassed)
         {
-            return State == ProximityState.Suspended
-                ? null
-                : Transition(ProximityState.Suspended, ProximityAction.NotifySuspended,
-                    "凭据预验证失败，自动解锁已暂停");
+            if (State == ProximityState.Suspended) return null;
+
+            // Desde PendingLock el aviso sigue en pantalla: se retira como en toda otra salida
+            var action = State == ProximityState.PendingLock
+                ? ProximityAction.CancelLockPromptAndNotifySuspended
+                : ProximityAction.NotifySuspended;
+            return Transition(ProximityState.Suspended, action, "凭据预验证失败，自动解锁已暂停");
         }
 
         if (State != ProximityState.Suspended) return null;

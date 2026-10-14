@@ -385,4 +385,62 @@ public class ProximityStateMachineUnlockTests
         Assert.Null(sm.Evaluate(history));
         Assert.Equal(ProximityState.LockedWaitingDeparture, sm.State);
     }
+
+    [Fact]
+    public void Arrancando_bloqueado_con_historico_vacio_dentro_de_la_gracia_no_arma()
+    {
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(14));   // la gracia son 15 s
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.LockedWaitingDeparture, sm.State);
+    }
+
+    [Fact]
+    public void Arrancando_bloqueado_sin_senal_pasada_la_gracia_si_arma()
+    {
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(16));
+
+        Assert.Equal(ProximityState.LockedArmed, sm.Evaluate(history)?.To);
+    }
+
+    [Fact]
+    public void Win_L_sentado_con_suspension_y_despertar_no_desbloquea()
+    {
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(60));   // la gracia inicial ya paso
+        Fill(history, time, -30, 5);
+        Assert.Null(sm.Evaluate(history));
+
+        // La pantalla duerme y el usuario despierta el equipo: el orquestador vacia el historico
+        history.Clear();
+        sm.OnResume();
+
+        for (int i = 0; i < 14; i++)
+        {
+            Assert.Null(sm.Evaluate(history));    // sin datos aun: no es "se fue"
+            time.Advance(TimeSpan.FromSeconds(1));
+            Fill(history, time, -30, 5);          // llegan las primeras emisiones
+            var change = sm.Evaluate(history);
+            Assert.NotEqual(ProximityAction.SendCredentials, change?.Action ?? ProximityAction.None);
+            Assert.Equal(ProximityState.LockedWaitingDeparture, sm.State);
+        }
+    }
+
+    [Fact]
+    public void Suspender_por_credencial_invalida_desde_PendingLock_retira_el_aviso()
+    {
+        var time = new FakeTimeProvider(T0);
+        var history = new RssiHistory(TimeSpan.FromSeconds(120), time);
+        var sm = new ProximityStateMachine(time, new ProximityOptions(), new NotificationOptions(), false);
+        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(30));
+        Assert.Equal(ProximityState.PendingLock, sm.Evaluate(history)?.To);
+
+        var change = sm.OnCredentialsChanged(preValidationPassed: false);
+
+        Assert.Equal(ProximityState.Suspended, change?.To);
+        Assert.Equal(ProximityAction.CancelLockPromptAndNotifySuspended, change!.Action);
+    }
 }
