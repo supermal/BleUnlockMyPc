@@ -27,20 +27,23 @@ public class OptionsGateTests
     }
 
     [Fact]
-    public void Varios_envios_seguidos_producen_un_solo_evento()
+    public void El_antirrebote_se_reinicia_y_gana_el_ultimo_candidato()
     {
         var (gate, time, changes) = Build();
 
-        gate.Submit(Options(irk: IrkB));
-        time.Advance(TimeSpan.FromMilliseconds(100));
-        gate.Submit(Options(irk: IrkB));
-        time.Advance(TimeSpan.FromMilliseconds(100));
-        gate.Submit(Options(irk: IrkB));
+        gate.Submit(Options(irk: IrkB));                 // A, vencera en t=250 si no se reinicia
+        time.Advance(TimeSpan.FromMilliseconds(200));
+        gate.Submit(Options(user: "Otro"));              // B, vencera en t=450
 
-        Assert.Empty(changes);                     // todavia dentro del antirrebote
+        // t=300: un temporizador sin reinicio ya habria aplicado A
+        time.Advance(TimeSpan.FromMilliseconds(100));
+        Assert.Empty(changes);
 
-        time.Advance(TimeSpan.FromMilliseconds(300));
+        // t=460: vencio el temporizador reiniciado
+        time.Advance(TimeSpan.FromMilliseconds(160));
         Assert.Single(changes);
+        Assert.Equal("Otro", gate.Current.Credentials.UserName);
+        Assert.Equal(IrkA, gate.Current.Device.Irk);     // A nunca se aplico
     }
 
     [Fact]
@@ -146,5 +149,18 @@ public class OptionsGateTests
 
         Assert.Single(changes);
         Assert.Equal(IrkB, gate.Current.Device.Irk);
+    }
+
+    [Fact]
+    public void Un_envio_tras_Dispose_no_hace_nada()
+    {
+        var (gate, time, changes) = Build();
+
+        gate.Dispose();
+        gate.Submit(Options(irk: IrkB));
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Empty(changes);
+        Assert.Equal(IrkA, gate.Current.Device.Irk);
     }
 }

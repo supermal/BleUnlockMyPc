@@ -14,6 +14,7 @@ public sealed class OptionsGate : IDisposable
 
     private ITimer? _timer;
     private AutoUnlockOptions? _pending;
+    private bool _disposed;
 
     public OptionsGate(
         AutoUnlockOptions initial, ILogger<OptionsGate> log, TimeProvider time, TimeSpan debounce)
@@ -34,6 +35,9 @@ public sealed class OptionsGate : IDisposable
     {
         lock (_lock)
         {
+            // Tras Dispose no se crean temporizadores nuevos que nadie limpiaria
+            if (_disposed) return;
+
             _pending = candidate;
             _timer?.Dispose();
             _timer = _time.CreateTimer(_ => Apply(), null, _debounce, Timeout.InfiniteTimeSpan);
@@ -105,6 +109,7 @@ public sealed class OptionsGate : IDisposable
     {
         lock (_lock)
         {
+            _disposed = true;
             _timer?.Dispose();
             _timer = null;
         }
