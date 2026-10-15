@@ -4,6 +4,8 @@ using AutoUnlockService.Core;
 using AutoUnlockService.Credentials;
 using AutoUnlockService.Notifications;
 using AutoUnlockService.Session;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
@@ -39,6 +41,19 @@ public static class Program
             builder.Configuration.AddJsonFile(
                 Path.Combine(DataDir, "appsettings.json"), optional: false, reloadOnChange: true);
 
+            // Validacion temprana: fallar aqui evita que el SCM marque el servicio como
+            // "en ejecucion" y lo reinicie en bucle por el plan de recuperacion (sc failure)
+            var initialOptions = builder.Configuration
+                .GetSection(AutoUnlockOptions.SectionName).Get<AutoUnlockOptions>() ?? new AutoUnlockOptions();
+            var earlyValidation = OptionsValidator.Validate(initialOptions);
+            if (!earlyValidation.IsValid)
+            {
+                foreach (var error in earlyValidation.Errors)
+                    Log.Fatal("配置无效，服务拒绝启动：{Error}", error);
+                Environment.ExitCode = 1;
+                return;
+            }
+
             builder.Services.AddWindowsService(o => o.ServiceName = "AutoUnlockService");
             builder.Services.AddSerilog();
             builder.Services.AddSingleton(TimeProvider.System);
@@ -46,9 +61,11 @@ public static class Program
                 builder.Configuration.GetSection(AutoUnlockOptions.SectionName));
 
             // Sustituye al ciclo de vida que registra AddWindowsService, para recibir
-            // los avisos de bloqueo, desbloqueo y reanudacion
+            // los avisos de bloqueo, desbloqueo y reanudacion. Solo cuando corre como
+            // servicio: en consola se conserva ConsoleLifetime, como haria AddWindowsService
             builder.Services.AddSingleton<SessionMonitor>();
-            builder.Services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<SessionMonitor>());
+            if (WindowsServiceHelpers.IsWindowsService())
+                builder.Services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<SessionMonitor>());
 
             builder.Services.AddSingleton(sp =>
             {

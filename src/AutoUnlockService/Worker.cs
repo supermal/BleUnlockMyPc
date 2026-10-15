@@ -39,7 +39,21 @@ public sealed class Worker(
     {
         var current = options.Current;
         matcher.Configure(current.Device);
-        _machine = new ProximityStateMachine(time, current.Proximity, current.Notification, false);
+
+        // El estado inicial importa: si la pantalla ya estaba bloqueada al arrancar,
+        // la maquina debe exigir "salir y volver" en vez de creer que esta desbloqueada
+        bool lockedAtStart = false;
+        if (WtsNative.TryIsActiveConsoleSessionLocked(out var sessionLocked))
+        {
+            lockedAtStart = sessionLocked;
+            log.LogInformation("启动时屏幕{State}", sessionLocked ? "已锁定" : "未锁定");
+        }
+        else
+        {
+            log.LogWarning("无法确定启动时屏幕是否已锁，按未锁定处理");
+        }
+
+        _machine = new ProximityStateMachine(time, current.Proximity, current.Notification, lockedAtStart);
         _lastSummary = time.GetUtcNow();
         Volatile.Write(ref _lastMatchTicks, time.GetUtcNow().UtcTicks);
 
