@@ -30,13 +30,35 @@ if ($existing) {
     }
     sc.exe delete $serviceName | Out-Null
     Assert-ScOk '删除服务'
+    # El servicio puede quedar "marcado para eliminar" hasta liberar los handles: se espera a que desaparezca
+    $deadline = (Get-Date).AddSeconds(30)
+    while ((Get-Service -Name $serviceName -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+        Start-Sleep -Milliseconds 500
+    }
+    if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+        throw '服务已标记为删除但仍未消失（30 秒）。请关闭 services.msc / 事件查看器等占用窗口，或重启后重试。'
+    }
     Write-Host '服务已删除'
+}
+
+# 助手在交互会话中运行，可能占用安装目录中的文件
+Get-Process -Name 'AutoUnlockHelper' -ErrorAction SilentlyContinue | Stop-Process -Force
+
+# 先注销 CP 再删除文件：DllUnregisterServer 需要 DLL 还在原路径
+$targetDll = Join-Path $InstallDir 'AutoUnlockCP.dll'
+if (Test-Path $targetDll) {
+    $proc = Start-Process regsvr32.exe -ArgumentList "/u /s `"$targetDll`"" -Wait -PassThru -NoNewWindow
+    if ($proc.ExitCode -eq 0) {
+        Write-Host '凭据提供程序已注销'
+    } else {
+        Write-Error "regsvr32 /u 失败，退出码 $($proc.ExitCode)。若注销失败，建议重启后再删除程序文件。"
+    }
 }
 
 if (Test-Path $InstallDir) {
     Remove-Item -Recurse -Force $InstallDir -ErrorAction SilentlyContinue
     if (Test-Path $InstallDir) {
-        Write-Error "程序文件删除失败（可能仍被占用）：$InstallDir"
+        Write-Error "程序文件删除失败（可能仍被占用，如 winlogon 持有 DLL）：$InstallDir"
     } else {
         Write-Host '程序文件已删除'
     }
@@ -50,5 +72,9 @@ if (-not $KeepData) {
         } else {
             Write-Host '配置与日志已删除'
         }
+    } else {
+        Write-Host "已保留 $DataDir"
     }
 }
+
+Write-Host '卸载完成。建议重启一次，确保 winlogon 释放凭据提供程序 DLL。'
