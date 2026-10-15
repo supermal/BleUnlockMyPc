@@ -112,12 +112,12 @@ if (-not (Test-Path $configPath)) {
 Remove-Item (Join-Path $InstallDir 'appsettings.json') -ErrorAction SilentlyContinue
 
 Write-Host '收紧配置目录权限（仅 SYSTEM 与 Administrators）…'
-icacls $DataDir /inheritance:r | Out-Null
-if ($LASTEXITCODE -ne 0) { throw "icacls 移除继承失败，退出码 $LASTEXITCODE" }
-icacls $DataDir /grant:r 'SYSTEM:(OI)(CI)F' | Out-Null
-if ($LASTEXITCODE -ne 0) { throw "icacls 授予 SYSTEM 失败，退出码 $LASTEXITCODE" }
-icacls $DataDir /grant:r 'Administrators:(OI)(CI)F' | Out-Null
-if ($LASTEXITCODE -ne 0) { throw "icacls 授予 Administrators 失败，退出码 $LASTEXITCODE" }
+# Administrators 必须用 SID（*S-1-5-32-544）：组名随系统语言本地化（如西班牙语为 Administradores），
+# 英文名会导致 icacls 解析失败（exit 1332）。/inheritance:r 与授权放在同一条命令里完成，
+# 子项不经历空 DACL 窗口；/T 显式覆盖已存在的子项（logs、appsettings.json 等）。
+# 不用 /C：逐项失败必须以非零退出码浮出，而不是被吞掉。
+icacls $DataDir /inheritance:r /grant:r 'SYSTEM:(OI)(CI)F' /grant:r '*S-1-5-32-544:(OI)(CI)F' /T | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "icacls 收紧配置目录权限失败，退出码 $LASTEXITCODE" }
 
 # ── 4. 注册凭据提供程序 ─────────────────────────────────────────────────────
 Write-Host '注册凭据提供程序…'

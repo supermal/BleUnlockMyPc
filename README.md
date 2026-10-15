@@ -5,7 +5,7 @@
 三个组件：
 
 - **服务（AutoUnlockService.exe）**：以 Windows 服务运行，负责 BLE 扫描与 RSSI 状态机判定，执行锁屏，并向凭据提供程序推送凭据。
-- **助手（AutoUnlockHelper.exe）**：在交互会话中运行，负责 Toast / 对话框提示与兜底锁屏。
+- **助手（AutoUnlockHelper.exe）**：在交互会话中运行，负责弹 Toast 提示、执行锁屏（LockWorkStation），并把用户选择与执行结果回传服务。
 - **凭据提供程序（AutoUnlockCredentialProvider.dll，安装后复制为 AutoUnlockCP.dll）**：位于登录界面，接收服务推送的凭据完成登录。
 
 ## 前提条件
@@ -16,6 +16,8 @@
 - VC++ 2022 运行库（凭据提供程序工具集 v145）
 
 安装与查看日志需要管理员权限。
+
+安装与卸载脚本的目标环境是 Windows PowerShell 5.1（系统自带）；未在 PowerShell 7 上验证（其默认不提供 New-EventLog）。
 
 ## 构建
 
@@ -43,7 +45,7 @@ dotnet test tests\AutoUnlockService.Tests\AutoUnlockService.Tests.csproj
 .\scripts\install.ps1
 ```
 
-脚本是幂等的，可重复运行用于升级。参数：
+脚本是幂等的，可重复运行用于升级；升级只覆盖同名文件，上一版本已删除或改名的文件会残留在安装目录（通常不影响运行）。参数：
 
 - `-Configuration`（默认 `Release`）：构建配置，决定从哪个产物目录部署。
 - `-SourceDir`（默认空）：手动指定服务输出目录，跳过产物自动探测。
