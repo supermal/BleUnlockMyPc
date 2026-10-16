@@ -57,12 +57,12 @@
 
 ## Task 2: 服务端管理通道（Management v1）
 
-- [ ] 协议：JSON 单行帧（`\n`），`t`=hello/snapshot；seq/tsMs；schema 按设计文档 §3.3
-- [ ] `TelemetryHub`：旁路订阅样本/状态转换/扫描状态/助手与凭据连接态；5 分钟环形缓冲（4096 上限）；快照组装（两窗口均值、当前阈值、状态、健康、增量样本）
-- [ ] `ManagementPipeServer`：`PipeSecurity`（SYSTEM+Administrators）、单客户端顶替、250ms 节拍 + 变化即推、连接补发、推送异常隔离（不影响服务主流程）
-- [ ] `Worker`/`Program` 接线（不改现有逻辑；无客户端零序列化开销）
-- [ ] 单测：帧序列化往返、环形缓冲裁剪、节流合并、状态映射、连接顶替
-- 验证：277 基线 + 新增测试全绿；`dotnet build src\AutoUnlockService -c Release` 0 警告
+- [x] 协议：JSON 单行帧（`\n`），`t`=hello/snapshot；seq/gen/tsMs；schema 按设计文档 §3.3
+- [x] `TelemetryHub`：旁路订阅样本/状态转换/扫描状态/助手与凭据连接态；5 分钟环形缓冲（4096 上限）；快照组装（两窗口均值、`OptionsGate` 生效阈值、状态、健康、增量样本；历史重置 gen 递增）
+- [x] `ManagementPipeServer`：`PipeSecurity`（SYSTEM+Administrators）、单客户端（断连/写超时即释放，无主动顶替）、250ms 节拍 + 变化即推、连接补发、推送异常隔离（不影响服务主流程）
+- [x] `Worker`/`Program` 接线（不改现有逻辑；无客户端零序列化开销）
+- [x] 单测：帧序列化往返、环形缓冲裁剪、节流合并、状态映射、单客户端行为、gen 重置、敏感信息哨兵
+- 验证：基线 + 新增测试全绿（实跑 277 → 306，0 失败）；`dotnet build src\AutoUnlockService -c Release` 0 警告 0 错误；评审 Approved with findings（全部落实，见简报评审记录）
 
 ## Task 3: 管理端骨架（Core + WinUI 项目 + 托盘 + 导航）
 

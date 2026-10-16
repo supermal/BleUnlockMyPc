@@ -56,7 +56,7 @@ AutoUnlockService 本体已完成实机验证（BLE 自动锁定/解锁 go）。
 
 - 管道名：`\\.\pipe\AutoUnlockManagement`
 - ACL：`SYSTEM` + `BUILTIN\Administrators` 完全控制（`PipeSecurity` 实现），其他主体不可连接
-- 单活动客户端：新连接建立时顶替旧连接（管理端重启/重复启动不会互相锁死）
+- 单活动客户端：同一时间只服务一个客户端；旧连接断开或写失败（写超时 5s + 250ms 节拍）后立即释放并接受新连接。管理端有单实例互斥体，正常场景不存在双客户端，故作此简化（无主动顶替；卡死的旧客户端最迟约 5s 被清理，请求方 2s 重试）
 - push-only：服务端只写快照，**不读取**任何客户端数据
 - 帧格式：UTF-8 JSON、单行、以 `\n` 结尾；以 `t` 字段判别类型
 
@@ -69,7 +69,7 @@ AutoUnlockService 本体已完成实机验证（BLE 自动锁定/解锁 go）。
 
 ```json
 {
-  "t": "snapshot", "v": 1, "seq": 813, "tsMs": 1760648000123,
+  "t": "snapshot", "v": 1, "seq": 813, "gen": 2, "tsMs": 1760648000123,
   "uptimeSec": 532.4,
   "state": { "name": "LockedArmed", "sinceMs": 1760647911250 },
   "scan":  { "status": "Running", "detail": null },
@@ -85,6 +85,7 @@ AutoUnlockService 本体已完成实机验证（BLE 自动锁定/解锁 go）。
 | 字段 | 说明 |
 | --- | --- |
 | `seq` | 帧序号（每帧 +1）；管理端可检测丢帧 |
+| `gen` | 历史代数：服务每次清空 RSSI 历史（休眠恢复、目标设备变更）时 +1（初始 1）；管理端见 `gen` 变化即清空曲线重新累积 |
 | `tsMs` | 服务端 UTC 毫秒时间戳 |
 | `uptimeSec` | 服务进程运行时长 |
 | `state.name` | `ProximityState` 枚举名：Unlocked / PendingLock / Snoozed / LockedWaitingDeparture / LockedArmed / UnlockPending / Suspended（实现直接取枚举 `ToString()`） |
@@ -92,7 +93,7 @@ AutoUnlockService 本体已完成实机验证（BLE 自动锁定/解锁 go）。
 | `scan.status` | BLE 扫描健康状态（沿用现有状态上报语义：运行中/重试中/不可用等；实现时钉死取值） |
 | `scan.detail` | 补充说明（可空） |
 | `helper.connected` / `cred.connected` | 助手 / 凭据提供程序管道当前连接状态 |
-| `thr.*` | **当前生效**阈值（热重载后自动变化；曲线阈值线随之移动） |
+| `thr.*` | **当前生效**阈值（取自 `OptionsGate.Current`，即服务实际采用的校验后值；热重载后自动变化，曲线阈值线随之移动） |
 | `avg.w5/w10` | `RssiHistory` 5s / 10s 窗口均值（null = 无样本） |
 | `avg.n5/n10` | 窗口内样本数 |
 | `lastMatchMs` | 距最近一次匹配到目标设备的时长（null = 本次运行从未匹配） |

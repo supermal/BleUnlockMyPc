@@ -37,6 +37,10 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
     // Se invoca en el hilo de lectura: el manejador debe ser rapido y no bloquear
     public event Action<AuthResult>? AuthResultReceived;
 
+    // 连接状态变化（遥测旁路订阅用）；订阅者异常不影响管道循环
+    public event Action? Connected;
+    public event Action? Disconnected;
+
     public void Start(CancellationToken ct)
     {
         if (_cts is not null || Volatile.Read(ref _disposed) != 0) return;   // un solo arranque
@@ -50,13 +54,16 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
     {
         while (!ct.IsCancellationRequested)
         {
+            bool wasConnected = false;
             try
             {
                 var pipe = CreatePipe();
                 _pipe = pipe;
                 log.LogInformation("凭据管道已就绪，等待凭据提供程序连接");
                 await pipe.WaitForConnectionAsync(ct);
+                wasConnected = true;
                 log.LogInformation("凭据提供程序已连接");
+                Raise(Connected);
 
                 await ReadLoopAsync(pipe, ct);
                 log.LogInformation("凭据提供程序已断开");
@@ -73,7 +80,18 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
                 // Cada instancia se libera siempre: ni una por reconexion se queda viva
                 var old = Interlocked.Exchange(ref _pipe, null);
                 if (old is not null) await old.DisposeAsync();
+                if (wasConnected) Raise(Disconnected);
             }
+        }
+    }
+
+    // 通知订阅者连接变化；订阅者出错不得打断管道循环
+    private void Raise(Action? handler)
+    {
+        try { handler?.Invoke(); }
+        catch (Exception ex)
+        {
+            log.LogWarning("处理凭据管道连接事件时出错：{Message}", ex.Message);
         }
     }
 

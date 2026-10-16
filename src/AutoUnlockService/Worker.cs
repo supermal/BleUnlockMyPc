@@ -2,6 +2,7 @@ using AutoUnlockService.Ble;
 using AutoUnlockService.Config;
 using AutoUnlockService.Core;
 using AutoUnlockService.Credentials;
+using AutoUnlockService.Management;
 using AutoUnlockService.Notifications;
 using AutoUnlockService.Session;
 
@@ -19,7 +20,8 @@ public sealed class Worker(
     HelperLauncher launcher,
     ResilientNotifier notifier,
     IScreenLocker locker,
-    SessionMonitor sessions) : BackgroundService
+    SessionMonitor sessions,
+    TelemetryHub telemetry) : BackgroundService
 {
     private static readonly TimeSpan EvaluateInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan SummaryInterval = TimeSpan.FromSeconds(30);
@@ -54,6 +56,7 @@ public sealed class Worker(
         }
 
         _machine = new ProximityStateMachine(time, current.Proximity, current.Notification, lockedAtStart);
+        telemetry.OnStateChange(_machine.State);   // 遥测：初始状态没有转换事件，先行播种
         _lastSummary = time.GetUtcNow();
         Volatile.Write(ref _lastMatchTicks, time.GetUtcNow().UtcTicks);
 
@@ -67,6 +70,10 @@ public sealed class Worker(
         source.SampleReceived += OnSample;
         source.StatusChanged += OnStatus;
         credentialPipe.AuthResultReceived += OnAuthResult;
+        credentialPipe.Connected += OnCredConnected;
+        credentialPipe.Disconnected += OnCredDisconnected;
+        helperPipe.Connected += OnHelperConnected;
+        helperPipe.Disconnected += OnHelperDisconnected;
         sessions.SessionLocked += OnSessionLocked;
         sessions.SessionUnlocked += OnSessionUnlocked;
         sessions.Resumed += OnResumed;
@@ -97,6 +104,10 @@ public sealed class Worker(
             source.SampleReceived -= OnSample;
             source.StatusChanged -= OnStatus;
             credentialPipe.AuthResultReceived -= OnAuthResult;
+            credentialPipe.Connected -= OnCredConnected;
+            credentialPipe.Disconnected -= OnCredDisconnected;
+            helperPipe.Connected -= OnHelperConnected;
+            helperPipe.Disconnected -= OnHelperDisconnected;
             sessions.SessionLocked -= OnSessionLocked;
             sessions.SessionUnlocked -= OnSessionUnlocked;
             sessions.Resumed -= OnResumed;
@@ -110,16 +121,30 @@ public sealed class Worker(
     {
         if (!matcher.IsTarget(sample)) return;
         _history.Add(sample.Rssi, sample.Timestamp);
+        telemetry.OnSample(sample.Timestamp.ToUnixTimeMilliseconds(), sample.Rssi);
         Volatile.Write(ref _lastMatchTicks, time.GetUtcNow().UtcTicks);
     }
 
-    private void OnStatus(string status) => log.LogInformation("BLE 状态：{Status}", status);
+    private void OnStatus(string status)
+    {
+        log.LogInformation("BLE 状态：{Status}", status);
+        telemetry.OnScanStatus(status);
+    }
+
+    private void OnHelperConnected(int sessionId) => telemetry.OnHelperConnection(true);
+
+    private void OnHelperDisconnected() => telemetry.OnHelperConnection(false);
+
+    private void OnCredConnected() => telemetry.OnCredConnection(true);
+
+    private void OnCredDisconnected() => telemetry.OnCredConnection(false);
 
     private void OnResumed()
     {
         // El reloj puede haber saltado horas: el historico ya no representa nada
         log.LogInformation("系统已从睡眠中恢复，清空 RSSI 历史并重新进入宽限期");
         _history.Clear();
+        telemetry.OnHistoryReset();   // 遥测：历史作废，管理端据 gen 变化清空曲线
         Transition(() => _machine.OnResume());
     }
 
@@ -154,6 +179,7 @@ public sealed class Worker(
             {
                 matcher.Configure(change.Options.Device);
                 _history.Reset();
+                telemetry.OnHistoryReset();   // 遥测：设备变更，历史作废，管理端据 gen 变化清空曲线
                 _credentialBudget.Reset();
                 log.LogInformation("目标设备已变更，解析缓存与 RSSI 历史已清空");
             }
@@ -186,6 +212,7 @@ public sealed class Worker(
         if (change is null) return;
 
         log.LogInformation("状态 {From} → {To}：{Reason}", change.From, change.To, change.Reason);
+        telemetry.OnStateChange(change.To);   // 遥测：状态变更（旁路，不影响控制流）
         _ = DispatchAsync(change);
     }
 

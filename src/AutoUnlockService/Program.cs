@@ -2,6 +2,7 @@ using AutoUnlockService.Ble;
 using AutoUnlockService.Config;
 using AutoUnlockService.Core;
 using AutoUnlockService.Credentials;
+using AutoUnlockService.Management;
 using AutoUnlockService.Notifications;
 using AutoUnlockService.Session;
 using Microsoft.Extensions.Configuration;
@@ -91,6 +92,7 @@ public static class Program
             builder.Services.AddSingleton<IRssiSource, BleScanner>();
             builder.Services.AddSingleton<DeviceMatcher>();
             builder.Services.AddSingleton<CredentialValidator>();
+            builder.Services.AddSingleton<TelemetryHub>();
             builder.Services.AddSingleton<CredentialPipeServer>();
             builder.Services.AddSingleton<HelperPipeServer>();
             builder.Services.AddSingleton<HelperLauncher>();
@@ -110,6 +112,7 @@ public static class Program
                 sp.GetRequiredService<ILogger<HelperScreenLocker>>()));
 
             builder.Services.AddHostedService<Worker>();
+            builder.Services.AddHostedService<ManagementPipeServer>();
 
             builder.Build().Run();
         }
