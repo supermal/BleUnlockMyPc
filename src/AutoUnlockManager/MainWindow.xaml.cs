@@ -1,7 +1,10 @@
+using AutoUnlockManager.Services;
 using AutoUnlockManager.Views;
+using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
 
 namespace AutoUnlockManager;
@@ -30,6 +33,8 @@ public sealed partial class MainWindow : Window
         // 默认尺寸约 1100×750（窗口位置记忆见 backlog，本任务不做）
         AppWindow.Resize(new SizeInt32(1100, 750));
         TrySetIcon();
+        TryApplyModernChrome();
+        ThemeService.Initialize(this);
         AppWindow.Closing += OnAppWindowClosing;
 
         // 默认选中「概览」（SelectionChanged 触发首页导航）
@@ -123,12 +128,36 @@ public sealed partial class MainWindow : Window
         {
             "config" => typeof(ConfigPage),
             "logs" => typeof(LogsPage),
+            "settings" => typeof(SettingsPage),
             _ => typeof(OverviewPage),
         };
 
         if (ContentFrame.CurrentSourcePageType != pageType)
         {
             ContentFrame.Navigate(pageType);
+        }
+    }
+
+    /// <summary>
+    /// WinUI 3 模板风格外观：Mica 背景（不支持时由 RootGrid 主题化背景兜底）+ 无系统标题栏的扩展标题栏（AppTitleBar 为拖拽区）。
+    /// 标题栏按钮配色由 <see cref="ThemeService"/> 随主题同步；极端环境失败时静默退回默认外观。
+    /// </summary>
+    private void TryApplyModernChrome()
+    {
+        try
+        {
+            if (MicaController.IsSupported())
+            {
+                SystemBackdrop = new MicaBackdrop();
+                RootGrid.Background = null; // 清空兜底背景，让 Mica 透出
+            }
+
+            ExtendsContentIntoTitleBar = true;
+            SetTitleBar(AppTitleBar);
+        }
+        catch
+        {
+            // 新式外观失败仅影响观感
         }
     }
 

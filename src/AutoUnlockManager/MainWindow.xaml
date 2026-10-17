@@ -7,30 +7,55 @@
     mc:Ignorable="d"
     Title="AutoUnlock 管理器">
 
-    <NavigationView x:Name="NavView"
-                    IsSettingsVisible="False"
-                    IsBackButtonVisible="Collapsed"
-                    PaneDisplayMode="Left"
-                    OpenPaneLength="200"
-                    SelectionChanged="OnNavigationSelectionChanged">
-        <NavigationView.MenuItems>
-            <NavigationViewItem Content="概览" Tag="overview">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE80F;" />
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
-            <NavigationViewItem Content="配置" Tag="config">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE713;" />
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
-            <NavigationViewItem Content="日志" Tag="logs">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE8A5;" />
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
-        </NavigationView.MenuItems>
+    <!-- RootGrid：Mica 可用时由代码清空背景（透出毛玻璃）；不可用时保留主题化页面背景兜底 -->
+    <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-        <Frame x:Name="ContentFrame" />
-    </NavigationView>
+        <!-- WinUI 3 模板风格自定义标题栏（AppTitleBar = 拖拽区域，见 MainWindow.xaml.cs） -->
+        <Grid x:Name="AppTitleBar" Height="48">
+            <TextBlock Text="AutoUnlock 管理器"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       VerticalAlignment="Center"
+                       Margin="16,0,0,0" />
+        </Grid>
+
+        <NavigationView x:Name="NavView"
+                        Grid.Row="1"
+                        IsSettingsVisible="False"
+                        IsBackButtonVisible="Collapsed"
+                        PaneDisplayMode="Left"
+                        OpenPaneLength="200"
+                        SelectionChanged="OnNavigationSelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="概览" Tag="overview">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="配置" Tag="config">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="日志" Tag="logs">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8A5;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem Content="设置" Tag="settings">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE706;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
+    </Grid>
 </Window>

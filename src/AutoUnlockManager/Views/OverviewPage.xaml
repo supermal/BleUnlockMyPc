@@ -6,12 +6,33 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Padding="36,28">
-        <StackPanel Spacing="8">
-            <TextBlock Text="概览" Style="{StaticResource TitleTextBlockStyle}" />
-            <TextBlock Text="实时 dBm 曲线、服务状态与健康信息将在此展示（Task 4 实现）。"
-                       Style="{StaticResource BodyTextBlockStyle}"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="36,20,36,36">
+        <StackPanel Spacing="16" MaxWidth="860" HorizontalAlignment="Left">
+            <StackPanel Spacing="8">
+                <TextBlock Text="概览" Style="{StaticResource TitleTextBlockStyle}" />
+                <TextBlock Text="实时 dBm 曲线、服务状态与健康信息。"
+                           Style="{StaticResource BodyTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <Border Style="{StaticResource CardPanelStyle}">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Glyph="&#xE80F;" FontSize="28"
+                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                              VerticalAlignment="Top" />
+                    <StackPanel Grid.Column="1" Spacing="6">
+                        <TextBlock Text="即将推出（Task 4）" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock TextWrapping="Wrap"
+                                   Style="{StaticResource BodyTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="大号当前 dBm 与 5s/10s 均值、滚动信号曲线（含锁定/解锁阈值线）、服务状态与启停控制、样本 CSV 导出。" />
+                    </StackPanel>
+                </Grid>
+            </Border>
         </StackPanel>
-    </Grid>
+    </ScrollViewer>
 </Page>
