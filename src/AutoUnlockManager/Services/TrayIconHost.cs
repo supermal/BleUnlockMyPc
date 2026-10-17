@@ -23,6 +23,9 @@ internal sealed class TrayIconHost : IDisposable
     /// <summary>图标位图尺寸（托盘 100% DPI 为 16px，32px 覆盖高 DPI 缩放）。</summary>
     private const int IconSize = 32;
 
+    /// <summary>见 <see cref="PinMessageHandlerDelegate"/>：进程级委托固定列表（只增不减）。</summary>
+    private static readonly List<object> PinnedMessageHandlers = [];
+
     private readonly MainWindow _window;
     private readonly ServiceControlService _serviceControl = new();
     private readonly TaskbarIcon _taskbarIcon;
@@ -104,8 +107,31 @@ internal sealed class TrayIconHost : IDisposable
             ContextFlyout = menu,
             DoubleClickCommand = new RelayCommand(() => _window.ShowMainWindow()),
         };
-        ApplyIcon(ServiceStatusKind.Unknown);
-        _taskbarIcon.ForceCreate(); // 无 XAML 容器场景：必须显式创建
+        try
+        {
+            ApplyIcon(ServiceStatusKind.Unknown);
+            _taskbarIcon.ForceCreate(); // 无 XAML 容器场景：必须显式创建
+        }
+        catch
+        {
+            // 崩溃防护（2026-10-17 复盘）：库的 Create() 先建隐藏消息窗口、再调 Shell_NotifyIcon；
+            // 后者失败（如登录早期 shell 未就绪）即抛异常。此时若只丢弃引用：GC 在终结器线程上
+            // 调 DestroyWindow 会因跨线程失败，留下“孤儿窗口”；其 WNDPROC 委托被回收后，.NET 10
+            // 会在窗口收到任何消息时 FailFast 杀进程（0x80131623，已在本机 1:1 复现）。
+            // 因此创建失败必须在本线程（UI 线程）显式 Dispose，让 DestroyWindow 成功、窗口不残留。
+            try
+            {
+                _taskbarIcon.Dispose();
+            }
+            catch
+            {
+                // 释放失败不得掩盖原始异常
+            }
+
+            throw;
+        }
+
+        PinMessageHandlerDelegate(_taskbarIcon.TrayIcon.MessageWindow);
 
         _pollTimer = new DispatcherTimer { Interval = PollInterval };
         _pollTimer.Tick += OnPollTick;
@@ -397,6 +423,34 @@ internal sealed class TrayIconHost : IDisposable
     }
 
     /// <summary>兜底托盘图标：Assets\AppIcon.ico（随发布产物分发）。</summary>
+    /// <summary>
+    /// 崩溃防护（纵深防御，2026-10-17 复盘）：把 H.NotifyIcon 隐藏消息窗口的 WNDPROC 委托
+    /// （<c>MessageWindow.MessageHandler</c>，2.4.1 的私有属性）固定到进程级静态根。
+    /// 库缺陷：该委托仅被 MessageWindow 实例引用；引用链一旦意外丢失，委托会随实例被 GC 回收，
+    /// 而“孤儿窗口”仍存在于系统；此后任何窗口消息都会触发 .NET 10 的
+    /// “callback on garbage collected delegate” FailFast（0x80131623）。
+    /// 委托被固定后其 Target（MessageWindow 实例）保持存活，即使链路丢失也不会崩溃；
+    /// 代价仅为进程生命周期内一个对象引用。库升级若属性改名/移除则静默跳过本防护。
+    /// </summary>
+    private static void PinMessageHandlerDelegate(MessageWindow messageWindow)
+    {
+        try
+        {
+            var property = typeof(MessageWindow).GetProperty(
+                "MessageHandler",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var handler = property?.GetValue(messageWindow);
+            if (handler is not null)
+            {
+                PinnedMessageHandlers.Add(handler);
+            }
+        }
+        catch
+        {
+            // 固定失败不影响托盘功能
+        }
+    }
+
     private static Icon? TryLoadFallbackIcon()
     {
         try

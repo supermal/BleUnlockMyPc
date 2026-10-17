@@ -1,13 +1,15 @@
 ﻿#Requires -RunAsAdministrator
 <#
-    Instala AutoUnlock: servicio, ayudante y proveedor de credenciales.
-    Es idempotente: se puede volver a ejecutar para actualizar.
+    安装 AutoUnlock：服务、助手、凭据提供程序与管理端。
+    幂等：可重复运行以升级。管理端以计划任务方式随登录自启（最高权限，无 UAC 弹窗）。
 #>
 param(
-    [string]$Configuration = 'Release',
-    [string]$SourceDir     = '',
-    [string]$InstallDir    = 'C:\Program Files\AutoUnlock',
-    [string]$DataDir       = (Join-Path $env:ProgramData 'AutoUnlock')
+    [string]$Configuration     = 'Release',
+    [string]$SourceDir         = '',
+    [string]$ManagerSourceDir  = '',
+    [string]$InstallDir        = 'C:\Program Files\AutoUnlock',
+    [string]$DataDir           = (Join-Path $env:ProgramData 'AutoUnlock'),
+    [string]$ManagerUser       = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,9 +58,16 @@ $cpOut      = Resolve-Artifact '凭据提供程序' @(
     (Join-Path $repoRoot "src\AutoUnlockCredentialProvider\bin\$Configuration\x64")
 ) 'AutoUnlockCredentialProvider.dll'
 
+# 管理端是自包含发布产物：以 win-x64 publish 目录整体分发
+$managerCandidates = if ($ManagerSourceDir) { @($ManagerSourceDir) } else { @(
+    (Join-Path $repoRoot "src\AutoUnlockManager\bin\$Configuration\net10.0-windows10.0.19041.0\win-x64\publish")
+) }
+$managerOut = Resolve-Artifact '管理端（发布产物）' $managerCandidates 'AutoUnlockManager.exe'
+
 Write-Host "服务输出：$serviceOut"
 Write-Host "助手输出：$helperOut"
 Write-Host "凭据提供程序：$cpOut"
+Write-Host "管理端发布：$managerOut"
 
 # ── 1. 停止旧服务 ────────────────────────────────────────────────────────────
 $existing = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
@@ -86,8 +95,17 @@ if ($existing) {
     }
 }
 
-# 助手在交互会话中运行，可能占用安装目录中的文件
+# 助手与管理端在交互会话中运行，可能占用安装目录中的文件
 Get-Process -Name 'AutoUnlockHelper' -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue | Stop-Process -Force
+# 结束是异步的：等旧进程完全退出，避免随后替换文件时被占用
+$deadline = (Get-Date).AddSeconds(10)
+while ((Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+    Start-Sleep -Milliseconds 250
+}
+if (Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue) {
+    throw '管理端进程仍未退出（已等待 10 秒），请手动结束后重试。'
+}
 
 # ── 2. 目录与文件 ───────────────────────────────────────────────────────────
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
@@ -99,6 +117,16 @@ Copy-Item -Path (Join-Path $helperOut  '*') -Destination $InstallDir -Recurse -F
 
 $targetDll = Join-Path $InstallDir 'AutoUnlockCP.dll'
 Copy-Item -Path (Join-Path $cpOut 'AutoUnlockCredentialProvider.dll') -Destination $targetDll -Force
+
+# 管理端：整体替换 Manager 子目录（干净升级，避免上一版本残留文件）
+$managerDir = Join-Path $InstallDir 'Manager'
+if (Test-Path $managerDir) {
+    Remove-Item -Recurse -Force $managerDir
+    if (Test-Path $managerDir) { throw "旧管理端目录删除失败：$managerDir" }
+}
+New-Item -ItemType Directory -Force -Path $managerDir | Out-Null
+Copy-Item -Path (Join-Path $managerOut '*') -Destination $managerDir -Recurse -Force
+Write-Host "管理端已部署：$managerDir"
 
 # ── 3. 配置文件与权限 ───────────────────────────────────────────────────────
 $configPath = Join-Path $DataDir 'appsettings.json'
@@ -114,10 +142,34 @@ Remove-Item (Join-Path $InstallDir 'appsettings.json') -ErrorAction SilentlyCont
 Write-Host '收紧配置目录权限（仅 SYSTEM 与 Administrators）…'
 # Administrators 必须用 SID（*S-1-5-32-544）：组名随系统语言本地化（如西班牙语为 Administradores），
 # 英文名会导致 icacls 解析失败（exit 1332）。/inheritance:r 与授权放在同一条命令里完成，
-# 子项不经历空 DACL 窗口；/T 显式覆盖已存在的子项（logs、appsettings.json 等）。
-# 不用 /C：逐项失败必须以非零退出码浮出，而不是被吞掉。
-icacls $DataDir /inheritance:r /grant:r 'SYSTEM:(OI)(CI)F' /grant:r '*S-1-5-32-544:(OI)(CI)F' /T | Out-Null
-if ($LASTEXITCODE -ne 0) { throw "icacls 收紧配置目录权限失败，退出码 $LASTEXITCODE" }
+# 子项不经历空 DACL 窗口。
+# 注意（Task 19 现场缺陷）：不能对「已存在的文件」用带 /T 的收紧——会把文件清成空 DACL（D:PAI）
+# 且 icacls 静默退出 0。这里改为：目录用 /inheritance:r + OI/CI（未来新文件自动继承），
+# 已存在的文件逐个显式授权；完成后回读 SDDL 断言，权限静默丢失时立即失败。
+$grantDir  = @('/grant:r', 'SYSTEM:(OI)(CI)F', '/grant:r', '*S-1-5-32-544:(OI)(CI)F')
+$grantFile = @('/grant:r', 'SYSTEM:F',         '/grant:r', '*S-1-5-32-544:F')
+$dirTargets = @($DataDir) + @(Get-ChildItem -Path $DataDir -Directory -Recurse | ForEach-Object { $_.FullName })
+foreach ($dir in $dirTargets) {
+    icacls $dir /inheritance:r @grantDir | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "icacls 收紧目录权限失败（$dir），退出码 $LASTEXITCODE" }
+}
+foreach ($file in @(Get-ChildItem -Path $DataDir -File -Recurse | ForEach-Object { $_.FullName })) {
+    icacls $file @grantFile | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "icacls 修复文件权限失败（$file），退出码 $LASTEXITCODE" }
+}
+
+# 回读断言（SDDL 须含 SYSTEM/Administrators 的 FA 授权）
+function Assert-AclHasFullControl {
+    param([string]$Path)
+    $sddl = (Get-Acl -Path $Path).Sddl
+    if ($sddl -notmatch ';FA;;;SY' -or $sddl -notmatch ';FA;;;BA') {
+        throw "权限收紧未生效（$Path）：SDDL=$sddl。请以管理员重试；若问题持续请反馈。"
+    }
+}
+foreach ($dir in $dirTargets) { Assert-AclHasFullControl $dir }
+foreach ($file in @(Get-ChildItem -Path $DataDir -File -Recurse | ForEach-Object { $_.FullName })) {
+    Assert-AclHasFullControl $file
+}
 
 # ── 4. 注册凭据提供程序 ─────────────────────────────────────────────────────
 Write-Host '注册凭据提供程序…'
@@ -139,15 +191,15 @@ Assert-ScOk '设置服务描述'
 sc.exe failure $serviceName reset= 86400 actions= restart/5000/restart/10000/restart/30000 | Out-Null
 Assert-ScOk '设置失败恢复策略'
 
-# 配置无效时服务会拒绝启动（退出码 1）：与其让 SCM 反复失败，不如在安装时就讲清楚
-$configReady = $false
+# 配置无效时服务会拒绝启动（退出码 1）：与其让 SCM 反复失败，不如在安装时就讲清楚。
+# 读取/解析失败必须 throw（Task 19 教训：ACL 静默丢失时此处曾只告警并继续，留下坏状态）。
 try {
     $config = Get-Content $configPath -Raw | ConvertFrom-Json
-    $configReady = -not ([string]::IsNullOrWhiteSpace($config.AutoUnlock.Device.Irk) -or
-                         [string]::IsNullOrWhiteSpace($config.AutoUnlock.Credentials.UserName))
 } catch {
-    Write-Warning "配置文件无法解析：$($_.Exception.Message)"
+    throw "读取或解析配置文件失败：$configPath（$($_.Exception.Message)）。通常是权限异常或文件损坏，请修复后重试。"
 }
+$configReady = -not ([string]::IsNullOrWhiteSpace($config.AutoUnlock.Device.Irk) -or
+                     [string]::IsNullOrWhiteSpace($config.AutoUnlock.Credentials.UserName))
 if ($configReady) {
     sc.exe start $serviceName | Out-Null
     Assert-ScOk '启动服务'
@@ -156,4 +208,40 @@ if ($configReady) {
     Write-Warning '配置尚未填写完整，服务不会启动。'
     Write-Warning "请编辑 $configPath 填入 Device.Irk、Credentials.UserName 与 Password，"
     Write-Warning "然后执行： Start-Service $serviceName"
+}
+
+# ── 7. 管理端：开始菜单快捷方式与登录自启计划任务 ─────────────────────────
+$managerExe = Join-Path $managerDir 'AutoUnlockManager.exe'
+$taskName   = 'AutoUnlockManager'
+
+Write-Host '创建开始菜单快捷方式…'
+$shortcutPath = Join-Path ([Environment]::GetFolderPath('CommonStartMenu')) 'Programs\AutoUnlock 管理器.lnk'
+$shell = New-Object -ComObject WScript.Shell
+$link = $shell.CreateShortcut($shortcutPath)
+$link.TargetPath = $managerExe
+$link.WorkingDirectory = $managerDir
+$link.IconLocation = "$managerExe,0"
+$link.Description = 'AutoUnlock 管理器（实时监控与配置）'
+$link.Save()
+[void][Runtime.InteropServices.Marshal]::ReleaseComObject($shell)
+
+if (-not $ManagerUser) {
+    # 默认=执行本安装的账户（提权 PowerShell 的当前身份）
+    $ManagerUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+}
+Write-Host "注册计划任务 $taskName（用户：$ManagerUser；登录自启、最高权限）…"
+$action    = New-ScheduledTaskAction -Execute $managerExe -WorkingDirectory $managerDir
+$trigger   = New-ScheduledTaskTrigger -AtLogOn -User $ManagerUser
+$principal = New-ScheduledTaskPrincipal -UserId $ManagerUser -LogonType Interactive -RunLevel Highest
+$settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+    -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
+Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal `
+    -Settings $settings -Description 'AutoUnlock 管理器：登录时自动启动（最高权限，无 UAC 弹窗）' -Force | Out-Null
+
+Write-Host '启动管理端…'
+try {
+    Start-ScheduledTask -TaskName $taskName
+    Write-Host '管理端已安装并已启动（见托盘图标）。'
+} catch {
+    Write-Warning "管理端将在该用户下次登录时启动（$($_.Exception.Message)）"
 }

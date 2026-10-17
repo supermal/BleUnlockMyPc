@@ -101,10 +101,10 @@
 
 ## Task 7: 安装集成与自包含发布
 
-- [ ] `install.ps1`：探测发布目录（候选含 `src\AutoUnlockManager\bin\Release\net10.0-windows10.0.19041.0\win-x64\publish`）→ 结束运行中进程 → 拷贝到 `$env:ProgramFiles\AutoUnlock\Manager` → 开始菜单快捷方式 → 计划任务 `AutoUnlockManager`（AtLogOn、最高权限、InteractiveToken、默认=安装执行账户，`-ManagerUser` 覆盖）
-- [ ] `uninstall.ps1`：注销任务、删快捷方式、删 Manager 目录
-- [ ] README：管理端构建/发布/部署说明
-- 验证：完整安装 → 注销重登无 UAC 自启；卸载无残留（任务/快捷方式/目录）；幂等重装
+- [x] `install.ps1`：探测发布目录（候选含 `src\AutoUnlockManager\bin\Release\net10.0-windows10.0.19041.0\win-x64\publish`）→ 结束运行中进程 → 拷贝到 `$env:ProgramFiles\AutoUnlock\Manager` → 开始菜单快捷方式 → 计划任务 `AutoUnlockManager`（AtLogOn、最高权限、InteractiveToken、默认=安装执行账户，`-ManagerUser` 覆盖）
+- [x] `uninstall.ps1`：注销任务、删快捷方式、删 Manager 目录
+- [x] README：管理端构建/发布/部署说明
+- 验证：完整安装 → 注销重登无 UAC 自启；卸载无残留（任务/快捷方式/目录）；幂等重装 —— 本机自测 PASS=24（探针：语法/ACL 缺陷复现与修复回读/快捷方式/任务对象/整体替换）；用户真机烟测通过（重装后自启实例可用）→ 烟测期修复登录自启实例「点导出 log 闪退」：H.NotifyIcon 隐藏消息窗口孤儿 + GC 委托 FailFast（0x80131623，1:1 复现；实测 2.5.0-beta.3 同样崩溃）→ 三层加固（创建失败即 UI 线程销毁 / 委托进程级固定 / 登录托盘 5s×6 重试）→ 构建 0/0、测试 204/204、重发布复测通过（「可以了 能用」）→ 提交 `f67db87`
 
 ## Task 8: 全量验证与交付
 

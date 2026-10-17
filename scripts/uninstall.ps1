@@ -41,8 +41,27 @@ if ($existing) {
     Write-Host '服务已删除'
 }
 
-# 助手在交互会话中运行，可能占用安装目录中的文件
+# 助手与管理端在交互会话中运行，可能占用安装目录中的文件
 Get-Process -Name 'AutoUnlockHelper' -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue | Stop-Process -Force
+$deadline = (Get-Date).AddSeconds(10)
+while ((Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+    Start-Sleep -Milliseconds 250
+}
+
+# 管理端：注销计划任务、删除开始菜单快捷方式（程序文件随安装目录一并删除）
+$managerTask = 'AutoUnlockManager'
+if (Get-ScheduledTask -TaskName $managerTask -ErrorAction SilentlyContinue) {
+    Unregister-ScheduledTask -TaskName $managerTask -Confirm:$false
+    Write-Host '管理端计划任务已注销'
+} else {
+    Write-Host '管理端计划任务不存在（跳过）'
+}
+$shortcutPath = Join-Path ([Environment]::GetFolderPath('CommonStartMenu')) 'Programs\AutoUnlock 管理器.lnk'
+if (Test-Path $shortcutPath) {
+    Remove-Item $shortcutPath -Force
+    Write-Host '管理端快捷方式已删除'
+}
 
 # 先注销 CP 再删除文件：DllUnregisterServer 需要 DLL 还在原路径
 $targetDll = Join-Path $InstallDir 'AutoUnlockCP.dll'
@@ -78,3 +97,4 @@ if (-not $KeepData) {
 }
 
 Write-Host '卸载完成。建议重启一次，确保 winlogon 释放凭据提供程序 DLL。'
+Write-Host "（管理端界面设置已保留：$env:LOCALAPPDATA\AutoUnlockManager）"

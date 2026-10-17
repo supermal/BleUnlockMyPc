@@ -1,4 +1,5 @@
 using AutoUnlockManager.Services;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
 namespace AutoUnlockManager;
@@ -39,15 +40,79 @@ public partial class App : Application
 
         // 托盘初始化失败不影响主窗口可用（托盘层异常不得崩溃应用）；
         // 同时回填托盘可用性：托盘不可用时关闭窗口 = 真实退出（防无入口隐藏进程）
+        TryInitializeTray();
+    }
+
+    /// <summary>托盘初始化已重试次数（初始尝试不计）。</summary>
+    private int _trayRetryCount;
+
+    /// <summary>托盘初始化重试上限（5 秒 × 6 ≈ 30 秒；登录早期 shell 就绪通常只需数秒）。</summary>
+    private const int TrayMaxRetryCount = 6;
+
+    /// <summary>托盘初始化重试间隔。</summary>
+    private static readonly TimeSpan TrayRetryInterval = TimeSpan.FromSeconds(5);
+
+    private DispatcherQueueTimer? _trayRetryTimer;
+
+    /// <summary>
+    /// 初始化托盘；失败时定时重试，直至成功或达到次数上限。
+    /// 登录自启场景下 shell/任务栏可能尚未就绪（Shell_NotifyIcon 失败 → TrayIconHost 构造抛异常），
+    /// 此时不放任托盘永久缺失，而是等待数秒后重试。
+    /// </summary>
+    private void TryInitializeTray()
+    {
+        var window = _window;
+        if (window is null)
+        {
+            return;
+        }
+
         try
         {
-            _trayIcon = new TrayIconHost(_window);
+            _trayIcon = new TrayIconHost(window);
+            window.TrayAvailable = true;
+            StopTrayRetry();
         }
         catch
         {
             _trayIcon = null;
+            window.TrayAvailable = false;
+            ScheduleTrayRetry(window);
         }
-        _window.TrayAvailable = _trayIcon is not null;
+    }
+
+    /// <summary>安排一次延迟重试（无剩余次数时不安排）。</summary>
+    private void ScheduleTrayRetry(MainWindow window)
+    {
+        if (_trayRetryCount >= TrayMaxRetryCount)
+        {
+            return;
+        }
+        _trayRetryCount++;
+
+        if (_trayRetryTimer is null)
+        {
+            var timer = window.DispatcherQueue.CreateTimer();
+            timer.Interval = TrayRetryInterval;
+            timer.IsRepeating = false;
+            timer.Tick += (_, _) => TryInitializeTray();
+            _trayRetryTimer = timer;
+        }
+
+        _trayRetryTimer.Start();
+    }
+
+    /// <summary>停止未决的托盘重试（初始化成功或应用退出时调用）。</summary>
+    private void StopTrayRetry()
+    {
+        try
+        {
+            _trayRetryTimer?.Stop();
+        }
+        catch
+        {
+            // 停止失败无碍：窗口关闭/应用退出后计时器自然失效
+        }
     }
 
     /// <summary>单实例唤醒回调（后台线程触发）：切换到 UI 线程显示主窗口。</summary>
@@ -82,6 +147,7 @@ public partial class App : Application
     /// <summary>窗口关闭（= 真实退出流程）：先销毁托盘（防残影），释放单实例资源，最后兜底请求应用退出。</summary>
     private void OnMainWindowClosed(object sender, WindowEventArgs args)
     {
+        StopTrayRetry(); // 退出路径：取消未决的托盘重试
         try
         {
             _trayIcon?.Dispose();
