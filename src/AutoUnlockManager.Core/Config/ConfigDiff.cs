@@ -1,0 +1,160 @@
+namespace AutoUnlockManager.Core.Config;
+
+/// <summary>
+/// 单条配置差异（保存前确认对话框展示）。
+/// <paramref name="IsSensitive"/> 为真时（密码）不携带新旧值，对话框显示「已修改」。
+/// </summary>
+public sealed record ConfigChange(
+    string Field,
+    string DisplayName,
+    string? OldText,
+    string? NewText,
+    bool IsSensitive);
+
+/// <summary>
+/// 配置差异计算：比较归一化后的值（Irk 重排版不算变更）；输出顺序与表单字段一致。
+/// 「无差异」判定同时用于「没有需要保存的更改」提示与编辑脏标记。
+/// </summary>
+public static class ConfigDiff
+{
+    /// <summary>计算从 <paramref name="from"/>（最近一次加载/写盘快照）到 <paramref name="to"/> 的差异列表。</summary>
+    public static IReadOnlyList<ConfigChange> Compute(AutoUnlockConfig from, AutoUnlockConfig to)
+    {
+        var changes = new List<ConfigChange>();
+
+        var oldIrk = ConfigValidator.NormalizeIrk(from.Device.Irk) ?? from.Device.Irk;
+        var newIrk = ConfigValidator.NormalizeIrk(to.Device.Irk) ?? to.Device.Irk;
+        if (!string.Equals(oldIrk, newIrk, StringComparison.Ordinal))
+        {
+            changes.Add(new ConfigChange(ConfigFields.DeviceIrk, GetDisplayName(ConfigFields.DeviceIrk),
+                FormatKey(oldIrk), FormatKey(newIrk), IsSensitive: false));
+        }
+
+        if (from.Device.IrkByteOrder != to.Device.IrkByteOrder)
+        {
+            changes.Add(new ConfigChange(ConfigFields.DeviceIrkByteOrder, GetDisplayName(ConfigFields.DeviceIrkByteOrder),
+                FormatIrkByteOrder(from.Device.IrkByteOrder), FormatIrkByteOrder(to.Device.IrkByteOrder), IsSensitive: false));
+        }
+
+        var oldAddress = ConfigValidator.NormalizeAddress(from.Device.IdentityAddress);
+        var newAddress = ConfigValidator.NormalizeAddress(to.Device.IdentityAddress);
+        if (oldAddress != newAddress)
+        {
+            changes.Add(new ConfigChange(ConfigFields.DeviceIdentityAddress, GetDisplayName(ConfigFields.DeviceIdentityAddress),
+                FormatAddress(oldAddress), FormatAddress(newAddress), IsSensitive: false));
+        }
+
+        if (!string.Equals(from.Credentials.UserName, to.Credentials.UserName, StringComparison.Ordinal))
+        {
+            changes.Add(new ConfigChange(ConfigFields.CredentialsUserName, GetDisplayName(ConfigFields.CredentialsUserName),
+                FormatText(from.Credentials.UserName), FormatText(to.Credentials.UserName), IsSensitive: false));
+        }
+
+        if (!string.Equals(from.Credentials.Password, to.Credentials.Password, StringComparison.Ordinal))
+        {
+            // 密码不进入对话框文本
+            changes.Add(new ConfigChange(ConfigFields.CredentialsPassword, GetDisplayName(ConfigFields.CredentialsPassword),
+                OldText: null, NewText: null, IsSensitive: true));
+        }
+
+        AddNumber(changes, ConfigFields.ProximityLockThresholdDbm,
+            from.Proximity.LockThresholdDbm, to.Proximity.LockThresholdDbm);
+        AddNumber(changes, ConfigFields.ProximityLockWindowSeconds,
+            from.Proximity.LockWindowSeconds, to.Proximity.LockWindowSeconds);
+        AddNumber(changes, ConfigFields.ProximityUnlockThresholdDbm,
+            from.Proximity.UnlockThresholdDbm, to.Proximity.UnlockThresholdDbm);
+        AddNumber(changes, ConfigFields.ProximityUnlockWindowSeconds,
+            from.Proximity.UnlockWindowSeconds, to.Proximity.UnlockWindowSeconds);
+
+        if (from.Proximity.MinSamples != to.Proximity.MinSamples)
+        {
+            changes.Add(new ConfigChange(ConfigFields.ProximityMinSamples, GetDisplayName(ConfigFields.ProximityMinSamples),
+                ConfigInput.FormatCount(from.Proximity.MinSamples), ConfigInput.FormatCount(to.Proximity.MinSamples), IsSensitive: false));
+        }
+
+        AddNumber(changes, ConfigFields.ProximityStartupGraceSeconds,
+            from.Proximity.StartupGraceSeconds, to.Proximity.StartupGraceSeconds);
+        AddNumber(changes, ConfigFields.ProximityUnlockPendingTimeoutSeconds,
+            from.Proximity.UnlockPendingTimeoutSeconds, to.Proximity.UnlockPendingTimeoutSeconds);
+
+        if (from.Notification.Mode != to.Notification.Mode)
+        {
+            changes.Add(new ConfigChange(ConfigFields.NotificationMode, GetDisplayName(ConfigFields.NotificationMode),
+                FormatNotifierMode(from.Notification.Mode), FormatNotifierMode(to.Notification.Mode), IsSensitive: false));
+        }
+
+        AddNumber(changes, ConfigFields.NotificationPromptTimeoutSeconds,
+            from.Notification.PromptTimeoutSeconds, to.Notification.PromptTimeoutSeconds);
+        AddNumber(changes, ConfigFields.NotificationRejectSnoozeSeconds,
+            from.Notification.RejectSnoozeSeconds, to.Notification.RejectSnoozeSeconds);
+        AddNumber(changes, ConfigFields.NotificationSnoozeMinutes,
+            from.Notification.SnoozeMinutes, to.Notification.SnoozeMinutes);
+
+        return changes;
+    }
+
+    /// <summary>字段中文名（表单标签/差异对话框共用）。未知字段回退点号标识。</summary>
+    public static string GetDisplayName(string field) => field switch
+    {
+        ConfigFields.DeviceIrk => "设备 IRK",
+        ConfigFields.DeviceIrkByteOrder => "IRK 字节序",
+        ConfigFields.DeviceIdentityAddress => "设备地址",
+        ConfigFields.CredentialsUserName => "凭据用户名",
+        ConfigFields.CredentialsPassword => "凭据密码",
+        ConfigFields.ProximityLockThresholdDbm => "锁定阈值（dBm）",
+        ConfigFields.ProximityLockWindowSeconds => "锁定窗口（秒）",
+        ConfigFields.ProximityUnlockThresholdDbm => "解锁阈值（dBm）",
+        ConfigFields.ProximityUnlockWindowSeconds => "解锁窗口（秒）",
+        ConfigFields.ProximityMinSamples => "最小样本数",
+        ConfigFields.ProximityStartupGraceSeconds => "启动宽限（秒）",
+        ConfigFields.ProximityUnlockPendingTimeoutSeconds => "解锁等待超时（秒）",
+        ConfigFields.NotificationMode => "通知方式",
+        ConfigFields.NotificationPromptTimeoutSeconds => "提示超时（秒）",
+        ConfigFields.NotificationRejectSnoozeSeconds => "拒绝后暂缓（秒）",
+        ConfigFields.NotificationSnoozeMinutes => "稍后提醒（分钟）",
+        _ => field,
+    };
+
+    /// <summary>IRK 字节序中文标签（表单下拉与差异共用）。</summary>
+    public static string FormatIrkByteOrder(IrkByteOrder value) => value switch
+    {
+        IrkByteOrder.Auto => "自动检测（Auto）",
+        IrkByteOrder.Normal => "正序（Normal）",
+        IrkByteOrder.Reversed => "反序（Reversed）",
+        _ => value.ToString(),
+    };
+
+    /// <summary>通知方式中文标签。</summary>
+    public static string FormatNotifierMode(NotifierMode value) => value switch
+    {
+        NotifierMode.Toast => "系统通知（Toast）",
+        NotifierMode.Dialog => "对话框（Dialog）",
+        _ => value.ToString(),
+    };
+
+    private static void AddNumber(List<ConfigChange> changes, string field, double from, double to)
+    {
+        if (from != to) // NaN 参与时恒为变更（脏标记哨兵）
+        {
+            changes.Add(new ConfigChange(field, GetDisplayName(field),
+                ConfigInput.FormatNumber(from), ConfigInput.FormatNumber(to), IsSensitive: false));
+        }
+    }
+
+    /// <summary>敏感键截断显示：前 8…后 4（过短则原样）。</summary>
+    private static string FormatKey(string? value)
+    {
+        value ??= ""; // 防御：加载/表单路径已收敛 null（评审 I1），此处兜底不抛
+        if (value.Length == 0)
+        {
+            return "（未设置）";
+        }
+
+        return value.Length <= 12 ? value : $"{value[..8]}…{value[^4..]}";
+    }
+
+    private static string FormatAddress(ulong? normalized)
+        => ConfigValidator.FormatAddress(normalized) ?? "（未设置）";
+
+    private static string FormatText(string? value) => string.IsNullOrEmpty(value) ? "（空）" : value;
+}

@@ -84,12 +84,12 @@
 
 ## Task 5: 配置页（全字段表单 + 热重载确认）
 
-- [ ] 4 组 16 字段表单 + 枚举下拉（IrkByteOrder、NotifierMode）；密码掩码+眼睛
-- [ ] Core 校验镜像 `OptionsValidator` 规则与文案；上限常量镜像 `HelperProtocol`（600s / 240min）
-- [ ] 路径：`%ProgramData%\AutoUnlock\appsettings.json`；目录缺失 → 横幅提示（服务可能未安装）
-- [ ] 保存：JsonNode 原位改值（保留未知字段）→ 临时文件 + `File.Replace`（`.bak`）→ 监听日志 `配置已重载（…）` 成功 / `配置校验失败，已保留原配置` 失败；5s 超时 → 提示 + 重启服务按钮；「重新从磁盘加载」「打开所在文件夹」
-- [ ] 单测：校验规则（含边界）、JSON 往返保真、备份/替换
-- 验证：改阈值 → 保存 → 服务日志确认重载 → 行为生效（用户机）；非法值被拦；`.bak` 生成
+- [x] 4 组 16 字段表单 + 枚举下拉（IrkByteOrder、NotifierMode）；密码与 IRK 掩码+眼睛（默认掩码、保存后自动回掩码）
+- [x] Core 校验镜像 `OptionsValidator` 规则与文案；上限常量镜像 `HelperProtocol`（600s / 240min）
+- [x] 路径：`%ProgramData%\AutoUnlock\appsettings.json`；目录缺失 → 横幅提示（服务可能未安装）
+- [x] 保存：JsonNode 原位改值（保留未知字段）→ 临时文件 + `File.Replace`（`.bak`）→ 监听日志 `配置已重载（…）` 成功 / `配置校验失败，已保留原配置` 失败；5s 超时 → 提示 + 重启服务按钮；「重新从磁盘加载」「打开所在文件夹」
+- [x] 单测：校验规则（含边界）、JSON 往返保真、备份/替换
+- 验证：改阈值 → 保存 → 服务日志确认重载 → 行为生效（用户机）；非法值被拦；`.bak` 生成；177 测试全绿 + diag5 全场景 PASS=61 + 用户真机烟测通过（含 IRK 眼睛补充）→ 提交 `a94bbbd`
 
 ## Task 6: 日志页（跟随/过滤/高亮/导出）
 

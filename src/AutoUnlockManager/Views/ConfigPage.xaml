@@ -15,23 +15,449 @@
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </StackPanel>
 
-            <Border Style="{StaticResource CardPanelStyle}">
-                <Grid ColumnSpacing="16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <FontIcon Glyph="&#xE713;" FontSize="28"
-                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                              VerticalAlignment="Top" />
-                    <StackPanel Grid.Column="1" Spacing="6">
-                        <TextBlock Text="即将推出（Task 5）" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                        <TextBlock TextWrapping="Wrap"
-                                   Style="{StaticResource BodyTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   Text="全字段表单、范围校验、保存与热重载结果确认（密码掩码编辑）。" />
+            <!-- 保存 / 服务操作结果横幅 -->
+            <InfoBar IsOpen="{x:Bind ViewModel.BannerVisible, Mode=TwoWay}"
+                     Severity="{x:Bind ViewModel.BannerSeverity, Mode=OneWay}"
+                     Title="{x:Bind ViewModel.BannerTitle, Mode=OneWay}"
+                     Message="{x:Bind ViewModel.BannerMessage, Mode=OneWay}">
+                <InfoBar.ActionButton>
+                    <Button Content="{x:Bind ViewModel.BannerActionText, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.BannerActionVisible, Mode=OneWay}"
+                            Click="OnBannerActionClicked" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+
+            <!-- 数据目录 / 解析问题警告（服务可能未安装；修复后重新加载） -->
+            <InfoBar IsOpen="{x:Bind ViewModel.PathWarningVisible, Mode=OneWay}"
+                     Severity="Warning"
+                     Title="配置文件不可用"
+                     Message="{x:Bind ViewModel.PathWarningText, Mode=OneWay}"
+                     IsClosable="False" />
+
+            <!-- 表单（配置文件不可用时整组禁用；ContentControl 提供 IsEnabled 语义） -->
+            <ContentControl IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}"
+                            HorizontalContentAlignment="Stretch">
+            <StackPanel Spacing="16">
+
+                <!-- 设备 -->
+                <Border Style="{StaticResource CardPanelStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="设备" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="设备 IRK" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <PasswordBox x:Name="IrkInput"
+                                                 Password="{x:Bind ViewModel.IrkText, Mode=TwoWay}"
+                                                 PasswordRevealMode="Hidden"
+                                                 FontFamily="Consolas" />
+                                    <ToggleButton x:Name="IrkRevealToggle" Grid.Column="1"
+                                                  MinWidth="40"
+                                                  Checked="OnIrkRevealChanged" Unchecked="OnIrkRevealChanged"
+                                                  ToolTipService.ToolTip="显示/隐藏 IRK">
+                                        <FontIcon Glyph="&#xE7B3;" FontSize="14" />
+                                    </ToggleButton>
+                                </Grid>
+                                <TextBlock Text="{x:Bind ViewModel.IrkError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasIrkError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="32 位十六进制；可含空格、冒号、连字符或 0x 前缀（保存前自动归一化）。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="IRK 字节序" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <ComboBox MinWidth="240" HorizontalAlignment="Left"
+                                          SelectedIndex="{x:Bind ViewModel.IrkByteOrderIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="自动检测（Auto）" />
+                                    <ComboBoxItem Content="正序（Normal）" />
+                                    <ComboBoxItem Content="反序（Reversed）" />
+                                </ComboBox>
+                                <TextBlock Text="一般保持「自动检测」；仅在识别异常时手动指定。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="设备地址（可选）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.IdentityAddressText, Mode=TwoWay}" FontFamily="Consolas" />
+                                <TextBlock Text="{x:Bind ViewModel.IdentityAddressError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasIdentityAddressError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="留空，或 6 字节 MAC 地址（可含分隔符；保存前归一化）。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
-                </Grid>
+                </Border>
+
+                <!-- 凭据 -->
+                <Border Style="{StaticResource CardPanelStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="凭据" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="用户名" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.UserNameText, Mode=TwoWay}" />
+                                <TextBlock Text="{x:Bind ViewModel.UserNameError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasUserNameError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="密码" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <PasswordBox x:Name="PasswordInput"
+                                                 Password="{x:Bind ViewModel.PasswordText, Mode=TwoWay}"
+                                                 PasswordRevealMode="Hidden" />
+                                    <ToggleButton x:Name="RevealToggle" Grid.Column="1"
+                                                  MinWidth="40"
+                                                  Checked="OnRevealChanged" Unchecked="OnRevealChanged"
+                                                  ToolTipService.ToolTip="显示/隐藏密码">
+                                        <FontIcon Glyph="&#xE7B3;" FontSize="14" />
+                                    </ToggleButton>
+                                </Grid>
+                                <TextBlock Text="{x:Bind ViewModel.PasswordError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasPasswordError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="用于登录 Windows 会话；仅写入配置文件，不会出现在日志中。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- 接近判定 -->
+                <Border Style="{StaticResource CardPanelStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="接近判定" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="锁定阈值（dBm）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.LockThresholdText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.LockThresholdError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasLockThresholdError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="锁定窗口（秒）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.LockWindowText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.LockWindowError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasLockWindowError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="信号低于锁定阈值并持续该时长后锁定。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="解锁阈值（dBm）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.UnlockThresholdText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.UnlockThresholdError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasUnlockThresholdError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="必须大于锁定阈值（死区为正）。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="解锁窗口（秒）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.UnlockWindowText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.UnlockWindowError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasUnlockWindowError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="信号高于解锁阈值并持续该时长后解锁。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="最小样本数" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.MinSamplesText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.MinSamplesError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasMinSamplesError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="窗口中至少需要的样本数（整数）。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="启动宽限（秒）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.StartupGraceText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.StartupGraceError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasStartupGraceError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="服务启动后忽略锁定的时长（可为 0）。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="解锁等待超时（秒）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.UnlockPendingTimeoutText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.UnlockPendingTimeoutError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasUnlockPendingTimeoutError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="进入解锁等待后允许协助的最长时间。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- 通知 -->
+                <Border Style="{StaticResource CardPanelStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="通知" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="通知方式" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <ComboBox MinWidth="240" HorizontalAlignment="Left"
+                                          SelectedIndex="{x:Bind ViewModel.NotifierModeIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="系统通知（Toast）" />
+                                    <ComboBoxItem Content="对话框（Dialog）" />
+                                </ComboBox>
+                                <TextBlock Text="解锁确认提示的呈现形式。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="提示超时（秒）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.PromptTimeoutText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.PromptTimeoutError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasPromptTimeoutError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="确认提示的最长等待，上限 600 秒。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="拒绝后暂缓（秒）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.RejectSnoozeText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.RejectSnoozeError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasRejectSnoozeError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="用户拒绝解锁后的静默时长。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="稍后提醒（分钟）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.SnoozeText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.SnoozeError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasSnoozeError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="选择「稍后」后的等待时长，上限 240 分钟。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            </ContentControl>
+
+            <!-- 操作 -->
+            <Border Style="{StaticResource CardPanelStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="操作" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock Text="{x:Bind ViewModel.ConfigPathText, Mode=OneWay}"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               IsTextSelectionEnabled="True" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="保存" Style="{StaticResource AccentButtonStyle}"
+                                Click="OnSaveClicked"
+                                IsEnabled="{x:Bind ViewModel.CanSave, Mode=OneWay}" />
+                        <ProgressRing Width="20" Height="20"
+                                      IsActive="{x:Bind ViewModel.IsSaving, Mode=OneWay}"
+                                      Visibility="{x:Bind ViewModel.IsSaving, Mode=OneWay}" />
+                        <Button Content="重新从磁盘加载" Click="OnReloadClicked" />
+                        <Button Content="打开所在文件夹" Click="OnOpenFolderClicked"
+                                IsEnabled="{x:Bind ViewModel.CanOpenFolder, Mode=OneWay}" />
+                    </StackPanel>
+                    <TextBlock Text="保存前会按服务端规则做本地校验；确认差异后原子写入配置文件，并等待服务热重载结果（旧文件保留为 .bak）。"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
             </Border>
         </StackPanel>
     </ScrollViewer>
