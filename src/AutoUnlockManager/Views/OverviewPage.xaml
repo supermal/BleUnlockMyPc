@@ -1,0 +1,17 @@
+<Page
+    x:Class="AutoUnlockManager.Views.OverviewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="36,28">
+        <StackPanel Spacing="8">
+            <TextBlock Text="概览" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock Text="实时 dBm 曲线、服务状态与健康信息将在此展示（Task 4 实现）。"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+    </Grid>
+</Page>

@@ -66,10 +66,10 @@
 
 ## Task 3: 管理端骨架（Core + WinUI 项目 + 托盘 + 导航）
 
-- [ ] `AutoUnlockManager.Core`（net10.0 类库）+ `AutoUnlockManager`（WinUI 项目，引用 Core）+ `tests/AutoUnlockManager.Tests`（引用 Core）
-- [ ] 单实例（Global 互斥体 + 唤醒事件）、manifest `requireAdministrator`、窗口图标/标题
-- [ ] NavigationView 三页骨架（概览/配置/日志）+ 系统主题跟随
-- [ ] 托盘（H.NotifyIcon）：图标状态色、菜单（显示/服务状态/启动/停止/重启/退出）、关闭=隐藏、双击显示
+- [x] `AutoUnlockManager.Core`（net10.0 类库）+ `AutoUnlockManager`（WinUI 项目，引用 Core）+ `tests/AutoUnlockManager.Tests`（引用 Core）
+- [x] 单实例（Global 互斥体 + 唤醒事件）、manifest `requireAdministrator`、窗口图标/标题
+- [x] NavigationView 三页骨架（概览/配置/日志）+ 系统主题跟随
+- [x] 托盘（H.NotifyIcon）：图标状态色、菜单（显示/服务状态/启动/停止/重启/退出）、关闭=隐藏、双击显示
 - 验证：`dotnet build src\AutoUnlockManager -c Release`；本机启动：托盘常驻、关闭不退出、二次启动唤出已有窗口
 
 ## Task 4: 概览页（实时 dBm + 状态 + 服务控制）
