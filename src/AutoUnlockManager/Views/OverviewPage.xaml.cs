@@ -1,11 +1,11 @@
 using System.ComponentModel;
 using System.Text;
 using AutoUnlockManager.Core;
+using AutoUnlockManager.Helpers;
 using AutoUnlockManager.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Windows.Storage.Pickers;
 using Windows.UI;
 
 namespace AutoUnlockManager.Views;
@@ -81,31 +81,29 @@ public sealed partial class OverviewPage : Page
     {
         try
         {
-            var picker = new FileSavePicker
-            {
-                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
-                SuggestedFileName = $"autounlock-samples-{DateTime.Now:yyyyMMdd-HHmmss}",
-            };
-            picker.FileTypeChoices.Add("CSV 文件", new List<string> { ".csv" });
-
             var window = (Application.Current as App)?.MainWindow;
-            if (window is not null)
+            if (window is null)
             {
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(window));
+                ViewModel.ShowOperationMessage("导出失败", "主窗口尚未就绪，请稍后重试。", InfoBarSeverity.Error);
+                return;
             }
 
-            var file = await picker.PickSaveFileAsync();
-            if (file is null)
+            var path = await SaveFilePicker.PickAsync(
+                window.AppWindow.Id,
+                $"autounlock-samples-{DateTime.Now:yyyyMMdd-HHmmss}",
+                "CSV 文件",
+                [".csv"]);
+            if (path is null)
             {
                 return; // 用户取消
             }
 
             var csv = ViewModel.BuildCsv();
             var sampleCount = ViewModel.SampleCount; // 写盘前快照计数（写盘期间可能仍有新帧到达）
-            await File.WriteAllTextAsync(file.Path, csv, new UTF8Encoding(false));
+            await File.WriteAllTextAsync(path, csv, new UTF8Encoding(false));
             ViewModel.ShowOperationMessage(
                 "已导出样本",
-                $"已导出 {sampleCount} 条样本到：{file.Path}",
+                $"已导出 {sampleCount} 条样本到：{path}",
                 InfoBarSeverity.Success);
         }
         catch (Exception ex)
