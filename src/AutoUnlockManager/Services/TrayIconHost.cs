@@ -172,7 +172,7 @@ internal sealed class TrayIconHost : IDisposable
 
     /// <summary>
     /// 执行一次服务控制操作：进行中禁操作项防重入；结束后刷新状态。
-    /// 操作结果分类将由 Task 4 概览页呈现，托盘骨架只负责状态恢复。
+    /// 失败经托盘气泡反馈（Task 3 评审 F4）；页面内另有结果横幅。
     /// </summary>
     private async Task RunServiceOperationAsync(Func<CancellationToken, Task<ServiceOperationResult>> operation)
     {
@@ -185,9 +185,10 @@ internal sealed class TrayIconHost : IDisposable
         DisableOperationItems();
         try
         {
+            ServiceOperationResult? result = null;
             try
             {
-                await operation(CancellationToken.None);
+                result = await operation(CancellationToken.None);
             }
             catch
             {
@@ -196,6 +197,14 @@ internal sealed class TrayIconHost : IDisposable
 
             _operationInProgress = false;
             await RefreshStatusAsync();
+
+            // Task 3 评审 F4：托盘发起的失败操作必须有可见反馈（成功不打扰）；
+            // 操作函数异常时兜底为 Failure，避免静默
+            result ??= new ServiceOperationResult(ServiceOperationStatus.Failure, "操作未完成：未预期的异常。");
+            if (result.Status != ServiceOperationStatus.Success)
+            {
+                ShowFailureNotification(result);
+            }
         }
         catch
         {
@@ -204,6 +213,31 @@ internal sealed class TrayIconHost : IDisposable
         finally
         {
             _operationInProgress = false;
+        }
+    }
+
+    /// <summary>托盘操作失败气泡（Task 3 评审 F4）：分类文案 + 消息；气泡异常不得影响托盘。</summary>
+    private void ShowFailureNotification(ServiceOperationResult result)
+    {
+        try
+        {
+            var message = result.Message;
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = result.Status switch
+                {
+                    ServiceOperationStatus.NotInstalled => "服务未安装（Win32 1060）。",
+                    ServiceOperationStatus.AccessDenied => "拒绝访问：需要管理员权限。",
+                    ServiceOperationStatus.Timeout => "等待服务状态变化超时。",
+                    _ => "未知错误。",
+                };
+            }
+
+            _taskbarIcon.ShowNotification("服务操作失败", message!, NotificationIcon.Warning);
+        }
+        catch
+        {
+            // 气泡失败不得影响托盘
         }
     }
 

@@ -14,6 +14,9 @@ public partial class App : Application
     private MainWindow? _window;
     private TrayIconHost? _trayIcon;
 
+    /// <summary>主窗口（FileSavePicker 等 WinRT 交互需要 HWND；null = 尚未创建或已退出）。</summary>
+    public MainWindow? MainWindow => _window;
+
     public App()
     {
         InitializeComponent();
