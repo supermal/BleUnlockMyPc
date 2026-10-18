@@ -79,7 +79,7 @@
                 <CheckBox Content="错误 (ERR)" IsChecked="{x:Bind ViewModel.ShowError, Mode=TwoWay}" />
                 <TextBox Width="300"
                          PlaceholderText="关键字过滤（匹配整行原文）"
-                         Text="{x:Bind ViewModel.Keyword, Mode=TwoWay}" />
+                         Text="{x:Bind ViewModel.Keyword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             </StackPanel>
         </StackPanel>
 
