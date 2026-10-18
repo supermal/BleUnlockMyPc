@@ -1,4 +1,5 @@
 using AutoUnlockManager.Core.Config;
+using AutoUnlockService.Config;
 using Xunit;
 
 namespace AutoUnlockManager.Tests;
@@ -87,6 +88,15 @@ public sealed class ConfigValidatorTests
         var error = Assert.Single(ConfigValidator.Validate(config).Errors);
         Assert.Equal(ConfigFields.DeviceIrk, error.Field);
         Assert.Equal("Device.Irk 必须是 32 个十六进制字符", error.Message);
+    }
+
+    [Fact]
+    public void Validate_ProtectedIrk_SkipsHexRule()
+    {
+        var config = Valid();
+        config.Device.Irk = SecretProtector.Protect(ValidIrk); // 管理端看到的磁盘原文：密文不校验明文
+
+        Assert.True(ConfigValidator.Validate(config).IsValid);
     }
 
     [Fact]

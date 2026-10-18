@@ -1,4 +1,5 @@
 using AutoUnlockManager.Core.Config;
+using AutoUnlockService.Config;
 using Xunit;
 
 namespace AutoUnlockManager.Tests;
@@ -195,5 +196,32 @@ public sealed class ConfigDiffTests
         Assert.Equal(ConfigFields.CredentialsUserName, change.Field);
         Assert.Equal("（空）", change.OldText);
         Assert.Equal("u", change.NewText);
+    }
+
+    [Fact]
+    public void Compute_ProtectedIrk_ShowsEncryptedPlaceholder()
+    {
+        var from = Baseline();
+        from.Device.Irk = SecretProtector.Protect("00112233445566778899aabbccddeeff");
+        var to = Baseline();
+        to.Device.Irk = "FFEEBBAA99887766554433221100FFEE";
+
+        var change = Assert.Single(ConfigDiff.Compute(from, to));
+
+        Assert.Equal(ConfigFields.DeviceIrk, change.Field);
+        Assert.Equal("（已加密）", change.OldText);   // 密文不展开
+        Assert.Equal("ffeebbaa…ffee", change.NewText); // 新值（明文）照常截断显示
+        Assert.False(change.IsSensitive);
+    }
+
+    [Fact]
+    public void Compute_IdenticalProtectedValues_NoChange()
+    {
+        var from = Baseline();
+        from.Device.Irk = SecretProtector.Protect("00112233445566778899aabbccddeeff");
+        from.Credentials.Password = SecretProtector.Protect("pw1");
+        var to = from.Clone(); // 密文原样（表单留空 → 保留）
+
+        Assert.Empty(ConfigDiff.Compute(from, to));
     }
 }

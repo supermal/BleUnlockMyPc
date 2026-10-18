@@ -3,8 +3,8 @@ namespace AutoUnlockService.Config;
 public sealed record OptionsChange(
     AutoUnlockOptions Options, bool DeviceChanged, bool CredentialsChanged);
 
-// Filtra las recargas en caliente: antirrebote, validacion y, si no pasa,
-// conservar la configuracion que ya estaba funcionando
+// Filtra las recargas en caliente: antirrebote, resolucion de secretos (dpapi), validacion y, si no
+// pasa, conservar la configuracion que ya estaba funcionando
 public sealed class OptionsGate : IDisposable
 {
     private readonly ILogger<OptionsGate> _log;
@@ -56,6 +56,18 @@ public sealed class OptionsGate : IDisposable
             var candidate = _pending;
             _pending = null;
             if (candidate is null) return;
+
+            // 敏感值解析（dpapi 密文 → 明文）：密文解不开等同校验失败，走同一「保留原配置」路径；
+            // 明文存储仅记警告（管理端保存时自动加密）
+            OptionsSecrets.TryResolve(candidate, out var secretWarnings, out var secretErrors);
+            foreach (var warning in secretWarnings)
+                _log.LogWarning("{Warning}", warning);
+            if (secretErrors.Count > 0)
+            {
+                foreach (var error in secretErrors)
+                    _log.LogError("配置校验失败，已保留原配置：{Error}", error);
+                return;
+            }
 
             var result = OptionsValidator.Validate(candidate);
             if (!result.IsValid)

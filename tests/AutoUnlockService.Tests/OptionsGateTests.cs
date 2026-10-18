@@ -1,4 +1,5 @@
 using AutoUnlockService.Config;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
@@ -18,9 +19,13 @@ public class OptionsGateTests
     };
 
     private static (OptionsGate Gate, FakeTimeProvider Time, List<OptionsChange> Changes) Build()
+        => Build(NullLogger<OptionsGate>.Instance);
+
+    private static (OptionsGate Gate, FakeTimeProvider Time, List<OptionsChange> Changes) Build(
+        ILogger<OptionsGate> log)
     {
         var time = new FakeTimeProvider();
-        var gate = new OptionsGate(Options(), NullLogger<OptionsGate>.Instance, time, Debounce);
+        var gate = new OptionsGate(Options(), log, time, Debounce);
         var changes = new List<OptionsChange>();
         gate.Changed += changes.Add;
         return (gate, time, changes);
@@ -178,5 +183,48 @@ public class OptionsGateTests
 
         Assert.Empty(changes);
         Assert.Equal(IrkA, gate.Current.Device.Irk);
+    }
+
+    [Fact]
+    public void Un_candidato_cifrado_se_descifra_antes_de_sustituir()
+    {
+        var (gate, time, changes) = Build();
+
+        gate.Submit(Options(irk: SecretProtector.Protect(IrkB), pass: SecretProtector.Protect("otra")));
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Single(changes);
+        Assert.Equal(IrkB, gate.Current.Device.Irk);             // 运行态只见明文
+        Assert.Equal("otra", gate.Current.Credentials.Password); // 同上
+        Assert.True(changes[0].DeviceChanged);
+        Assert.True(changes[0].CredentialsChanged);
+    }
+
+    [Fact]
+    public void Un_cifrado_ilegible_se_rechaza_y_conserva_el_vigente()
+    {
+        var log = new ListLogger<OptionsGate>();
+        var (gate, time, changes) = Build(log);
+        var antes = gate.Current;
+
+        gate.Submit(Options(irk: SecretTestData.Tampered(SecretProtector.Protect(IrkB))));
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Empty(changes);
+        Assert.Same(antes, gate.Current);
+        Assert.Contains(log.Messages, m => m.Contains("配置校验失败，已保留原配置：Device.Irk 无法解密"));
+    }
+
+    [Fact]
+    public void El_texto_plano_solo_deja_aviso_y_se_aplica()
+    {
+        var log = new ListLogger<OptionsGate>();
+        var (gate, time, _) = Build(log);
+
+        gate.Submit(Options(irk: IrkB));
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Equal(IrkB, gate.Current.Device.Irk);
+        Assert.Contains(log.Messages, m => m.Contains("Device.Irk 以明文存储"));
     }
 }

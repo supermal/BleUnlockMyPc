@@ -8,8 +8,9 @@ using Microsoft.UI.Xaml.Controls;
 namespace AutoUnlockManager.Views;
 
 /// <summary>
-/// 配置页（Task 5）：全字段表单（4 组 16 字段）+ 校验（镜像服务端规则）+ 差异确认对话框 +
-/// 原子保存与热重载确认 + 服务启停辅助。ViewModel 全程 UI 线程、无后台任务，无需 Dispose。
+/// 配置页（Task 5）：全字段表单（4 组 15 字段）+ 校验（镜像服务端规则）+ 差异确认对话框 +
+/// 原子保存与热重载确认 + 服务启停辅助。敏感字段（IRK/密码）以 dpapi 密文存储，界面不回显（留空保持不变）。
+/// ViewModel 全程 UI 线程、无后台任务，无需 Dispose。
 /// </summary>
 public sealed partial class ConfigPage : Page
 {

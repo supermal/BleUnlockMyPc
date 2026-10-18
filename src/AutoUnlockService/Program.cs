@@ -46,6 +46,12 @@ public static class Program
             // "en ejecucion" y lo reinicie en bucle por el plan de recuperacion (sc failure)
             var initialOptions = builder.Configuration
                 .GetSection(AutoUnlockOptions.SectionName).Get<AutoUnlockOptions>() ?? new AutoUnlockOptions();
+            if (!TryResolveSecrets(initialOptions))
+            {
+                Environment.ExitCode = 1;
+                return;
+            }
+
             var earlyValidation = OptionsValidator.Validate(initialOptions);
             if (!earlyValidation.IsValid)
             {
@@ -71,6 +77,11 @@ public static class Program
             builder.Services.AddSingleton(sp =>
             {
                 var initial = sp.GetRequiredService<IOptionsMonitor<AutoUnlockOptions>>().CurrentValue;
+                if (!TryResolveSecrets(initial))
+                {
+                    throw new InvalidOperationException("appsettings.json 配置无效");
+                }
+
                 var validation = OptionsValidator.Validate(initial);
                 if (!validation.IsValid)
                 {
@@ -124,5 +135,17 @@ public static class Program
         {
             Log.CloseAndFlush();
         }
+    }
+
+    // 敏感值（Device.Irk / Credentials.Password）解析：dpapi 密文 → 明文；
+    // 明文记警告（管理端保存时自动加密）；密文解不开按配置无效处理（SCM 不进入运行态）
+    private static bool TryResolveSecrets(AutoUnlockOptions options)
+    {
+        OptionsSecrets.TryResolve(options, out var warnings, out var errors);
+        foreach (var warning in warnings)
+            Log.Warning("{Warning}", warning);
+        foreach (var error in errors)
+            Log.Fatal("配置无效，服务拒绝启动：{Error}", error);
+        return errors.Count == 0;
     }
 }

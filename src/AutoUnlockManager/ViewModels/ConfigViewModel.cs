@@ -154,6 +154,19 @@ public sealed partial class ConfigViewModel : ObservableObject
     public bool HasRejectSnoozeError => RejectSnoozeError.Length > 0;
     public bool HasSnoozeError => SnoozeError.Length > 0;
 
+    // —— 敏感字段加密提示（空串 = 无提示；IRK/密码以 dpapi 密文存储时展示） ——
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasIrkHint))]
+    public partial string IrkHint { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPasswordHint))]
+    public partial string PasswordHint { get; set; }
+
+    public bool HasIrkHint => IrkHint.Length > 0;
+    public bool HasPasswordHint => PasswordHint.Length > 0;
+
     public ConfigViewModel()
     {
         // partial 属性的初始值在构造函数设置（生成器不支持声明处初始化）
@@ -188,6 +201,8 @@ public sealed partial class ConfigViewModel : ObservableObject
         UnlockPendingTimeoutError = "";
         RejectSnoozeError = "";
         SnoozeError = "";
+        IrkHint = "";
+        PasswordHint = "";
     }
 
     /// <summary>页面进入时调用：记录路径并首次加载。</summary>
@@ -244,6 +259,14 @@ public sealed partial class ConfigViewModel : ObservableObject
                 ShowBanner(InfoBarSeverity.Warning, "当前配置未通过校验",
                     $"共 {validation.Errors.Count} 处问题，服务在修正前会拒绝启动（下方字段已标出）。");
             }
+
+            // 跨机器拷贝等导致的不可解密密文：服务会拒绝启动，这里提前给出可操作提示（覆盖校验横幅）
+            if (ConfigSecrets.IsUnreadableOnThisMachine(_loadedConfig.Device.Irk) ||
+                ConfigSecrets.IsUnreadableOnThisMachine(_loadedConfig.Credentials.Password))
+            {
+                ShowBanner(InfoBarSeverity.Warning, "检测到无法解密的加密值",
+                    "设备 IRK 或凭据密码包含无法在本机解密的密文（可能来自其他机器）；请重新输入并保存，否则服务会拒绝启动。");
+            }
         }
         catch (Exception ex)
         {
@@ -288,6 +311,8 @@ public sealed partial class ConfigViewModel : ObservableObject
             return new SavePreparation(false, []);
         }
 
+        // 保存前把新输入的明文加密（密文原样保留、空值跳过）；差异列表已按明文计算
+        ConfigSecrets.ProtectNewValues(config);
         _pendingConfig = config;
         return new SavePreparation(true, changes);
     }
@@ -455,13 +480,14 @@ public sealed partial class ConfigViewModel : ObservableObject
         var config = new AutoUnlockConfig();
         var errors = new List<ConfigError>();
 
-        config.Device.Irk = IrkText.Trim();
+        // 敏感字段「留空保持不变」：留空 + 已加载密文 = 保留原密文；否则用表单文本
+        config.Device.Irk = ConfigSecrets.ResolveInput(IrkText.Trim(), _loadedConfig.Device.Irk);
         config.Device.IrkByteOrder = (IrkByteOrder)Math.Clamp(IrkByteOrderIndex, 0, 2);
         config.Device.IdentityAddress = string.IsNullOrWhiteSpace(IdentityAddressText)
             ? null
             : IdentityAddressText.Trim();
         config.Credentials.UserName = UserNameText;
-        config.Credentials.Password = PasswordText;
+        config.Credentials.Password = ConfigSecrets.ResolveInput(PasswordText, _loadedConfig.Credentials.Password);
 
         var p = config.Proximity;
         if (TryGetNumber(LockThresholdText, ConfigFields.ProximityLockThresholdDbm, errors, out var lockThreshold))
@@ -491,11 +517,11 @@ public sealed partial class ConfigViewModel : ObservableObject
 
     private void ApplyToFields(AutoUnlockConfig config)
     {
-        IrkText = config.Device.Irk;
+        IrkText = ConfigSecrets.DisplayText(config.Device.Irk);
         IrkByteOrderIndex = Math.Clamp((int)config.Device.IrkByteOrder, 0, 2);
         IdentityAddressText = config.Device.IdentityAddress ?? "";
         UserNameText = config.Credentials.UserName;
-        PasswordText = config.Credentials.Password;
+        PasswordText = ConfigSecrets.DisplayText(config.Credentials.Password);
         LockThresholdText = ConfigInput.FormatNumber(config.Proximity.LockThresholdDbm);
         UnlockThresholdText = ConfigInput.FormatNumber(config.Proximity.UnlockThresholdDbm);
         UnlockCountText = ConfigInput.FormatCount(config.Proximity.UnlockSampleCount);
@@ -506,6 +532,8 @@ public sealed partial class ConfigViewModel : ObservableObject
         NotifierModeIndex = Math.Clamp((int)config.Notification.Mode, 0, 1);
         RejectSnoozeText = ConfigInput.FormatNumber(config.Notification.RejectSnoozeSeconds);
         SnoozeText = ConfigInput.FormatNumber(config.Notification.SnoozeMinutes);
+        IrkHint = ConfigSecrets.HintText(config.Device.Irk);
+        PasswordHint = ConfigSecrets.HintText(config.Credentials.Password);
     }
 
     private static bool TryGetNumber(string text, string field, List<ConfigError> errors, out double value)
@@ -604,6 +632,8 @@ public sealed partial class ConfigViewModel : ObservableObject
         UnlockPendingTimeoutError = "";
         RejectSnoozeError = "";
         SnoozeError = "";
+        IrkHint = "";
+        PasswordHint = "";
     }
 
     /// <summary>用户编辑某字段时清除其错误提示（错误仅在下次保存/重载时重新计算）。</summary>

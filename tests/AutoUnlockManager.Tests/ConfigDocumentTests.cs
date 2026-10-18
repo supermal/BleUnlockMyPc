@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using AutoUnlockManager.Core.Config;
+using AutoUnlockService.Config;
 using Xunit;
 
 namespace AutoUnlockManager.Tests;
@@ -295,6 +296,28 @@ public sealed class ConfigDocumentTests : IDisposable
         ConfigDocument.Save(path, config);
 
         Assert.Equal("not-an-irk", JsonNode.Parse(File.ReadAllText(path))!["AutoUnlock"]!["Device"]!["Irk"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Save_ProtectedSecrets_WrittenVerbatim_NotNormalized()
+    {
+        // dpapi 密文不是 32 位十六进制：归一化回退保留原文；读回也原样（是否回显由 VM 决定）
+        var path = WriteFile(SampleJson);
+        var config = ConfigDocument.Load(path);
+        var cipherIrk = SecretProtector.Protect("00112233445566778899aabbccddeeff");
+        var cipherPw = SecretProtector.Protect("pw1");
+        config.Device.Irk = cipherIrk;
+        config.Credentials.Password = cipherPw;
+
+        ConfigDocument.Save(path, config);
+
+        var root = JsonNode.Parse(File.ReadAllText(path))!["AutoUnlock"]!;
+        Assert.Equal(cipherIrk, root["Device"]!["Irk"]!.GetValue<string>());
+        Assert.Equal(cipherPw, root["Credentials"]!["Password"]!.GetValue<string>());
+
+        var reloaded = ConfigDocument.Load(path);
+        Assert.Equal(cipherIrk, reloaded.Device.Irk);
+        Assert.Equal(cipherPw, reloaded.Credentials.Password);
     }
 
     [Fact]

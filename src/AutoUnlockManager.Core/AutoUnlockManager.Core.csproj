@@ -6,4 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- 敏感值加密：与服务端共享单一实现（DPAPI 机器范围，dpapi:v1: 格式，见 SecretProtector） -->
+    <Compile Include="..\AutoUnlockService\Config\SecretProtector.cs" Link="Config\SecretProtector.cs" />
+  </ItemGroup>
+
 </Project>

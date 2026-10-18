@@ -1,3 +1,5 @@
+using AutoUnlockService.Config;
+
 namespace AutoUnlockManager.Core.Config;
 
 /// <summary>
@@ -27,7 +29,7 @@ public static class ConfigDiff
         if (!string.Equals(oldIrk, newIrk, StringComparison.Ordinal))
         {
             changes.Add(new ConfigChange(ConfigFields.DeviceIrk, GetDisplayName(ConfigFields.DeviceIrk),
-                FormatKey(oldIrk), FormatKey(newIrk), IsSensitive: false));
+                FormatKeyOrProtected(oldIrk), FormatKeyOrProtected(newIrk), IsSensitive: false));
         }
 
         if (from.Device.IrkByteOrder != to.Device.IrkByteOrder)
@@ -143,6 +145,10 @@ public static class ConfigDiff
                 ConfigInput.FormatCount(from), ConfigInput.FormatCount(to), IsSensitive: false));
         }
     }
+
+    /// <summary>密文不展开显示（「（已加密）」），明文按敏感键截断。</summary>
+    private static string FormatKeyOrProtected(string value)
+        => SecretProtector.IsProtected(value) ? "（已加密）" : FormatKey(value);
 
     /// <summary>敏感键截断显示：前 8…后 4（过短则原样）。</summary>
     private static string FormatKey(string? value)

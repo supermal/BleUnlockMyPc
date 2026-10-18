@@ -73,6 +73,11 @@
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                            TextWrapping="Wrap" />
+                                <TextBlock Text="{x:Bind ViewModel.IrkHint, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasIrkHint, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
                                 <TextBlock Text="32 位十六进制；可含空格、冒号、连字符或 0x 前缀（保存前自动归一化）。"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -173,7 +178,12 @@
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                            TextWrapping="Wrap" />
-                                <TextBlock Text="用于登录 Windows 会话；仅写入配置文件，不会出现在日志中。"
+                                <TextBlock Text="{x:Bind ViewModel.PasswordHint, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasPasswordHint, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="用于登录 Windows 会话；保存时以本机加密方式写入配置文件，不会出现在日志中。"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap" />

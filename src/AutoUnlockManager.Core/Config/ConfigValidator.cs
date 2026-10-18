@@ -1,4 +1,5 @@
 using System.Globalization;
+using AutoUnlockService.Config;
 
 namespace AutoUnlockManager.Core.Config;
 
@@ -86,7 +87,9 @@ public static class ConfigValidator
     {
         var errors = new List<ConfigError>();
 
-        if (NormalizeIrk(config.Device.Irk) is null)
+        // 已加密值（dpapi:v1:）在管理端不显示也不校验其明文：服务端解密后再校验
+        // （服务端 Validate 永远运行在明文上，故此处是管理端特有的跳过分支，不参与镜像）
+        if (NormalizeIrk(config.Device.Irk) is null && !SecretProtector.IsProtected(config.Device.Irk))
         {
             errors.Add(new ConfigError(ConfigFields.DeviceIrk, $"{ConfigFields.DeviceIrk} 必须是 32 个十六进制字符"));
         }
