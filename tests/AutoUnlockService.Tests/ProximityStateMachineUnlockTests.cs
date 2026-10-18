@@ -29,9 +29,11 @@ public class ProximityStateMachineUnlockTests
     }
 
     // Lleva la maquina hasta LockedArmed: el usuario se fue de verdad
+    // (la senal primero se debilita por debajo del umbral; despues desaparece)
     private static void Arm(ProximityStateMachine sm, FakeTimeProvider time, RssiHistory history)
     {
-        history.Add(-50, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
         Assert.Equal(ProximityState.LockedArmed, sm.State);
@@ -65,7 +67,8 @@ public class ProximityStateMachineUnlockTests
     public void Tras_detectar_la_salida_queda_armado()
     {
         var (sm, time, history) = Build();
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());       // 信号先变弱再消失：真离开的形状
         time.Advance(TimeSpan.FromSeconds(30));   // silencio: la salida se confirma sola
 
         var change = sm.Evaluate(history);
@@ -281,9 +284,10 @@ public class ProximityStateMachineUnlockTests
     public void Tras_irse_y_volver_el_ciclo_completo_envia_credenciales()
     {
         var (sm, time, history) = Build();
-        Fill(history, time, -30, 5);
         time.Advance(TimeSpan.FromSeconds(1));
-        Assert.Null(sm.Evaluate(history));                 // sigue sentado
+        history.Add(-85, time.GetUtcNow());                // 信号已经在变弱
+        time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Null(sm.Evaluate(history));                 // 还差一个：宽限内不注入
         time.Advance(TimeSpan.FromSeconds(30));            // se va (silencio)
         Assert.Equal(ProximityState.LockedArmed, sm.Evaluate(history)?.To);
         Approach(history, time);                           // vuelve
@@ -472,8 +476,10 @@ public class ProximityStateMachineUnlockTests
     public void Arrancando_bloqueado_sin_senal_pasada_la_gracia_si_arma()
     {
         var (sm, time, history) = Build();
-        time.Advance(TimeSpan.FromSeconds(16));
+        time.Advance(TimeSpan.FromSeconds(16));   // la gracia son 15 s: ya paso, pero aun no hay 60 s sin senal
+        Assert.Null(sm.Evaluate(history));
 
+        time.Advance(TimeSpan.FromSeconds(45));   // 61 s sin ninguna lectura：兜底 → LockedArmed
         Assert.Equal(ProximityState.LockedArmed, sm.Evaluate(history)?.To);
     }
 
@@ -506,7 +512,8 @@ public class ProximityStateMachineUnlockTests
         var time = new FakeTimeProvider(T0);
         var history = new RssiHistory(TimeSpan.FromSeconds(120), time);
         var sm = new ProximityStateMachine(time, new ProximityOptions(), new NotificationOptions(), false);
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());        // 信号先变弱，静默才有离开证据
         time.Advance(TimeSpan.FromSeconds(30));
         Assert.Equal(ProximityState.PendingLock, sm.Evaluate(history)?.To);
 

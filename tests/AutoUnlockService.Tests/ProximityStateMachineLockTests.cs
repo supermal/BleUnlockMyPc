@@ -5,9 +5,9 @@ using Xunit;
 
 namespace AutoUnlockService.Tests;
 
-// 判定改版（2026-10-18，二次修订）：批次全数达标（每条读数都需达标，不取平均）。
-// 触发读数不计入；锁定侧的静默（连续无读数超过 3 s 宽限）每秒注入一个极低值并
-// 计入当前批次，静默本身即触发
+// 判定改版（2026-10-18，三次修订）：批次全数达标（每条读数都需达标，不取平均）。
+// 触发读数不计入；锁定侧的静默只有「信号先变弱」（最后一条读数低于阈值）或
+// 「完全无读数 60 s 兜底」时才注入极低值并计入当前批次
 public class ProximityStateMachineLockTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 13, 12, 0, 0, TimeSpan.Zero);
@@ -63,7 +63,8 @@ public class ProximityStateMachineLockTests
     public void El_silencio_llena_el_lote_y_pide_confirmacion()
     {
         var (sm, time, history) = Build();
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());        // 信号先变弱：静默这时才是离开证据
         time.Advance(TimeSpan.FromSeconds(30));    // pasada la gracia: 27 s de silencio
 
         var change = sm.Evaluate(history);
@@ -199,7 +200,8 @@ public class ProximityStateMachineLockTests
     public void Cancela_el_aviso_si_la_senal_vuelve()
     {
         var (sm, time, history) = Build();
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
         Assert.Equal(ProximityState.PendingLock, sm.State);
@@ -218,7 +220,8 @@ public class ProximityStateMachineLockTests
     public void Tres_lecturas_fuertes_no_cancelan_el_aviso_si_falta_una()
     {
         var (sm, time, history) = Build();
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
         Assert.Equal(ProximityState.PendingLock, sm.State);
@@ -234,7 +237,8 @@ public class ProximityStateMachineLockTests
     public void Tras_el_aviso_el_silencio_confirma_el_bloqueo()
     {
         var (sm, time, history) = Build();
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
 
@@ -252,7 +256,8 @@ public class ProximityStateMachineLockTests
     public void Las_lecturas_en_zona_muerta_mantienen_el_aviso_y_no_bloquean()
     {
         var (sm, time, history) = Build();
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
         Assert.Equal(ProximityState.PendingLock, sm.State);
@@ -271,7 +276,8 @@ public class ProximityStateMachineLockTests
     public void Respuesta_de_rechazo_abre_un_silencio_de_sesenta_segundos()
     {
         var (sm, time, history) = Build();
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
 
@@ -289,7 +295,8 @@ public class ProximityStateMachineLockTests
     public void Respuesta_de_aplazamiento_silencia_cinco_minutos()
     {
         var (sm, time, history) = Build();
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
 
@@ -336,7 +343,8 @@ public class ProximityStateMachineLockTests
     public void Un_bloqueo_externo_cancela_el_aviso_pendiente()
     {
         var (sm, time, history) = Build();
-        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
 
@@ -381,7 +389,11 @@ public class ProximityStateMachineLockTests
         Assert.Null(sm.Evaluate(history));         // no bloquea nada mas abrir la tapa
         Assert.Equal(ProximityState.Unlocked, sm.State);
 
-        time.Advance(TimeSpan.FromSeconds(16));    // 16 s de silencio tras la gracia reabierta
+        time.Advance(TimeSpan.FromSeconds(16));    // 16 s de silencio：超过宽限，但不到 60 s 兜底
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.Unlocked, sm.State);
+
+        time.Advance(TimeSpan.FromSeconds(45));    // 61 s sin ninguna lectura：兜底 → PendingLock
         Assert.Equal(ProximityState.PendingLock, sm.Evaluate(history)?.To);
     }
 
@@ -389,7 +401,8 @@ public class ProximityStateMachineLockTests
     private static (ProximityStateMachine Sm, FakeTimeProvider Time, RssiHistory History) BuildPending()
     {
         var b = Build();
-        b.History.Add(-50, T0);
+        b.Time.Advance(TimeSpan.FromSeconds(1));
+        b.History.Add(-85, b.Time.GetUtcNow());
         b.Time.Advance(TimeSpan.FromSeconds(30));
         b.Sm.Evaluate(b.History);
         Assert.Equal(ProximityState.PendingLock, b.Sm.State);
@@ -439,5 +452,89 @@ public class ProximityStateMachineLockTests
 
         Assert.Equal(ProximityState.Unlocked, change?.To);
         Assert.Equal(ProximityAction.CancelLockPrompt, change!.Action);
+    }
+
+    // —— 三次修订（2026-10-18）：静默门槛与 60 s 兜底 ——
+
+    [Fact]
+    public void Un_hueco_con_senal_fuerte_no_es_evidencia_de_salida()
+    {
+        // 回归：设备在身旁省电打盹（10~30 s 停播）不再弹窗。
+        // 停播前信号还强时，静默不是离开证据（10/18 实测误弹的根源）
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-55, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(50));    // 远超旧宽限，但不足兜底的 60 s
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.Unlocked, sm.State);
+    }
+
+    [Fact]
+    public void Varios_huecos_cortos_seguidos_no_acumulan_para_el_disparo()
+    {
+        // 打盹周期：停播 20 s 就醒来一拍；每一拍都重置兜底计时，永远凑不满 60 s
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-55, time.GetUtcNow());
+
+        for (var i = 0; i < 5; i++)
+        {
+            time.Advance(TimeSpan.FromSeconds(20));
+            Assert.Null(sm.Evaluate(history));
+            history.Add(-55, time.GetUtcNow());
+        }
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.Unlocked, sm.State);
+    }
+
+    [Fact]
+    public void El_silencio_de_un_minuto_completo_rellena_aunque_la_senal_fuera_fuerte()
+    {
+        // 兜底：设备关机/被拿走时不会先变弱；完全无读数 60 s 后照样判离开
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-55, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(61));
+
+        var change = sm.Evaluate(history);
+
+        Assert.Equal(ProximityState.PendingLock, change?.To);
+        Assert.Contains("静默", change!.Reason);
+    }
+
+    [Fact]
+    public void Tras_una_lectura_debil_el_aviso_llega_en_ocho_segundos()
+    {
+        // 真离开的节奏不变：信号先变弱（最后一条低于阈值），停播后 3 s 宽限 + 5 个注入
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(20));
+        history.Add(-85, time.GetUtcNow());        // 信号先变弱
+
+        time.Advance(TimeSpan.FromSeconds(7));     // 7 s：4 个注入，还差一个
+        Assert.Null(sm.Evaluate(history));
+
+        time.Advance(TimeSpan.FromSeconds(1));     // 8 s：凑满 5 个 → 弹窗
+        var change = sm.Evaluate(history);
+        Assert.Equal(ProximityState.PendingLock, change?.To);
+        Assert.Contains("静默", change!.Reason);
+    }
+
+    [Fact]
+    public void El_aviso_por_silencio_largo_tambien_confirma_el_bloqueo()
+    {
+        // 兜底弹窗后的确认节奏一致：弹窗后 3 s 宽限 + 10 个注入 → 锁屏
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-55, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(61));
+        Assert.Equal(ProximityState.PendingLock, sm.Evaluate(history)?.To);
+
+        time.Advance(TimeSpan.FromSeconds(13));
+        var change = sm.Evaluate(history);
+
+        Assert.Equal(ProximityState.LockedWaitingDeparture, change?.To);
+        Assert.Equal(ProximityAction.LockScreen, change!.Action);
     }
 }

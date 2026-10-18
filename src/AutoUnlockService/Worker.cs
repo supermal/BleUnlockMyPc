@@ -120,10 +120,16 @@ public sealed class Worker(
     private void OnSample(AdvertisementSample sample)
     {
         if (!matcher.IsTarget(sample)) return;
+        // 哨兵值不是测量结果：放进来会凭空凑出「信号变弱」（实测曾疑似造成误弹窗），
+        // 也不该出现在遥测曲线里
+        if (!HasUsableRssi(sample.Rssi)) return;
         _history.Add(sample.Rssi, sample.Timestamp);
         telemetry.OnSample(sample.Timestamp.ToUnixTimeMilliseconds(), sample.Rssi);
         Volatile.Write(ref _lastMatchTicks, time.GetUtcNow().UtcTicks);
     }
+
+    // BLE 规范把 -127/+127 一带预留为「RSSI 不可用」：不能当作读数
+    internal static bool HasUsableRssi(short rssi) => rssi is > -127 and < 127;
 
     private void OnStatus(string status)
     {

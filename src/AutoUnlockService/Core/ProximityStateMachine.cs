@@ -38,15 +38,19 @@ public sealed record AuthResult(bool Success, uint NtStatus);
 // Toda la politica de bloqueo y desbloqueo vive aqui. No toca Windows ni la red:
 // devuelve la accion que el orquestador debe ejecutar.
 //
-// 判定改版（2026-10-18，二次修订）：批次全数达标（触发读数不计入，不取平均）。
-//   - 触发：低于锁定阈值的读数，或静默（连续无读数超过宽限）；
+// 判定改版（2026-10-18，三次修订）：批次全数达标（触发读数不计入，不取平均）。
+//   - 触发：低于锁定阈值的读数；
 //   - 触发后收满 N 个读数，且每一个都达到阈值才算成立；任一条不达标整批作废，等下一个触发重来；
-//   - 静默每 1 秒注入一个极低值并计入当前批次（只在锁定侧：没有信号永远不是解锁证据）；
+//   - 静默注入只在锁定侧，且只在两种情况下启用：停播前最后一条读数已低于阈值（信号先变弱
+//     再消失 = 真离开的形状），或完全无读数超过 60 s 兜底（设备关机/被拿走/跑出范围）。
+//     信号还强时的停播只是设备省电打盹，不算离开——这是 10/18 实测「坐在电脑前也弹窗」的根源；
 //   - 弹窗不再自动超时：锁定只由「弹窗后新收的一批」或用户点击决定。
 public sealed class ProximityStateMachine
 {
     // 静默 = 离开证据。宽限内不注入：BLE 偶发丢包不算离开
     internal static readonly TimeSpan SilenceGrace = TimeSpan.FromSeconds(3);
+    // 超长兜底：完全无读数这么久，不管之前信号多强，都按离开处理
+    internal static readonly TimeSpan LongSilenceFallback = TimeSpan.FromSeconds(60);
     internal const double SilentValueDbm = -127;
 
     private readonly TimeProvider _time;
@@ -63,6 +67,8 @@ public sealed class ProximityStateMachine
     private DateTimeOffset _lockWatermark;  // 已消费到的读数时间（批次水位线）
     private DateTimeOffset _lockSilenceFrom; // 静默计时基准：最近一条读数或进入当前状态的时刻
     private int _lockSilentInjected;        // 本轮静默已注入的个数（出现新读数时清零）
+    private short? _lastRealRssi;           // 最后一条真实读数（静默补点门槛的依据）
+    private DateTimeOffset _lastRealAt;     // 上一条真实读数的时间（超长兜底计时；状态转换不重置）
 
     // —— 解锁侧批次（PendingLock 的信号恢复判定 / LockedArmed） ——
     private bool _unlockBatchActive;
@@ -81,6 +87,7 @@ public sealed class ProximityStateMachine
         Notification = notification;
         _screenLocked = screenLockedAtStartup;
         _graceUntil = time.GetUtcNow() + TimeSpan.FromSeconds(proximity.StartupGraceSeconds);
+        _lastRealAt = time.GetUtcNow();
         State = screenLockedAtStartup
             ? ProximityState.LockedWaitingDeparture
             : ProximityState.Unlocked;
@@ -305,6 +312,10 @@ public sealed class ProximityStateMachine
         var proximity = Proximity;
         _graceUntil = _time.GetUtcNow() + TimeSpan.FromSeconds(proximity.StartupGraceSeconds);
 
+        // 睡眠期间的时间不算「静默」：历史已清空，信号知识归零，旧读数不能当作补点依据
+        _lastRealRssi = null;
+        _lastRealAt = _time.GetUtcNow();
+
         // PendingLock no consulta la gracia: el aviso que el usuario nunca vio esta caducado
         // y ya no tiene sentido mantenerlo, asi que se retira y se reevalua desde cero
         if (State == ProximityState.PendingLock)
@@ -333,6 +344,8 @@ public sealed class ProximityStateMachine
             _lockWatermark = at;
             _lockSilenceFrom = at;      // 有读数：静默计时重新开始
             _lockSilentInjected = 0;
+            _lastRealRssi = rssi;       // 静默补点门槛与兜底都依据「最后一条真实读数」
+            _lastRealAt = at;
 
             if (!_lockBatchActive)
             {
@@ -355,9 +368,15 @@ public sealed class ProximityStateMachine
             }
         }
 
-        // 静默：没有读数，但同样是「离开」的证据
+        // 静默：没有读数，但不等于「离开」。设备（手表/手机）会周期性停播省电：
+        // 信号还强时的静默不是证据，注入会把打盹误判成离开——10/18 实测误弹的根源。
+        // 只有两种情况补点：信号先变弱（最后一条读数已低于阈值），或完全无读数达到兜底时长。
         var silence = now - _lockSilenceFrom;
         if (silence <= SilenceGrace) return false;
+
+        var signalFaded = _lastRealRssi is { } last && last < threshold;
+        var longSilence = now - _lastRealAt >= LongSilenceFallback;
+        if (!signalFaded && !longSilence) return false;
 
         var due = (int)Math.Floor((silence - SilenceGrace).TotalSeconds);
         while (_lockSilentInjected < due)
