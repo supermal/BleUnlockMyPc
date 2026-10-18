@@ -84,7 +84,7 @@ internal static class Program
         switch (command)
         {
             case HelperCommand.Prompt p:
-                prompt.Show(p.Id, p.TimeoutSeconds, p.SnoozeMinutes);
+                prompt.Show(p.Id, p.SnoozeMinutes);
                 break;
 
             case HelperCommand.Cancel c:

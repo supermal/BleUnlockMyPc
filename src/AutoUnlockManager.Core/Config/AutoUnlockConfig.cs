@@ -28,17 +28,16 @@ public sealed class AutoUnlockConfig
         Proximity = new ProximityConfig
         {
             LockThresholdDbm = Proximity.LockThresholdDbm,
-            LockWindowSeconds = Proximity.LockWindowSeconds,
             UnlockThresholdDbm = Proximity.UnlockThresholdDbm,
-            UnlockWindowSeconds = Proximity.UnlockWindowSeconds,
-            MinSamples = Proximity.MinSamples,
+            UnlockSampleCount = Proximity.UnlockSampleCount,
+            LockPromptSampleCount = Proximity.LockPromptSampleCount,
+            LockConfirmSampleCount = Proximity.LockConfirmSampleCount,
             StartupGraceSeconds = Proximity.StartupGraceSeconds,
             UnlockPendingTimeoutSeconds = Proximity.UnlockPendingTimeoutSeconds,
         },
         Notification = new NotificationConfig
         {
             Mode = Notification.Mode,
-            PromptTimeoutSeconds = Notification.PromptTimeoutSeconds,
             RejectSnoozeSeconds = Notification.RejectSnoozeSeconds,
             SnoozeMinutes = Notification.SnoozeMinutes,
         },
@@ -76,10 +75,13 @@ public sealed class CredentialsConfig
 public sealed class ProximityConfig
 {
     public double LockThresholdDbm { get; set; } = -80;
-    public double LockWindowSeconds { get; set; } = 10;
     public double UnlockThresholdDbm { get; set; } = -45;
-    public double UnlockWindowSeconds { get; set; } = 5;
-    public int MinSamples { get; set; } = 3;
+
+    // 批次个数（镜像服务端判定：触发读数不计入，收满 N 个取平均）
+    public int UnlockSampleCount { get; set; } = 3;
+    public int LockPromptSampleCount { get; set; } = 5;
+    public int LockConfirmSampleCount { get; set; } = 10;
+
     public double StartupGraceSeconds { get; set; } = 15;
     public double UnlockPendingTimeoutSeconds { get; set; } = 20;
 }
@@ -87,7 +89,6 @@ public sealed class ProximityConfig
 public sealed class NotificationConfig
 {
     public NotifierMode Mode { get; set; } = NotifierMode.Toast;
-    public double PromptTimeoutSeconds { get; set; } = 15;
     public double RejectSnoozeSeconds { get; set; } = 60;
     public double SnoozeMinutes { get; set; } = 5;
 }

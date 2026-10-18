@@ -6,6 +6,8 @@ using Xunit;
 
 namespace AutoUnlockService.Tests;
 
+// 判定改版（2026-10-18）：解锁 = 第一条 > 阈值触发（不计入）+ 再收 3 条平均 > 阈值。
+// 批次内间隙超过静默宽限（3 s）时旧值作废，重新触发
 public class ProximityStateMachineUnlockTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 13, 12, 0, 0, TimeSpan.Zero);
@@ -35,6 +37,13 @@ public class ProximityStateMachineUnlockTests
         Assert.Equal(ProximityState.LockedArmed, sm.State);
     }
 
+    // El usuario vuelve: disparador -40 + 3 confirmaciones -40 (todo > -45)
+    private static void Approach(RssiHistory h, FakeTimeProvider time)
+    {
+        time.Advance(TimeSpan.FromSeconds(5));
+        Fill(h, time, -40, 5);
+    }
+
     [Fact]
     public void Pegado_al_ordenador_tras_bloquear_no_desbloquea_nunca()
     {
@@ -57,7 +66,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         history.Add(-50, T0);
-        time.Advance(TimeSpan.FromSeconds(30));   // ventana sin senal
+        time.Advance(TimeSpan.FromSeconds(30));   // silencio: la salida se confirma sola
 
         var change = sm.Evaluate(history);
 
@@ -71,8 +80,7 @@ public class ProximityStateMachineUnlockTests
         var (sm, time, history) = Build();
         Arm(sm, time, history);
 
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
 
         var change = sm.Evaluate(history);
         Assert.Equal(ProximityState.UnlockPending, change?.To);
@@ -89,8 +97,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
 
         var change = sm.OnAuthResult(new AuthResult(true, 0));
@@ -103,8 +110,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
 
         var change = sm.OnSessionEvent(SessionEvent.Unlock);
@@ -117,8 +123,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
 
         var change = sm.OnAuthResult(new AuthResult(false, NtStatusPolicy.StatusLogonFailure));
@@ -132,8 +137,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
 
         var change = sm.OnAuthResult(new AuthResult(false, 0xC0000022));
@@ -146,8 +150,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
 
         // ReportResult puede no llegar nunca si LogonUI se destruye
@@ -164,8 +167,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
         sm.OnAuthResult(new AuthResult(false, NtStatusPolicy.StatusLogonFailure));
 
@@ -182,8 +184,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
         sm.OnAuthResult(new AuthResult(false, NtStatusPolicy.StatusLogonFailure));
 
@@ -199,8 +200,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
         sm.OnAuthResult(new AuthResult(false, NtStatusPolicy.StatusLogonFailure));
 
@@ -215,8 +215,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
         sm.OnAuthResult(new AuthResult(false, NtStatusPolicy.StatusLogonFailure));
 
@@ -231,8 +230,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
         sm.OnAuthResult(new AuthResult(false, NtStatusPolicy.StatusLogonFailure));
 
@@ -257,7 +255,7 @@ public class ProximityStateMachineUnlockTests
         var (sm, time, history) = Build();
         Arm(sm, time, history);
 
-        time.Advance(TimeSpan.FromSeconds(1));
+        time.Advance(TimeSpan.FromSeconds(5));
         Fill(history, time, -60, 5);   // entre -80 y -45: zona muerta
 
         Assert.Null(sm.Evaluate(history));
@@ -286,11 +284,68 @@ public class ProximityStateMachineUnlockTests
         Fill(history, time, -30, 5);
         time.Advance(TimeSpan.FromSeconds(1));
         Assert.Null(sm.Evaluate(history));                 // sigue sentado
-        time.Advance(TimeSpan.FromSeconds(30));            // se va
+        time.Advance(TimeSpan.FromSeconds(30));            // se va (silencio)
         Assert.Equal(ProximityState.LockedArmed, sm.Evaluate(history)?.To);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -35, 5);                       // vuelve
+        Approach(history, time);                           // vuelve
         Assert.Equal(ProximityAction.SendCredentials, sm.Evaluate(history)?.Action);
+    }
+
+    [Fact]
+    public void Un_hueco_en_el_lote_de_aproximacion_invalida_lo_acumulado()
+    {
+        var (sm, time, history) = Build();
+        Arm(sm, time, history);
+
+        // disparador + 2 confirmaciones, luego 10 s sin lecturas
+        time.Advance(TimeSpan.FromSeconds(5));
+        history.Add(-40, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-40, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-40, time.GetUtcNow());        // 2/3
+        Assert.Null(sm.Evaluate(history));
+
+        time.Advance(TimeSpan.FromSeconds(10));
+        history.Add(-40, time.GetUtcNow());        // hueco > 3 s: el lote viejo se tira
+        Assert.Null(sm.Evaluate(history));         // esta lectura solo dispara
+
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-40, time.GetUtcNow());        // 1/3
+        Assert.Null(sm.Evaluate(history));
+
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-40, time.GetUtcNow());        // 2/3
+        Assert.Null(sm.Evaluate(history));
+
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-40, time.GetUtcNow());        // 3/3
+        Assert.Equal(ProximityAction.SendCredentials, sm.Evaluate(history)?.Action);
+    }
+
+    [Fact]
+    public void Un_lote_de_aproximacion_que_no_confirma_se_descarta()
+    {
+        var (sm, time, history) = Build();
+        Arm(sm, time, history);
+
+        time.Advance(TimeSpan.FromSeconds(5));
+        history.Add(-40, time.GetUtcNow());        // disparador
+        for (var i = 0; i < 3; i++)
+        {
+            time.Advance(TimeSpan.FromSeconds(1));
+            history.Add(-50, time.GetUtcNow());    // -50 ≤ umbral: el promedio no alcanza
+        }
+        Assert.Null(sm.Evaluate(history));
+
+        // 重新触发：-40 作触发 + 3 个 -40 才确认
+        for (var i = 0; i < 4; i++)
+        {
+            time.Advance(TimeSpan.FromSeconds(1));
+            history.Add(-40, time.GetUtcNow());
+            var change = sm.Evaluate(history);
+            if (i < 3) Assert.Null(change);
+            else Assert.Equal(ProximityAction.SendCredentials, change?.Action);
+        }
     }
 
     [Theory]
@@ -302,8 +357,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
 
         Assert.Equal(ProximityState.Suspended, sm.OnAuthResult(new AuthResult(false, status))?.To);
@@ -323,8 +377,7 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
 
         time.Advance(TimeSpan.FromSeconds(19));
@@ -337,14 +390,13 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
 
         time.Advance(TimeSpan.FromSeconds(21));
         Assert.Equal(ProximityState.LockedArmed, sm.Evaluate(history)?.To);
 
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         Assert.Equal(ProximityAction.SendCredentials, sm.Evaluate(history)?.Action);
     }
 
@@ -374,13 +426,12 @@ public class ProximityStateMachineUnlockTests
     {
         var (sm, time, history) = Build();
         Arm(sm, time, history);
-        time.Advance(TimeSpan.FromSeconds(1));
-        Fill(history, time, -40, 5);
+        Approach(history, time);
         sm.Evaluate(history);
         sm.OnAuthResult(new AuthResult(false, NtStatusPolicy.StatusLogonFailure));
         sm.OnCredentialsChanged(preValidationPassed: true);
 
-        time.Advance(TimeSpan.FromSeconds(1));
+        time.Advance(TimeSpan.FromSeconds(5));
         Fill(history, time, -30, 5);
         Assert.Null(sm.Evaluate(history));
         Assert.Equal(ProximityState.LockedWaitingDeparture, sm.State);

@@ -54,6 +54,22 @@ public sealed class RssiHistory(TimeSpan retention, TimeProvider time)
         }
     }
 
+    // 自水印之后到达的样本，按时间升序（批次判定按到达顺序消费）。
+    // 时间戳可能乱序到达（WinRT 不保证顺序），所以这里排序后再返回
+    public IReadOnlyList<(DateTimeOffset Time, short Rssi)> Since(DateTimeOffset after)
+    {
+        lock (_lock)
+        {
+            var result = new List<(DateTimeOffset Time, short Rssi)>();
+            foreach (var p in _points)
+                if (p.Time > after)
+                    result.Add(p);
+
+            result.Sort(static (a, b) => a.Time.CompareTo(b.Time));
+            return result;
+        }
+    }
+
     // Tras despertar de suspension el historico ya no es representativo, pero el
     // dispositivo si existio: esa distincion la necesita la maquina de estados
     public void Clear()

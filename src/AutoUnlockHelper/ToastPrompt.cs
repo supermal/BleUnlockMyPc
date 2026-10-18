@@ -12,22 +12,19 @@ namespace AutoUnlockHelper;
 // Inicio, que Windows exige a las aplicaciones sin empaquetar.
 //
 // Garantia central: por cada Prompt se emite como maximo UNA respuesta, sea cual sea
-// el orden en que lleguen boton, descarte y plazo (todos pasan por Answer)
+// el orden en que lleguen boton y descarte (todos pasan por Answer).
+// 判定改版：没有倒计时、没有自动响应；Toast 常驻直到用户点击或服务撤回
 internal sealed class ToastPrompt : IDisposable
 {
     private readonly ToastNotifierCompat _notifier = ToastNotificationManagerCompat.CreateToastNotifier();
-    private readonly TimeProvider _time;
     private readonly object _lock = new();
     private ToastNotification? _current;
-    private ITimer? _timer;
     private int _currentId;
     private bool _answered = true;   // sin Toast activo no hay nada que responder
 
-    public ToastPrompt(TimeProvider? time = null) => _time = time ?? TimeProvider.System;
-
     public event Action<int, PromptOutcome>? Responded;
 
-    public void Show(int id, double timeoutSeconds, double snoozeMinutes)
+    public void Show(int id, double snoozeMinutes)
     {
         // El servicio ya paso al Prompt nuevo: el anterior se retira (sin responderlo) antes de
         // construir nada, para que un fallo al montar el nuevo no deje el viejo activo
@@ -39,15 +36,15 @@ internal sealed class ToastPrompt : IDisposable
               <visual>
                 <binding template="ToastGeneric">
                   <text>即将锁定屏幕</text>
-                  <text>未检测到你的设备，{0:0} 秒后将自动锁屏。</text>
+                  <text>未检测到你的设备。若持续未检测到，屏幕将自动锁定。</text>
                 </binding>
               </visual>
               <actions>
                 <action content="拒绝" arguments="reject" activationType="foreground"/>
-                <action content="{1:0} 分钟内不锁定" arguments="snooze" activationType="foreground"/>
+                <action content="{0:0} 分钟内不锁定" arguments="snooze" activationType="foreground"/>
               </actions>
             </toast>
-            """, timeoutSeconds, snoozeMinutes));
+            """, snoozeMinutes));
 
         var toast = new ToastNotification(xml) { Tag = "autounlock-lock-prompt" };
         toast.Activated += OnActivated;
@@ -60,11 +57,6 @@ internal sealed class ToastPrompt : IDisposable
             _current = toast;
             _currentId = id;
             _answered = false;
-            // El ayudante vigila tambien el plazo; el servicio tiene ademas el suyo.
-            // El temporizador nace desarmado: se arma despues de mostrar el Toast para que,
-            // con plazo 0, no pueda disparar antes de que el Toast exista
-            _timer = _time.CreateTimer(_ => Answer(toast, PromptOutcome.Timeout),
-                null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
 
         try
@@ -79,13 +71,6 @@ internal sealed class ToastPrompt : IDisposable
                 if (ReferenceEquals(_current, toast)) RetractLocked();
             }
             throw;
-        }
-
-        lock (_lock)
-        {
-            // Puede haberse respondido o sustituido mientras se mostraba
-            if (ReferenceEquals(_current, toast))
-                _timer?.Change(TimeSpan.FromSeconds(timeoutSeconds), Timeout.InfiniteTimeSpan);
         }
     }
 
@@ -135,10 +120,10 @@ internal sealed class ToastPrompt : IDisposable
 
     private void OnDismissed(ToastNotification sender, ToastDismissedEventArgs args)
     {
-        // ApplicationHidden es nuestra propia retirada: no es respuesta del usuario
+        // ApplicationHidden es nuestra propia retirada: no es respuesta del usuario.
+        // Cualquier otro motivo (la X del usuario o una caducidad del propio Windows)
+        // cuenta como descarte explicito: el servicio lo trata como "bloquear ya"
         if (args.Reason == ToastDismissalReason.ApplicationHidden) return;
-        // TimedOut aqui es el plazo del propio Windows para el Toast, no el nuestro:
-        // para el servicio equivale a que el usuario lo descarto
         Answer(sender, PromptOutcome.Dismissed);
     }
 
@@ -159,8 +144,6 @@ internal sealed class ToastPrompt : IDisposable
 
     private void RetractLocked()
     {
-        _timer?.Dispose();
-        _timer = null;
         _answered = true;
         if (_current is null) return;
 

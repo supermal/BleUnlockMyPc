@@ -22,16 +22,15 @@ public sealed class ConfigDocumentTests : IDisposable
             "Credentials": { "UserName": "user1", "Password": "pw1" },
             "Proximity": {
               "LockThresholdDbm": -80,
-              "LockWindowSeconds": 10,
               "UnlockThresholdDbm": -45,
-              "UnlockWindowSeconds": 5,
-              "MinSamples": 3,
+              "UnlockSampleCount": 3,
+              "LockPromptSampleCount": 5,
+              "LockConfirmSampleCount": 10,
               "StartupGraceSeconds": 15,
               "UnlockPendingTimeoutSeconds": 20
             },
             "Notification": {
               "Mode": "Toast",
-              "PromptTimeoutSeconds": 15,
               "RejectSnoozeSeconds": 60,
               "SnoozeMinutes": 5
             }
@@ -80,14 +79,13 @@ public sealed class ConfigDocumentTests : IDisposable
         Assert.Equal("aa-bb-cc-dd-ee-ff", config.Device.IdentityAddress);
         Assert.Equal("user1", config.Credentials.UserName);
         Assert.Equal(-80, config.Proximity.LockThresholdDbm);
-        Assert.Equal(10, config.Proximity.LockWindowSeconds);
         Assert.Equal(-45, config.Proximity.UnlockThresholdDbm);
-        Assert.Equal(5, config.Proximity.UnlockWindowSeconds);
-        Assert.Equal(3, config.Proximity.MinSamples);
+        Assert.Equal(3, config.Proximity.UnlockSampleCount);
+        Assert.Equal(5, config.Proximity.LockPromptSampleCount);
+        Assert.Equal(10, config.Proximity.LockConfirmSampleCount);
         Assert.Equal(15, config.Proximity.StartupGraceSeconds);
         Assert.Equal(20, config.Proximity.UnlockPendingTimeoutSeconds);
         Assert.Equal(NotifierMode.Toast, config.Notification.Mode);
-        Assert.Equal(15, config.Notification.PromptTimeoutSeconds);
         Assert.Equal(60, config.Notification.RejectSnoozeSeconds);
         Assert.Equal(5, config.Notification.SnoozeMinutes);
     }
@@ -126,7 +124,7 @@ public sealed class ConfigDocumentTests : IDisposable
               "AutoUnlock": {
                 "Device": { "Irk": "00112233445566778899aabbccddeeff" },
                 "Credentials": { "UserName": "u" },
-                "Proximity": { "LockWindowSeconds": "12.5", },
+                "Proximity": { "UnlockSampleCount": "4", },
                 "Notification": { "Mode": 1 }
               }
             }
@@ -134,7 +132,7 @@ public sealed class ConfigDocumentTests : IDisposable
 
         var config = ConfigDocument.Load(path);
 
-        Assert.Equal(12.5, config.Proximity.LockWindowSeconds);
+        Assert.Equal(4, config.Proximity.UnlockSampleCount);
         Assert.Equal(NotifierMode.Dialog, config.Notification.Mode); // 数字枚举容错（typeConverter 语义）
     }
 
@@ -158,7 +156,7 @@ public sealed class ConfigDocumentTests : IDisposable
         var path = WriteFile(SampleJson);
         var config = ConfigDocument.Load(path);
         config.Proximity.LockThresholdDbm = -75;
-        config.Proximity.MinSamples = 4;
+        config.Proximity.UnlockSampleCount = 4;
         config.Notification.Mode = NotifierMode.Dialog;
         config.Device.IdentityAddress = null;
 
@@ -172,8 +170,8 @@ public sealed class ConfigDocumentTests : IDisposable
         var proximity = root["AutoUnlock"]!["Proximity"]!;
         Assert.Equal(JsonValueKind.Number, proximity["LockThresholdDbm"]!.GetValueKind());
         Assert.Equal(-75, proximity["LockThresholdDbm"]!.GetValue<double>());
-        Assert.Equal(JsonValueKind.Number, proximity["MinSamples"]!.GetValueKind());
-        Assert.Equal(4, proximity["MinSamples"]!.GetValue<int>());
+        Assert.Equal(JsonValueKind.Number, proximity["UnlockSampleCount"]!.GetValueKind());
+        Assert.Equal(4, proximity["UnlockSampleCount"]!.GetValue<int>());
 
         var notification = root["AutoUnlock"]!["Notification"]!;
         Assert.Equal(JsonValueKind.String, notification["Mode"]!.GetValueKind());
@@ -223,6 +221,7 @@ public sealed class ConfigDocumentTests : IDisposable
             .Count();
         Assert.Equal(1, lockThresholdKeys);
         Assert.Equal(-70, proximity["lockthresholddbm"]!.GetValue<double>()); // 原位更新（保留原键）
+        Assert.Equal(10, proximity["LockWindowSeconds"]!.GetValue<double>()); // 旧键留在文件里，不被删除
     }
 
     [Fact]
@@ -249,13 +248,13 @@ public sealed class ConfigDocumentTests : IDisposable
         var path = WriteFile(SampleJson);
         var original = File.ReadAllText(path);
         var config = ConfigDocument.Load(path);
-        config.Proximity.LockWindowSeconds = 11;
+        config.Proximity.UnlockSampleCount = 11;
 
         ConfigDocument.Save(path, config);
 
         Assert.Equal(original, File.ReadAllText(path + ".bak"));
         Assert.False(File.Exists(path + ".tmp"));
-        Assert.Equal(11, ConfigDocument.Load(path).Proximity.LockWindowSeconds);
+        Assert.Equal(11, ConfigDocument.Load(path).Proximity.UnlockSampleCount);
     }
 
     [Fact]
@@ -263,16 +262,16 @@ public sealed class ConfigDocumentTests : IDisposable
     {
         var path = WriteFile(SampleJson);
         var first = ConfigDocument.Load(path);
-        first.Proximity.LockWindowSeconds = 11;
+        first.Proximity.UnlockSampleCount = 11;
         ConfigDocument.Save(path, first);
         var afterFirst = File.ReadAllText(path);
 
         var second = ConfigDocument.Load(path);
-        second.Proximity.LockWindowSeconds = 12;
+        second.Proximity.UnlockSampleCount = 12;
         ConfigDocument.Save(path, second);
 
         Assert.Equal(afterFirst, File.ReadAllText(path + ".bak"));
-        Assert.Equal(12, ConfigDocument.Load(path).Proximity.LockWindowSeconds);
+        Assert.Equal(12, ConfigDocument.Load(path).Proximity.UnlockSampleCount);
     }
 
     [Fact]
@@ -305,7 +304,7 @@ public sealed class ConfigDocumentTests : IDisposable
         var path = WriteFile(SampleJson);
         var original = File.ReadAllText(path);
         var config = ConfigDocument.Load(path);
-        config.Proximity.LockWindowSeconds = 11;
+        config.Proximity.UnlockSampleCount = 11;
 
         using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
@@ -334,7 +333,7 @@ public sealed class ConfigDocumentTests : IDisposable
         Assert.Equal("", config.Credentials.Password);
 
         ConfigDocument.Save(path, config); // 加载后保存路径不再遇 null（原 NRE 场景）
-        Assert.Equal(3, ConfigDocument.Load(path).Proximity.MinSamples); // 缺省字段以默认值写回
+        Assert.Equal(3, ConfigDocument.Load(path).Proximity.UnlockSampleCount); // 缺省字段以默认值写回
     }
 
     [Fact]
@@ -351,6 +350,6 @@ public sealed class ConfigDocumentTests : IDisposable
         Assert.Equal(NotifierMode.Toast, config.Notification.Mode);
 
         ConfigDocument.Save(path, config);
-        Assert.Equal(10, ConfigDocument.Load(path).Proximity.LockWindowSeconds);
+        Assert.Equal(10, ConfigDocument.Load(path).Proximity.LockConfirmSampleCount);
     }
 }

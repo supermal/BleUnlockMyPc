@@ -5,8 +5,9 @@ using AutoUnlockService.Session;
 namespace AutoUnlockService.Notifications;
 
 // Implementacion sin ayudante: WTSSendMessage esta pensado justo para esto,
-// un servicio que pregunta algo con plazo en la sesion del usuario.
-// No la afecta el modo "no molestar", pero el dialogo no se puede cerrar desde fuera
+// un servicio que pregunta algo en la sesion del usuario.
+// No la afecta el modo "no molestar", pero el dialogo no se puede cerrar desde fuera.
+// 判定改版：没有自动锁屏期限——对话框自身的期限只决定它何时消失，超时不再锁屏
 public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotifier
 {
     private const uint MbYesNo = 0x00000004;
@@ -17,6 +18,10 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
     private const uint IdNo = 7;
 
     // WTSSendMessage interpreta 0 como "esperar para siempre": nunca se debe enviar 0.
+    // El dialogo degradado no puede quedarse eternamente frente a la sesion: su propia
+    // vida util es el tope del protocolo (10 分钟)
+    private static readonly TimeSpan DialogLifetime = TimeSpan.FromSeconds(HelperProtocol.MaxTimeoutSeconds);
+
     // Se acota a [1, MaxTimeoutSeconds] y se redondea hacia arriba
     public static uint ClampTimeoutSeconds(TimeSpan timeout)
     {
@@ -25,21 +30,21 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
         return (uint)Math.Min(seconds, HelperProtocol.MaxTimeoutSeconds);
     }
 
-    public Task<PromptOutcome> PromptAsync(TimeSpan timeout, double snoozeMinutes, CancellationToken ct)
+    public Task<PromptOutcome> PromptAsync(double snoozeMinutes, CancellationToken ct)
     {
         var sessionId = WtsNative.GetActiveConsoleSessionId();
         if (sessionId == WtsNative.InvalidSession)
         {
-            log.LogWarning("没有活动的控制台会话，无法弹出提示，按超时处理");
+            log.LogWarning("没有活动的控制台会话，无法弹出提示");
             return Task.FromResult(PromptOutcome.Timeout);
         }
 
         const string title = "AutoUnlock";
         var message = string.Format(CultureInfo.InvariantCulture,
-            "未检测到你的设备，{0:0} 秒后将自动锁屏。\n\n" +
+            "未检测到你的设备。若持续未检测到，屏幕将自动锁定。\n\n" +
             "「是」= 本次不锁屏\n" +
-            "「否」= {1:0} 分钟内不锁屏",
-            ClampTimeoutSeconds(timeout), snoozeMinutes);
+            "「否」= {0:0} 分钟内不锁屏",
+            snoozeMinutes);
 
         return Task.Run(() =>
         {
@@ -48,14 +53,15 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
                 title, (uint)(title.Length * 2),
                 message, (uint)(message.Length * 2),
                 MbYesNo | MbIconExclamation | MbSystemModal,
-                ClampTimeoutSeconds(timeout),
+                ClampTimeoutSeconds(DialogLifetime),
                 out uint response,
                 bWait: true);
 
             if (!ok)
             {
-                // Sin dialogo el usuario no ha sido avisado: se bloqueara igualmente al vencer el plazo
-                log.LogError("WTSSendMessage 调用失败（错误码 {Error}），用户未收到任何提示，将按超时处理并直接锁屏",
+                // Sin dialogo el usuario no ha sido avisado; la nueva logica no bloquea por
+                // tiempo, asi que aqui solo se deja constancia
+                log.LogError("WTSSendMessage 调用失败（错误码 {Error}），用户未收到任何提示",
                     Marshal.GetLastWin32Error());
                 return PromptOutcome.Timeout;
             }
@@ -64,6 +70,7 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
             {
                 IdYes => PromptOutcome.Reject,
                 IdNo  => PromptOutcome.Snooze,
+                // El dialogo se acabo solo: no es una respuesta del usuario ni motivo de bloqueo
                 _     => PromptOutcome.Timeout
             };
         }, ct);

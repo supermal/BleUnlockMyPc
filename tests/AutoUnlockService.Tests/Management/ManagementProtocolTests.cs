@@ -21,7 +21,7 @@ public class ManagementProtocolTests
         Scan: new SnapshotScan(scanStatus, null),
         Helper: new SnapshotConnection(true),
         Cred: new SnapshotConnection(false),
-        Thr: new SnapshotThresholds(-65, -45, 10, 5, 3),
+        Thr: new SnapshotThresholds(-65, -45, 3, 5, 10),
         Avg: new SnapshotAverages(-57.3, -58.1, 6, 14),
         LastMatchMs: 420,
         Samples: [[T0.ToUnixTimeMilliseconds(), -61], [T0.AddMilliseconds(1250).ToUnixTimeMilliseconds(), -59]]);
@@ -77,7 +77,7 @@ public class ManagementProtocolTests
             root.GetProperty("helper").EnumerateObject().Select(p => p.Name));
         Assert.Equal(["connected"],
             root.GetProperty("cred").EnumerateObject().Select(p => p.Name));
-        Assert.Equal(["lockDbm", "unlockDbm", "lockWinSec", "unlockWinSec", "minSamples"],
+        Assert.Equal(["lockDbm", "unlockDbm", "unlockCount", "lockPromptCount", "lockConfirmCount"],
             root.GetProperty("thr").EnumerateObject().Select(p => p.Name));
         Assert.Equal(["w5", "w10", "n5", "n10"],
             root.GetProperty("avg").EnumerateObject().Select(p => p.Name));
@@ -100,9 +100,9 @@ public class ManagementProtocolTests
         Assert.False(root.GetProperty("cred").GetProperty("connected").GetBoolean());
         Assert.Equal(-65, root.GetProperty("thr").GetProperty("lockDbm").GetDouble());
         Assert.Equal(-45, root.GetProperty("thr").GetProperty("unlockDbm").GetDouble());
-        Assert.Equal(10, root.GetProperty("thr").GetProperty("lockWinSec").GetDouble());
-        Assert.Equal(5, root.GetProperty("thr").GetProperty("unlockWinSec").GetDouble());
-        Assert.Equal(3, root.GetProperty("thr").GetProperty("minSamples").GetInt32());
+        Assert.Equal(3, root.GetProperty("thr").GetProperty("unlockCount").GetInt32());
+        Assert.Equal(5, root.GetProperty("thr").GetProperty("lockPromptCount").GetInt32());
+        Assert.Equal(10, root.GetProperty("thr").GetProperty("lockConfirmCount").GetInt32());
         Assert.Equal(-57.3, root.GetProperty("avg").GetProperty("w5").GetDouble(), 6);
         Assert.Equal(-58.1, root.GetProperty("avg").GetProperty("w10").GetDouble(), 6);
         Assert.Equal(6, root.GetProperty("avg").GetProperty("n5").GetInt32());

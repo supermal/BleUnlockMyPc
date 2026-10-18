@@ -97,20 +97,54 @@ public class OptionsValidatorTests
 
     [Theory]
     [InlineData(0)]
-    [InlineData(-1)]
-    public void Validate_rechaza_ventanas_no_positivas(double seconds)
+    [InlineData(21)]
+    public void Validate_rechaza_UnlockSampleCount_fuera_de_rango(int count)
     {
         var o = Valid();
-        o.Proximity.LockWindowSeconds = seconds;
-        Assert.False(OptionsValidator.Validate(o).IsValid);
+        o.Proximity.UnlockSampleCount = count;
+        var r = OptionsValidator.Validate(o);
+        Assert.False(r.IsValid);
+        // 消息与镜像端逐字一致（MirrorDriftGuard 也会比对）
+        Assert.Contains("Proximity.UnlockSampleCount 必须在 1 到 20 之间", r.Errors);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(51)]
+    public void Validate_rechaza_LockPromptSampleCount_fuera_de_rango(int count)
+    {
+        var o = Valid();
+        o.Proximity.LockPromptSampleCount = count;
+        var r = OptionsValidator.Validate(o);
+        Assert.False(r.IsValid);
+        Assert.Contains("Proximity.LockPromptSampleCount 必须在 1 到 50 之间", r.Errors);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(51)]
+    public void Validate_rechaza_LockConfirmSampleCount_fuera_de_rango(int count)
+    {
+        var o = Valid();
+        o.Proximity.LockConfirmSampleCount = count;
+        var r = OptionsValidator.Validate(o);
+        Assert.False(r.IsValid);
+        Assert.Contains("Proximity.LockConfirmSampleCount 必须在 1 到 50 之间", r.Errors);
     }
 
     [Fact]
-    public void Validate_rechaza_min_samples_menor_que_uno()
+    public void Los_limites_exactos_de_los_conteos_se_aceptan()
     {
         var o = Valid();
-        o.Proximity.MinSamples = 0;
-        Assert.False(OptionsValidator.Validate(o).IsValid);
+        o.Proximity.UnlockSampleCount = 1;
+        o.Proximity.LockPromptSampleCount = 1;
+        o.Proximity.LockConfirmSampleCount = 1;
+        Assert.True(OptionsValidator.Validate(o).IsValid);
+
+        o.Proximity.UnlockSampleCount = 20;
+        o.Proximity.LockPromptSampleCount = 50;
+        o.Proximity.LockConfirmSampleCount = 50;
+        Assert.True(OptionsValidator.Validate(o).IsValid);
     }
 
     [Fact]
@@ -147,18 +181,6 @@ public class OptionsValidatorTests
     }
 
     [Fact]
-    public void PromptTimeout_por_encima_del_maximo_se_rechaza_nombrando_campo_y_limite()
-    {
-        var o = Valid();
-        o.Notification.PromptTimeoutSeconds = HelperProtocol.MaxTimeoutSeconds + 1;
-
-        var r = OptionsValidator.Validate(o);
-
-        Assert.False(r.IsValid);
-        Assert.Contains(r.Errors, e => e.Contains("Notification.PromptTimeoutSeconds") && e.Contains("600"));
-    }
-
-    [Fact]
     public void SnoozeMinutes_por_encima_del_maximo_se_rechaza_nombrando_campo_y_limite()
     {
         var o = Valid();
@@ -171,22 +193,20 @@ public class OptionsValidatorTests
     }
 
     [Fact]
-    public void Los_maximos_exactos_de_notificacion_se_aceptan()
+    public void El_maximo_exacto_de_SnoozeMinutes_se_acepta()
     {
         var o = Valid();
-        o.Notification.PromptTimeoutSeconds = HelperProtocol.MaxTimeoutSeconds;
         o.Notification.SnoozeMinutes = HelperProtocol.MaxSnoozeMinutes;
 
         Assert.True(OptionsValidator.Validate(o).IsValid);
     }
 
     [Fact]
-    public void NaN_en_los_plazos_de_notificacion_se_rechaza()
+    public void NaN_en_SnoozeMinutes_se_rechaza()
     {
         var o = Valid();
-        o.Notification.PromptTimeoutSeconds = double.NaN;
         o.Notification.SnoozeMinutes = double.NaN;
 
-        Assert.True(OptionsValidator.Validate(o).Errors.Count >= 2);
+        Assert.True(OptionsValidator.Validate(o).Errors.Count >= 1);
     }
 }

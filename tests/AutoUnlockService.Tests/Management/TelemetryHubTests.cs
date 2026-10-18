@@ -194,7 +194,7 @@ public class TelemetryHubTests
 
         var before = FirstSnapshot(hub);
         Assert.Equal(gate.Current.Proximity.LockThresholdDbm, before.Thr.LockDbm);
-        Assert.Equal(gate.Current.Proximity.UnlockWindowSeconds, before.Thr.UnlockWinSec);
+        Assert.Equal(gate.Current.Proximity.UnlockSampleCount, before.Thr.UnlockCount);
 
         // 合法候选：防抖期满（与生产相同的 250ms）后生效，下一帧立即反映
         var candidate = TestGates.ValidOptions();
@@ -202,9 +202,9 @@ public class TelemetryHubTests
         {
             LockThresholdDbm = -70,
             UnlockThresholdDbm = -40,
-            LockWindowSeconds = 20,
-            UnlockWindowSeconds = 7,
-            MinSamples = 5
+            UnlockSampleCount = 4,
+            LockPromptSampleCount = 6,
+            LockConfirmSampleCount = 11
         };
         gate.Submit(candidate);
         clock.Advance(TestGates.Debounce);
@@ -212,9 +212,9 @@ public class TelemetryHubTests
         var after = JsonSerializer.Deserialize<SnapshotFrame>(hub.BuildSnapshot(), ManagementProtocol.JsonOptions)!;
         Assert.Equal(-70, after.Thr.LockDbm);
         Assert.Equal(-40, after.Thr.UnlockDbm);
-        Assert.Equal(20, after.Thr.LockWinSec);
-        Assert.Equal(7, after.Thr.UnlockWinSec);
-        Assert.Equal(5, after.Thr.MinSamples);
+        Assert.Equal(4, after.Thr.UnlockCount);
+        Assert.Equal(6, after.Thr.LockPromptCount);
+        Assert.Equal(11, after.Thr.LockConfirmCount);
     }
 
     [Fact]
@@ -235,7 +235,8 @@ public class TelemetryHubTests
         var after = JsonSerializer.Deserialize<SnapshotFrame>(hub.BuildSnapshot(), ManagementProtocol.JsonOptions)!;
         Assert.Equal(before.Thr.LockDbm, after.Thr.LockDbm);
         Assert.Equal(before.Thr.UnlockDbm, after.Thr.UnlockDbm);
-        Assert.Equal(before.Thr.MinSamples, after.Thr.MinSamples);
+        Assert.Equal(before.Thr.UnlockCount, after.Thr.UnlockCount);
+        Assert.Equal(before.Thr.LockConfirmCount, after.Thr.LockConfirmCount);
     }
 
     [Fact]

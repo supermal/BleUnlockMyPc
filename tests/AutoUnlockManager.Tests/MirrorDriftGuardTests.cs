@@ -34,7 +34,7 @@ public sealed class MirrorDriftGuardTests
     private static string ServiceSourcePath(params string[] parts)
         => Path.Combine(new[] { RepoRoot, "src", "AutoUnlockService" }.Concat(parts).ToArray());
 
-    /// <summary>全字段非法配置：一次触发 13 条规则（上限两条为插值生成，其余 11 条为服务端字面量）。</summary>
+    /// <summary>全字段非法配置：一次触发 12 条规则（上限 1 条为插值生成（SnoozeMinutes），其余 11 条为服务端字面量）。</summary>
     private static AutoUnlockConfig AllInvalidConfig()
     {
         var config = new AutoUnlockConfig();
@@ -44,12 +44,11 @@ public sealed class MirrorDriftGuardTests
         config.Credentials.Password = "p\tx";                     // 控制字符
         config.Proximity.LockThresholdDbm = -80;
         config.Proximity.UnlockThresholdDbm = -80;                // <= Lock → 死区
-        config.Proximity.LockWindowSeconds = 0;                   // 必须为正数
-        config.Proximity.UnlockWindowSeconds = 0;                 // 必须为正数
+        config.Proximity.UnlockSampleCount = 0;                   // 必须在 1 到 20 之间
+        config.Proximity.LockPromptSampleCount = 0;               // 必须在 1 到 50 之间
+        config.Proximity.LockConfirmSampleCount = 0;              // 必须在 1 到 50 之间
         config.Proximity.StartupGraceSeconds = -1;                // 不能为负数
         config.Proximity.UnlockPendingTimeoutSeconds = 0;         // 必须为正数
-        config.Proximity.MinSamples = 0;                          // >= 1
-        config.Notification.PromptTimeoutSeconds = 700;           // 超上限
         config.Notification.RejectSnoozeSeconds = 0;              // 必须为正数
         config.Notification.SnoozeMinutes = 300;                  // 超上限
         return config;
@@ -61,12 +60,11 @@ public sealed class MirrorDriftGuardTests
         var source = File.ReadAllText(ServiceSourcePath("Config", "OptionsValidator.cs"));
         var errors = ConfigValidator.Validate(AllInvalidConfig()).Errors;
 
-        Assert.Equal(13, errors.Count);
+        Assert.Equal(12, errors.Count);
 
-        // 服务端以字符串插值拼接的两条上限文案：这里断言其字面前缀存在于源码
+        // 服务端以字符串插值拼接的上限文案：这里断言其字面前缀存在于源码
         foreach (var prefix in new[]
                  {
-                     "Notification.PromptTimeoutSeconds 不能超过 ",
                      "Notification.SnoozeMinutes 不能超过 ",
                  })
         {
@@ -75,8 +73,7 @@ public sealed class MirrorDriftGuardTests
 
         foreach (var error in errors)
         {
-            if (error.Message.StartsWith("Notification.PromptTimeoutSeconds 不能超过 ", StringComparison.Ordinal) ||
-                error.Message.StartsWith("Notification.SnoozeMinutes 不能超过 ", StringComparison.Ordinal))
+            if (error.Message.StartsWith("Notification.SnoozeMinutes 不能超过 ", StringComparison.Ordinal))
             {
                 continue; // 由前缀断言与上限常量测试共同覆盖
             }
@@ -86,7 +83,6 @@ public sealed class MirrorDriftGuardTests
         }
 
         // 渲染出的上限文案与常量数值一致
-        Assert.Contains(errors, e => e.Message == "Notification.PromptTimeoutSeconds 不能超过 600 秒");
         Assert.Contains(errors, e => e.Message == "Notification.SnoozeMinutes 不能超过 240 分钟");
     }
 
@@ -95,7 +91,6 @@ public sealed class MirrorDriftGuardTests
     {
         var source = File.ReadAllText(ServiceSourcePath("Session", "HelperProtocol.cs"));
 
-        Assert.Equal(ConfigValidator.MaxPromptTimeoutSeconds, ReadConst(source, "MaxTimeoutSeconds"));
         Assert.Equal(ConfigValidator.MaxSnoozeMinutes, ReadConst(source, "MaxSnoozeMinutes"));
     }
 

@@ -135,24 +135,49 @@ public sealed class ConfigValidatorTests
         Assert.Equal("Proximity.UnlockThresholdDbm 必须大于 LockThresholdDbm，否则死区为负", error.Message);
     }
 
-    [Theory]
-    [InlineData(0.0, "Proximity.LockWindowSeconds 必须为正数")]
-    [InlineData(-0.001, "Proximity.LockWindowSeconds 必须为正数")]
-    public void Validate_LockWindow_Message(double value, string expected)
+    [Fact]
+    public void Validate_UnlockSampleCount_Boundaries()
     {
         var config = Valid();
-        config.Proximity.LockWindowSeconds = value;
+        config.Proximity.UnlockSampleCount = 1;
+        Assert.True(ConfigValidator.Validate(config).IsValid);
+        config.Proximity.UnlockSampleCount = 20;
+        Assert.True(ConfigValidator.Validate(config).IsValid); // 上限含 20
 
-        Assert.Equal(expected, Assert.Single(ConfigValidator.Validate(config).Errors).Message);
+        config.Proximity.UnlockSampleCount = 21;
+        Assert.Equal("Proximity.UnlockSampleCount 必须在 1 到 20 之间",
+            Assert.Single(ConfigValidator.Validate(config).Errors).Message);
+
+        config.Proximity.UnlockSampleCount = 0;
+        Assert.Equal("Proximity.UnlockSampleCount 必须在 1 到 20 之间",
+            Assert.Single(ConfigValidator.Validate(config).Errors).Message);
     }
 
     [Fact]
-    public void Validate_UnlockWindow_Message()
+    public void Validate_LockPromptSampleCount_Boundaries()
     {
         var config = Valid();
-        config.Proximity.UnlockWindowSeconds = 0;
+        config.Proximity.LockPromptSampleCount = 1;
+        Assert.True(ConfigValidator.Validate(config).IsValid);
+        config.Proximity.LockPromptSampleCount = 50;
+        Assert.True(ConfigValidator.Validate(config).IsValid); // 上限含 50
 
-        Assert.Equal("Proximity.UnlockWindowSeconds 必须为正数",
+        config.Proximity.LockPromptSampleCount = 51;
+        Assert.Equal("Proximity.LockPromptSampleCount 必须在 1 到 50 之间",
+            Assert.Single(ConfigValidator.Validate(config).Errors).Message);
+    }
+
+    [Fact]
+    public void Validate_LockConfirmSampleCount_Boundaries()
+    {
+        var config = Valid();
+        config.Proximity.LockConfirmSampleCount = 1;
+        Assert.True(ConfigValidator.Validate(config).IsValid);
+        config.Proximity.LockConfirmSampleCount = 50;
+        Assert.True(ConfigValidator.Validate(config).IsValid); // 上限含 50
+
+        config.Proximity.LockConfirmSampleCount = 0;
+        Assert.Equal("Proximity.LockConfirmSampleCount 必须在 1 到 50 之间",
             Assert.Single(ConfigValidator.Validate(config).Errors).Message);
     }
 
@@ -176,40 +201,6 @@ public sealed class ConfigValidatorTests
 
         Assert.Equal("Proximity.UnlockPendingTimeoutSeconds 必须为正数",
             Assert.Single(ConfigValidator.Validate(config).Errors).Message);
-    }
-
-    [Fact]
-    public void Validate_MinSamples_Boundaries()
-    {
-        var config = Valid();
-        config.Proximity.MinSamples = 1;
-        Assert.True(ConfigValidator.Validate(config).IsValid);
-
-        config.Proximity.MinSamples = 0;
-        Assert.Equal("Proximity.MinSamples 必须大于等于 1",
-            Assert.Single(ConfigValidator.Validate(config).Errors).Message);
-    }
-
-    [Fact]
-    public void Validate_PromptTimeout_Zero_Message()
-    {
-        var config = Valid();
-        config.Notification.PromptTimeoutSeconds = 0;
-
-        Assert.Equal("Notification.PromptTimeoutSeconds 必须为正数",
-            Assert.Single(ConfigValidator.Validate(config).Errors).Message);
-    }
-
-    [Fact]
-    public void Validate_PromptTimeout_UpperBoundary()
-    {
-        var config = Valid();
-        config.Notification.PromptTimeoutSeconds = 600;
-        Assert.True(ConfigValidator.Validate(config).IsValid); // 上限含 600
-
-        config.Notification.PromptTimeoutSeconds = 600.0001;
-        var error = Assert.Single(ConfigValidator.Validate(config).Errors);
-        Assert.Equal("Notification.PromptTimeoutSeconds 不能超过 600 秒", error.Message);
     }
 
     [Fact]
@@ -250,14 +241,14 @@ public sealed class ConfigValidatorTests
         var config = Valid();
         config.Device.Irk = "bad";
         config.Credentials.UserName = "";
-        config.Proximity.LockWindowSeconds = 0;
+        config.Proximity.LockConfirmSampleCount = 0;
         config.Notification.SnoozeMinutes = 999;
 
         var errors = ConfigValidator.Validate(config).Errors;
         Assert.Equal(4, errors.Count);
         Assert.Equal(ConfigFields.DeviceIrk, errors[0].Field);
         Assert.Equal(ConfigFields.CredentialsUserName, errors[1].Field);
-        Assert.Equal(ConfigFields.ProximityLockWindowSeconds, errors[2].Field);
+        Assert.Equal(ConfigFields.ProximityLockConfirmSampleCount, errors[2].Field);
         Assert.Equal(ConfigFields.NotificationSnoozeMinutes, errors[3].Field);
     }
 }

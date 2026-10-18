@@ -93,14 +93,14 @@ public sealed class ConfigDiffTests
         var from = Baseline();
         var to = Baseline();
         to.Proximity.LockThresholdDbm = -75.5;
-        to.Proximity.MinSamples = 4;
+        to.Proximity.UnlockSampleCount = 4;
 
         var changes = ConfigDiff.Compute(from, to);
         Assert.Equal(2, changes.Count);
         Assert.Equal("锁定阈值（dBm）", changes[0].DisplayName);
         Assert.Equal("-80", changes[0].OldText);
         Assert.Equal("-75.5", changes[0].NewText);
-        Assert.Equal("最小样本数", changes[1].DisplayName);
+        Assert.Equal("解锁确认个数", changes[1].DisplayName);
         Assert.Equal("3", changes[1].OldText);
         Assert.Equal("4", changes[1].NewText);
     }
@@ -130,16 +130,18 @@ public sealed class ConfigDiffTests
         var to = Baseline();
         to.Notification.SnoozeMinutes = 10;
         to.Credentials.UserName = "user2";
+        to.Proximity.LockConfirmSampleCount = 11;
         to.Proximity.UnlockPendingTimeoutSeconds = 30;
 
         var changes = ConfigDiff.Compute(from, to);
         Assert.Equal(
-            [ConfigFields.CredentialsUserName, ConfigFields.ProximityUnlockPendingTimeoutSeconds, ConfigFields.NotificationSnoozeMinutes],
+            [ConfigFields.CredentialsUserName, ConfigFields.ProximityLockConfirmSampleCount,
+             ConfigFields.ProximityUnlockPendingTimeoutSeconds, ConfigFields.NotificationSnoozeMinutes],
             changes.Select(c => c.Field));
     }
 
     [Fact]
-    public void Compute_AllSixteenFields_Covered()
+    public void Compute_AllFifteenFields_Covered()
     {
         var from = new AutoUnlockConfig();
         from.Device.Irk = "00112233445566778899aabbccddeeff";
@@ -153,29 +155,28 @@ public sealed class ConfigDiffTests
         to.Credentials.UserName = "u2";
         to.Credentials.Password = "p2";
         to.Proximity.LockThresholdDbm = -81;
-        to.Proximity.LockWindowSeconds = 11;
         to.Proximity.UnlockThresholdDbm = -46;
-        to.Proximity.UnlockWindowSeconds = 6;
-        to.Proximity.MinSamples = 4;
+        to.Proximity.UnlockSampleCount = 4;
+        to.Proximity.LockPromptSampleCount = 6;
+        to.Proximity.LockConfirmSampleCount = 11;
         to.Proximity.StartupGraceSeconds = 16;
         to.Proximity.UnlockPendingTimeoutSeconds = 21;
         to.Notification.Mode = NotifierMode.Dialog;
-        to.Notification.PromptTimeoutSeconds = 16;
         to.Notification.RejectSnoozeSeconds = 61;
         to.Notification.SnoozeMinutes = 6;
 
         var changes = ConfigDiff.Compute(from, to);
-        Assert.Equal(16, changes.Count);
+        Assert.Equal(15, changes.Count);
         Assert.Equal(
             [
                 ConfigFields.DeviceIrk, ConfigFields.DeviceIrkByteOrder, ConfigFields.DeviceIdentityAddress,
                 ConfigFields.CredentialsUserName, ConfigFields.CredentialsPassword,
-                ConfigFields.ProximityLockThresholdDbm, ConfigFields.ProximityLockWindowSeconds,
-                ConfigFields.ProximityUnlockThresholdDbm, ConfigFields.ProximityUnlockWindowSeconds,
-                ConfigFields.ProximityMinSamples, ConfigFields.ProximityStartupGraceSeconds,
+                ConfigFields.ProximityLockThresholdDbm, ConfigFields.ProximityUnlockThresholdDbm,
+                ConfigFields.ProximityUnlockSampleCount, ConfigFields.ProximityLockPromptSampleCount,
+                ConfigFields.ProximityLockConfirmSampleCount, ConfigFields.ProximityStartupGraceSeconds,
                 ConfigFields.ProximityUnlockPendingTimeoutSeconds,
-                ConfigFields.NotificationMode, ConfigFields.NotificationPromptTimeoutSeconds,
-                ConfigFields.NotificationRejectSnoozeSeconds, ConfigFields.NotificationSnoozeMinutes,
+                ConfigFields.NotificationMode, ConfigFields.NotificationRejectSnoozeSeconds,
+                ConfigFields.NotificationSnoozeMinutes,
             ],
             changes.Select(c => c.Field));
     }

@@ -9,13 +9,20 @@ public class HelperProtocolTests
     [Fact]
     public void Prompt_ida_y_vuelta()
     {
-        var line = HelperProtocol.BuildPrompt(7, 15, 5);
+        var line = HelperProtocol.BuildPrompt(7, 5);
 
         Assert.True(HelperProtocol.TryParseCommand(line, out var cmd));
         var prompt = Assert.IsType<HelperCommand.Prompt>(cmd);
         Assert.Equal(7, prompt.Id);
-        Assert.Equal(15, prompt.TimeoutSeconds);
         Assert.Equal(5, prompt.SnoozeMinutes);
+    }
+
+    [Fact]
+    public void Prompt_no_lleva_plazo()
+    {
+        // 判定改版：PROMPT ya no lleva plazo; el aviso queda en pantalla hasta que
+        // el usuario responda o el servicio lo retire
+        Assert.Equal("PROMPT 9 5\n", HelperProtocol.BuildPrompt(9, 5));
     }
 
     [Fact]
@@ -60,11 +67,11 @@ public class HelperProtocolTests
         CultureInfo.CurrentCulture = new CultureInfo("es-ES");
         try
         {
-            var line = HelperProtocol.BuildPrompt(1, 12.5, 2.5);
+            var line = HelperProtocol.BuildPrompt(1, 2.5);
 
-            Assert.Contains("12.5", line);
+            Assert.Contains("2.5", line);
             Assert.True(HelperProtocol.TryParseCommand(line, out var cmd));
-            Assert.Equal(12.5, Assert.IsType<HelperCommand.Prompt>(cmd).TimeoutSeconds);
+            Assert.Equal(2.5, Assert.IsType<HelperCommand.Prompt>(cmd).SnoozeMinutes);
         }
         finally
         {
@@ -73,10 +80,10 @@ public class HelperProtocolTests
     }
 
     [Fact]
-    public void Los_maximos_exactos_se_aceptan()
+    public void El_maximo_exacto_se_acepta()
     {
         Assert.True(HelperProtocol.TryParseCommand(
-            HelperProtocol.BuildPrompt(1, HelperProtocol.MaxTimeoutSeconds, HelperProtocol.MaxSnoozeMinutes), out _));
+            HelperProtocol.BuildPrompt(1, HelperProtocol.MaxSnoozeMinutes), out _));
     }
 
     [Theory]
@@ -96,12 +103,13 @@ public class HelperProtocolTests
     [Theory]
     [InlineData("")]
     [InlineData("PROMPT")]
-    [InlineData("PROMPT a b c")]
-    [InlineData("PROMPT 1 NaN 5")]
-    [InlineData("PROMPT 1 -3 5")]
-    [InlineData("PROMPT 1 1e300 5")]
-    [InlineData("PROMPT 1 601 5")]
-    [InlineData("PROMPT 1 15 241")]
+    [InlineData("PROMPT 1")]
+    [InlineData("PROMPT 1 2 3")]
+    [InlineData("PROMPT a 5")]
+    [InlineData("PROMPT 1 NaN")]
+    [InlineData("PROMPT 1 -3")]
+    [InlineData("PROMPT 1 1e300")]
+    [InlineData("PROMPT 1 241")]
     [InlineData("QUE_ES_ESTO 1")]
     public void TryParseCommand_rechaza_basura(string line)
         => Assert.False(HelperProtocol.TryParseCommand(line, out _));

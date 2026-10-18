@@ -103,8 +103,7 @@ public static class Program
             builder.Services.AddSingleton(sp => new ResilientNotifier(
                 sp.GetRequiredService<HelperNotifier>(),
                 sp.GetRequiredService<WtsMessageNotifier>(),
-                sp.GetRequiredService<ILogger<ResilientNotifier>>(),
-                sp.GetRequiredService<TimeProvider>()));
+                sp.GetRequiredService<ILogger<ResilientNotifier>>()));
 
             builder.Services.AddSingleton<IScreenLocker>(sp => new HelperScreenLocker(
                 sp.GetRequiredService<HelperPipeServer>(),

@@ -34,13 +34,13 @@ public sealed record SnapshotScan(string? Status, string? Detail);
 /// <summary>管道连接态（助手/凭据）。</summary>
 public sealed record SnapshotConnection(bool Connected);
 
-/// <summary>当前生效阈值（热重载后随之变化，曲线阈值线用）。</summary>
+/// <summary>当前生效阈值与批次参数（热重载后随之变化，曲线阈值线只用前两个）。</summary>
 public sealed record SnapshotThresholds(
     double LockDbm,
     double UnlockDbm,
-    double LockWinSec,
-    double UnlockWinSec,
-    int MinSamples);
+    int UnlockCount,
+    int LockPromptCount,
+    int LockConfirmCount);
 
 /// <summary>5s/10s 窗口均值（null = 无样本）与样本数。</summary>
 public sealed record SnapshotAverages(double? W5, double? W10, int N5, int N10);

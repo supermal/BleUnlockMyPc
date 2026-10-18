@@ -94,14 +94,13 @@ public sealed class OptionsGate : IDisposable
 
     private static bool OtherDiffers(AutoUnlockOptions a, AutoUnlockOptions b) =>
         a.Proximity.LockThresholdDbm != b.Proximity.LockThresholdDbm ||
-        a.Proximity.LockWindowSeconds != b.Proximity.LockWindowSeconds ||
         a.Proximity.UnlockThresholdDbm != b.Proximity.UnlockThresholdDbm ||
-        a.Proximity.UnlockWindowSeconds != b.Proximity.UnlockWindowSeconds ||
-        a.Proximity.MinSamples != b.Proximity.MinSamples ||
+        a.Proximity.UnlockSampleCount != b.Proximity.UnlockSampleCount ||
+        a.Proximity.LockPromptSampleCount != b.Proximity.LockPromptSampleCount ||
+        a.Proximity.LockConfirmSampleCount != b.Proximity.LockConfirmSampleCount ||
         a.Proximity.StartupGraceSeconds != b.Proximity.StartupGraceSeconds ||
         a.Proximity.UnlockPendingTimeoutSeconds != b.Proximity.UnlockPendingTimeoutSeconds ||
         a.Notification.Mode != b.Notification.Mode ||
-        a.Notification.PromptTimeoutSeconds != b.Notification.PromptTimeoutSeconds ||
         a.Notification.RejectSnoozeSeconds != b.Notification.RejectSnoozeSeconds ||
         a.Notification.SnoozeMinutes != b.Notification.SnoozeMinutes;
 

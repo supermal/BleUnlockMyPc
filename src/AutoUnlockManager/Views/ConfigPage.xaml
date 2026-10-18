@@ -210,28 +210,6 @@
                                 <ColumnDefinition Width="200" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="锁定窗口（秒）" Margin="0,8,0,0" VerticalAlignment="Top"
-                                       Style="{StaticResource BodyTextBlockStyle}" />
-                            <StackPanel Grid.Column="1" Spacing="4">
-                                <TextBox Text="{x:Bind ViewModel.LockWindowText, Mode=TwoWay}"
-                                         MaxWidth="240" HorizontalAlignment="Left" />
-                                <TextBlock Text="{x:Bind ViewModel.LockWindowError, Mode=OneWay}"
-                                           Visibility="{x:Bind ViewModel.HasLockWindowError, Mode=OneWay}"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                                           TextWrapping="Wrap" />
-                                <TextBlock Text="信号低于锁定阈值并持续该时长后锁定。"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="200" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
                             <TextBlock Text="解锁阈值（dBm）" Margin="0,8,0,0" VerticalAlignment="Top"
                                        Style="{StaticResource BodyTextBlockStyle}" />
                             <StackPanel Grid.Column="1" Spacing="4">
@@ -254,17 +232,17 @@
                                 <ColumnDefinition Width="200" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="解锁窗口（秒）" Margin="0,8,0,0" VerticalAlignment="Top"
+                            <TextBlock Text="解锁确认个数" Margin="0,8,0,0" VerticalAlignment="Top"
                                        Style="{StaticResource BodyTextBlockStyle}" />
                             <StackPanel Grid.Column="1" Spacing="4">
-                                <TextBox Text="{x:Bind ViewModel.UnlockWindowText, Mode=TwoWay}"
+                                <TextBox Text="{x:Bind ViewModel.UnlockCountText, Mode=TwoWay}"
                                          MaxWidth="240" HorizontalAlignment="Left" />
-                                <TextBlock Text="{x:Bind ViewModel.UnlockWindowError, Mode=OneWay}"
-                                           Visibility="{x:Bind ViewModel.HasUnlockWindowError, Mode=OneWay}"
+                                <TextBlock Text="{x:Bind ViewModel.UnlockCountError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasUnlockCountError, Mode=OneWay}"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                            TextWrapping="Wrap" />
-                                <TextBlock Text="信号高于解锁阈值并持续该时长后解锁。"
+                                <TextBlock Text="高于解锁阈值的连续读数个数（触发读数不计入），取值范围 1-20。"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap" />
@@ -276,17 +254,39 @@
                                 <ColumnDefinition Width="200" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="最小样本数" Margin="0,8,0,0" VerticalAlignment="Top"
+                            <TextBlock Text="弹窗触发个数" Margin="0,8,0,0" VerticalAlignment="Top"
                                        Style="{StaticResource BodyTextBlockStyle}" />
                             <StackPanel Grid.Column="1" Spacing="4">
-                                <TextBox Text="{x:Bind ViewModel.MinSamplesText, Mode=TwoWay}"
+                                <TextBox Text="{x:Bind ViewModel.LockPromptCountText, Mode=TwoWay}"
                                          MaxWidth="240" HorizontalAlignment="Left" />
-                                <TextBlock Text="{x:Bind ViewModel.MinSamplesError, Mode=OneWay}"
-                                           Visibility="{x:Bind ViewModel.HasMinSamplesError, Mode=OneWay}"
+                                <TextBlock Text="{x:Bind ViewModel.LockPromptCountError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasLockPromptCountError, Mode=OneWay}"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                            TextWrapping="Wrap" />
-                                <TextBlock Text="窗口中至少需要的样本数（整数）。"
+                                <TextBlock Text="低于锁定阈值的读数个数（触发读数不计入；静默时间按每秒 1 条极低值计入），取值范围 1-50。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="锁屏确认个数" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.LockConfirmCountText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.LockConfirmCountError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasLockConfirmCountError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="弹窗出现后新收的读数个数（弹窗前的读数不计入），取值范围 1-50。"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap" />
@@ -360,28 +360,6 @@
                                 <TextBlock Text="解锁确认提示的呈现形式。"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="200" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="提示超时（秒）" Margin="0,8,0,0" VerticalAlignment="Top"
-                                       Style="{StaticResource BodyTextBlockStyle}" />
-                            <StackPanel Grid.Column="1" Spacing="4">
-                                <TextBox Text="{x:Bind ViewModel.PromptTimeoutText, Mode=TwoWay}"
-                                         MaxWidth="240" HorizontalAlignment="Left" />
-                                <TextBlock Text="{x:Bind ViewModel.PromptTimeoutError, Mode=OneWay}"
-                                           Visibility="{x:Bind ViewModel.HasPromptTimeoutError, Mode=OneWay}"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                                           TextWrapping="Wrap" />
-                                <TextBlock Text="确认提示的最长等待，上限 600 秒。"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           TextWrapping="Wrap" />
                             </StackPanel>
                         </Grid>
 

@@ -6164,3 +6164,47 @@ Select-String -Path "$env:ProgramData\AutoUnlock\logs\*.log" -Pattern '你的密
 git add docs/superpowers/plans/2026-10-13-autounlock-service.md README.md
 git commit -m "docs: 记录 AutoUnlockService 实机验收结果"
 ```
+
+---
+
+### Task 20: 判定改版 —— 时间窗口平均 → 批次个数平均
+
+验收期发现时间窗平均对观测节奏敏感：Apple Watch 息屏后广播降频，窗口内样本不足会被误判为「无信号」而弹窗。改版把判定从「固定时间窗取平均」换成「按个数收集批次取平均」：判决只依赖收到的读数个数，不依赖采样节奏；完全无读数时用静默注入补足。
+
+**决策（2026-10-18 冻结）**
+
+- R1 解锁：第一条高于解锁阈值（默认 -45）为触发器（不计入批次）→ 再收 `UnlockSampleCount` 条平均高于阈值 → 推送凭据；批次内出现超过静默宽限（3 秒）的间隙则旧值作废、重新触发。
+- R2 弹窗：第一条低于锁定阈值（默认 -80）触发 → 再收 `LockPromptSampleCount` 条平均低于阈值 → 弹窗。
+- R3 锁定：弹窗后**新收** `LockConfirmSampleCount` 条平均低于阈值 → 锁屏。取消原 15 秒自动锁屏；锁定只由批次或用户点击决定（关闭 X／拒绝满期后重新评估）。
+- R4 静默：连续 ≥3 秒无读数后，每秒注入 1 个极低值（-127 dBm，计入批次且本身可触发）。
+- R5 恢复：弹窗期间按解锁标准（触发 + 3 条）判定，达标即撤弹窗回到 `Unlocked`。
+- R6 Win+L 后的「已确认离开」沿用 R2（5 条）。
+- R7 按钮语义不变：拒绝=60 秒静默、5 分钟=息屏不锁、关闭 X=立即锁屏；`Timeout` 降为 no-op（不再锁屏）。
+
+**配置变化**（旧键留在用户 `appsettings.json` 里、绑定忽略、不生效）
+
+- 删：`Proximity.LockWindowSeconds`、`Proximity.UnlockWindowSeconds`、`Proximity.MinSamples`、`Notification.PromptTimeoutSeconds`。
+- 增：`UnlockSampleCount`=3（1–20）、`LockPromptSampleCount`=5（1–50）、`LockConfirmSampleCount`=10（1–50）。
+- 校验消息用字面量（MirrorDriftGuard 逐字比对）：「Proximity.UnlockSampleCount 必须在 1 到 20 之间」等 3 条。
+- 管理端配置页 16→15 字段；遥测 `thr` 收缩为 `lockDbm / unlockDbm / unlockCount / lockPromptCount / lockConfirmCount`。
+
+**协议变化**：`PROMPT` 删除 timeout 字段（`PROMPT {id} {snooze}`）；`HelperProtocol.MaxTimeoutSeconds`（600）仅保留给降级对话框自限；HelperNotifier 改为无限期等待（仅用户响应／撤回／断连结束）。
+
+**实现要点**：批次只存 count+sum；触发读数不计入、静默值计入；每次状态迁移重置两侧水位；启动宽限门保留在 `Unlocked`/`LockedWaitingDeparture`（不在 `PendingLock`）；弹窗期间 -80~-65 悬浮读数保持弹窗；`OnResume` 显式重置两侧并续宽限；`BatchProgressText`（锁屏确认/解锁确认/离开确认 x/N）进摘要日志。
+
+**Files:**
+- Modify: `src/AutoUnlockService/`（Config、Core/RssiHistory、Core/ProximityStateMachine 重写、Notifications、Session/HelperProtocol、Worker、Management、Program）
+- Modify: `src/AutoUnlockHelper/`（ToastPrompt 去计时器与倒计时、Program 调用点）
+- Modify: `src/AutoUnlockManager.Core/`（Config/Management 镜像）、`src/AutoUnlockManager/`（ConfigPage.xaml、ConfigViewModel）
+- Modify: `tests/`（服务端状态机/协议/通知/遥测测试全量更新 + 新批次用例；管理端镜像测试）
+- Modify: `README.md`、本文件
+
+**结果**：全量构建 0 警 0 错；测试 521 全绿（服务 320 + 管理端 201）。发布与实机验收（按改版后新版验收单重跑）待执行。
+
+- [x] **Step 1: 服务端判定与配置改版**
+- [x] **Step 2: 通知管道与协议改版**
+- [x] **Step 3: 遥测与管理端镜像同步**
+- [x] **Step 4: 测试全量更新**
+- [x] **Step 5: 构建与自动化测试全绿**
+- [ ] **Step 6: 发布并重装（管理员运行 `scripts/install.ps1`）**
+- [ ] **Step 7: 实机验收（新版验收单）并记录结果**

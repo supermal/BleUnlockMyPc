@@ -36,16 +36,41 @@ public sealed record StateChange(
 public sealed record AuthResult(bool Success, uint NtStatus);
 
 // Toda la politica de bloqueo y desbloqueo vive aqui. No toca Windows ni la red:
-// devuelve la accion que el orquestador debe ejecutar
+// devuelve la accion que el orquestador debe ejecutar.
+//
+// 判定改版（2026-10-18）：批次个数平均（触发读数不计入）。
+//   - 触发：低于锁定阈值的读数，或静默（连续无读数超过宽限）；
+//   - 收满 N 个取平均判定；不达标整批作废，等下一个触发重来；
+//   - 静默每 1 秒注入一个极低值并计入当前批次（只在锁定侧：没有信号永远不是解锁证据）；
+//   - 弹窗不再自动超时：锁定只由「弹窗后新收的一批」或用户点击决定。
 public sealed class ProximityStateMachine
 {
+    // 静默 = 离开证据。宽限内不注入：BLE 偶发丢包不算离开
+    internal static readonly TimeSpan SilenceGrace = TimeSpan.FromSeconds(3);
+    internal const double SilentValueDbm = -127;
+
     private readonly TimeProvider _time;
     private DateTimeOffset _graceUntil;
     private DateTimeOffset _snoozeUntil;
-    private DateTimeOffset _promptDeadline;
     // Se recuerda incluso en Suspended, para saber a que estado volver al reanudar
     private bool _screenLocked;
     private DateTimeOffset _unlockSentAt;
+
+    // —— 锁定侧批次（Unlocked / PendingLock / LockedWaitingDeparture） ——
+    private bool _lockBatchActive;
+    private int _lockBatchCount;
+    private double _lockBatchSum;
+    private int _lockBatchSilentCount;      // 当前批次里的静默值个数（日志用）
+    private DateTimeOffset _lockWatermark;  // 已消费到的读数时间（批次水位线）
+    private DateTimeOffset _lockSilenceFrom; // 静默计时基准：最近一条读数或进入当前状态的时刻
+    private int _lockSilentInjected;        // 本轮静默已注入的个数（出现新读数时清零）
+
+    // —— 解锁侧批次（PendingLock 的信号恢复判定 / LockedArmed） ——
+    private bool _unlockBatchActive;
+    private int _unlockBatchCount;
+    private double _unlockBatchSum;
+    private DateTimeOffset _unlockWatermark;
+    private DateTimeOffset _unlockLastValueAt; // 批次内上一个值（或触发）的时间：间隙过大时旧值作废
 
     public ProximityStateMachine(
         TimeProvider time,
@@ -61,6 +86,7 @@ public sealed class ProximityStateMachine
         State = screenLockedAtStartup
             ? ProximityState.LockedWaitingDeparture
             : ProximityState.Unlocked;
+        ResetSides(State);
     }
 
     // Mutables: la recarga en caliente las sustituye sin reconstruir la maquina
@@ -68,6 +94,18 @@ public sealed class ProximityStateMachine
     public NotificationOptions Notification { get; set; }
 
     public ProximityState State { get; private set; }
+
+    // 摘要日志用：当前批次的收集进度（近似读取，只用于观察）
+    public string BatchProgressText => State switch
+    {
+        ProximityState.PendingLock when _lockBatchActive =>
+            $"锁屏确认 {_lockBatchCount}/{Math.Max(1, Proximity.LockConfirmSampleCount)}",
+        ProximityState.LockedArmed when _unlockBatchActive =>
+            $"解锁确认 {_unlockBatchCount}/{Math.Max(1, Proximity.UnlockSampleCount)}",
+        ProximityState.Unlocked or ProximityState.LockedWaitingDeparture when _lockBatchActive =>
+            $"离开确认 {_lockBatchCount}/{Math.Max(1, Proximity.LockPromptSampleCount)}",
+        _ => ""
+    };
 
     public StateChange? Evaluate(RssiHistory history)
     {
@@ -93,26 +131,27 @@ public sealed class ProximityStateMachine
         // recien instalado, "sin muestras" significa "sin configurar", no "el usuario se fue"
         if (!history.HasEverSeenDevice) return null;
 
-        var (far, reason) = IsFar(history, now);
-        if (!far) return null;
+        if (LockBatchConfirmed(history, now, Proximity.LockPromptSampleCount, out var reason))
+            return Transition(ProximityState.PendingLock, ProximityAction.ShowLockPrompt,
+                $"检测到离开：{reason}");
 
-        _promptDeadline = now + TimeSpan.FromSeconds(Notification.PromptTimeoutSeconds);
-        return Transition(ProximityState.PendingLock, ProximityAction.ShowLockPrompt, reason);
+        return null;
     }
 
     private StateChange? EvaluatePendingLock(RssiHistory history, DateTimeOffset now)
     {
-        var (near, nearReason) = IsNear(history, now);
-        if (near)
+        // Primero el regreso: si el usuario vuelve, el aviso se retira y no se bloquea
+        if (UnlockBatchNear(history, Proximity.UnlockSampleCount, out var nearReason))
             return Transition(ProximityState.Unlocked, ProximityAction.CancelLockPrompt,
                 $"信号恢复：{nearReason}");
 
-        // Red de seguridad: aunque la respuesta del aviso nunca llegue, el plazo vence igual
-        if (now >= _promptDeadline)
+        // 弹窗后新收的一批（弹窗前的读数不参与）：平均低于阈值才锁屏。
+        // 等待期没有任何自动超时：只有这批读数或用户点击能决定
+        if (LockBatchConfirmed(history, now, Proximity.LockConfirmSampleCount, out var reason))
         {
             _screenLocked = true;
             return Transition(ProximityState.LockedWaitingDeparture, ProximityAction.LockScreen,
-                "通知超时无响应");
+                $"弹窗后确认离开：{reason}");
         }
 
         return null;
@@ -128,20 +167,19 @@ public sealed class ProximityStateMachine
         // Aqui NUNCA se envian credenciales, por fuerte que sea la senal: el usuario que
         // pulsa Win+L sentado debe irse de verdad antes de que se arme el desbloqueo
         // La gracia de arranque/reanudacion tambien cuenta aqui: tras vaciar el historico,
-        // una ventana vacia significa "aun sin datos", no "el usuario se fue". Sin esto,
+        // una ausencia de datos significa "aun sin datos", no "el usuario se fue". Sin esto,
         // Win+L sentado + suspension de pantalla + despertar desbloquearia sin haberse ido
         if (now < _graceUntil) return null;
 
-        var (far, reason) = IsFar(history, now);
-        return far
-            ? Transition(ProximityState.LockedArmed, ProximityAction.None, $"已确认离开：{reason}")
-            : null;
+        if (LockBatchConfirmed(history, now, Proximity.LockPromptSampleCount, out var reason))
+            return Transition(ProximityState.LockedArmed, ProximityAction.None, $"已确认离开：{reason}");
+
+        return null;
     }
 
     private StateChange? EvaluateArmed(RssiHistory history, DateTimeOffset now)
     {
-        var (near, reason) = IsNear(history, now);
-        if (!near) return null;
+        if (!UnlockBatchNear(history, Proximity.UnlockSampleCount, out var reason)) return null;
 
         _unlockSentAt = now;
         return Transition(ProximityState.UnlockPending, ProximityAction.SendCredentials,
@@ -175,10 +213,16 @@ public sealed class ProximityStateMachine
                 return Transition(ProximityState.Snoozed, ProximityAction.None,
                     $"用户延期 {Notification.SnoozeMinutes:0} 分钟");
 
-            default:
+            case PromptResponse.Dismissed:
+                // Cerrar la X es una orden explicita del usuario: bloquear ya
                 _screenLocked = true;
                 return Transition(ProximityState.LockedWaitingDeparture, ProximityAction.LockScreen,
-                    response == PromptResponse.Timeout ? "通知超时无响应" : "用户关闭了通知");
+                    "用户关闭了通知");
+
+            default:
+                // 改版：超时不再锁屏（弹窗本身也不会自动超时；这里只剩降级对话框的自身期限）。
+                // 锁定永远由「弹窗后的读数」或用户点击决定
+                return null;
         }
     }
 
@@ -264,50 +308,174 @@ public sealed class ProximityStateMachine
         _graceUntil = _time.GetUtcNow() + TimeSpan.FromSeconds(proximity.StartupGraceSeconds);
 
         // PendingLock no consulta la gracia: el aviso que el usuario nunca vio esta caducado
-        // y su plazo ya vencio, asi que se retira y se reevalua desde cero
-        return State == ProximityState.PendingLock
-            ? Transition(ProximityState.Unlocked, ProximityAction.CancelLockPrompt, "系统从睡眠恢复，旧的锁屏提示已作废")
-            : null;
+        // y ya no tiene sentido mantenerlo, asi que se retira y se reevalua desde cero
+        if (State == ProximityState.PendingLock)
+            return Transition(ProximityState.Unlocked, ProximityAction.CancelLockPrompt,
+                "系统从睡眠恢复，旧的锁屏提示已作废");
+
+        // El historico se vacia en el orquestador: los lotes a medias ya no valen
+        ResetSides(State);
+        return null;
     }
 
-    private (bool Far, string Reason) IsFar(RssiHistory history, DateTimeOffset now)
+    // —— 批次判定 ——
+
+    // 锁定侧：消费新读数（第一个低于阈值的只做触发、不计入）；静默超过宽限后
+    // 每 1 秒注入一个极低值（静默本身即触发，注入值计入）。收满 size 个取平均，
+    // 低于阈值 → true；否则整批作废，等下一个触发
+    private bool LockBatchConfirmed(RssiHistory history, DateTimeOffset now, int target, out string reason)
     {
+        reason = "";
         // Copia local: la recarga en caliente puede sustituir Proximity en mitad de la evaluacion
-        var proximity = Proximity;
-        var window = TimeSpan.FromSeconds(proximity.LockWindowSeconds);
-        var stats = history.InWindow(now, window);
+        var threshold = Proximity.LockThresholdDbm;
+        var size = Math.Max(1, target);
 
-        if (stats.Count == 0)
-            return (true, $"{proximity.LockWindowSeconds:0} 秒内无信号");
+        foreach (var (at, rssi) in history.Since(_lockWatermark))
+        {
+            _lockWatermark = at;
+            _lockSilenceFrom = at;      // 有读数：静默计时重新开始
+            _lockSilentInjected = 0;
 
-        if (stats.Count < proximity.MinSamples) return (false, "");
+            if (!_lockBatchActive)
+            {
+                if (rssi >= threshold) continue;
+                StartLockBatch();       // 触发读数不计入
+                continue;
+            }
 
-        return stats.Average < proximity.LockThresholdDbm
-            ? (true, $"{proximity.LockWindowSeconds:0} 秒内平均 {stats.Average:0.0} dBm" +
-                     $"（{stats.Count} 个读数）< {proximity.LockThresholdDbm:0}")
-            : (false, "");
+            _lockBatchCount++;
+            _lockBatchSum += rssi;
+            if (_lockBatchCount >= size)
+            {
+                if (_lockBatchSum / _lockBatchCount < threshold)
+                {
+                    reason = DescribeLockBatch(size, threshold);
+                    return true;
+                }
+                ResetLockBatch();
+            }
+        }
+
+        // 静默：没有读数，但同样是「离开」的证据
+        var silence = now - _lockSilenceFrom;
+        if (silence <= SilenceGrace) return false;
+
+        var due = (int)Math.Floor((silence - SilenceGrace).TotalSeconds);
+        while (_lockSilentInjected < due)
+        {
+            _lockSilentInjected++;
+            if (!_lockBatchActive) StartLockBatch();
+
+            _lockBatchCount++;
+            _lockBatchSum += SilentValueDbm;
+            _lockBatchSilentCount++;
+            if (_lockBatchCount >= size)
+            {
+                if (_lockBatchSum / _lockBatchCount < threshold)
+                {
+                    reason = DescribeLockBatch(size, threshold);
+                    return true;
+                }
+                ResetLockBatch();
+            }
+        }
+
+        return false;
     }
 
-    private (bool Near, string Reason) IsNear(RssiHistory history, DateTimeOffset now)
+    // 解锁侧：第一个高于阈值的读数只做触发、不计入；之后收满 size 个取平均，
+    // 高于阈值才算靠近。间隙超过静默宽限的旧值作废：宁可重新数，不拿陈旧证据解锁
+    private bool UnlockBatchNear(RssiHistory history, int target, out string reason)
     {
-        // Copia local: la recarga en caliente puede sustituir Proximity en mitad de la evaluacion
-        var proximity = Proximity;
-        var window = TimeSpan.FromSeconds(proximity.UnlockWindowSeconds);
-        var stats = history.InWindow(now, window);
+        reason = "";
+        var threshold = Proximity.UnlockThresholdDbm;
+        var size = Math.Max(1, target);
 
-        // Sin señal nunca es "cerca": el desbloqueo jamas se basa en una suposicion
-        if (stats.Count < proximity.MinSamples) return (false, "");
+        foreach (var (at, rssi) in history.Since(_unlockWatermark))
+        {
+            _unlockWatermark = at;
 
-        return stats.Average > proximity.UnlockThresholdDbm
-            ? (true, $"{proximity.UnlockWindowSeconds:0} 秒内平均 {stats.Average:0.0} dBm" +
-                     $"（{stats.Count} 个读数）> {proximity.UnlockThresholdDbm:0}")
-            : (false, "");
+            if (_unlockBatchActive && at - _unlockLastValueAt > SilenceGrace)
+                ResetUnlockBatch();
+
+            if (!_unlockBatchActive)
+            {
+                if (rssi <= threshold) continue;
+                _unlockBatchActive = true;
+                _unlockBatchCount = 0;
+                _unlockBatchSum = 0;
+                _unlockLastValueAt = at;   // 触发读数不计入
+                continue;
+            }
+
+            _unlockBatchCount++;
+            _unlockBatchSum += rssi;
+            _unlockLastValueAt = at;
+            if (_unlockBatchCount >= size)
+            {
+                if (_unlockBatchSum / _unlockBatchCount > threshold)
+                {
+                    reason = $"{size} 个读数平均 {_unlockBatchSum / _unlockBatchCount:0.0} dBm > {threshold:0}";
+                    return true;
+                }
+                ResetUnlockBatch();
+            }
+        }
+
+        return false;
+    }
+
+    private void StartLockBatch()
+    {
+        _lockBatchActive = true;
+        _lockBatchCount = 0;
+        _lockBatchSum = 0;
+        _lockBatchSilentCount = 0;
+    }
+
+    private void ResetLockBatch()
+    {
+        _lockBatchActive = false;
+        _lockBatchCount = 0;
+        _lockBatchSum = 0;
+        _lockBatchSilentCount = 0;
+    }
+
+    private void ResetUnlockBatch()
+    {
+        _unlockBatchActive = false;
+        _unlockBatchCount = 0;
+        _unlockBatchSum = 0;
+    }
+
+    private string DescribeLockBatch(int count, double threshold) =>
+        _lockBatchSilentCount > 0
+            ? $"{count} 个读数平均 {_lockBatchSum / _lockBatchCount:0.0} dBm（含 {_lockBatchSilentCount} 个静默值）< {threshold:0}"
+            : $"{count} 个读数平均 {_lockBatchSum / _lockBatchCount:0.0} dBm < {threshold:0}";
+
+    // 每次转换都从零开始：批次属于状态，跨状态不继承任何收集。
+    // 例外：进入 PendingLock 立即启动「弹窗后」的确认批次（不需要触发读数）
+    private void ResetSides(ProximityState state)
+    {
+        var now = _time.GetUtcNow();
+
+        ResetLockBatch();
+        _lockWatermark = now;
+        _lockSilenceFrom = now;
+        _lockSilentInjected = 0;
+
+        ResetUnlockBatch();
+        _unlockWatermark = now;
+
+        if (state == ProximityState.PendingLock)
+            _lockBatchActive = true;
     }
 
     private StateChange Transition(ProximityState to, ProximityAction action, string reason)
     {
         var change = new StateChange(State, to, action, reason);
         State = to;
+        ResetSides(to);
         return change;
     }
 }

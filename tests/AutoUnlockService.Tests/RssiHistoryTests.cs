@@ -176,4 +176,55 @@ public class RssiHistoryTests
 
         Assert.Equal(0, h.InWindow(T0, TimeSpan.FromSeconds(10)).Count);
     }
+
+    [Fact]
+    public void Since_devuelve_solo_las_muestras_posteriores_al_marca_de_agua()
+    {
+        var h = Create(Retention, out _);
+        h.Add(-50, T0.AddSeconds(-3));
+        h.Add(-60, T0.AddSeconds(-1));
+        h.Add(-70, T0);
+
+        var since = h.Since(T0.AddSeconds(-2));
+
+        Assert.Equal(2, since.Count);
+        Assert.Equal(-60, since[0].Rssi);
+        Assert.Equal(-70, since[1].Rssi);
+    }
+
+    [Fact]
+    public void Since_es_exclusivo_en_el_borde()
+    {
+        var h = Create(Retention, out _);
+        h.Add(-50, T0);                    // justo en el borde: excluida
+        h.Add(-60, T0.AddMilliseconds(1));
+
+        var since = h.Since(T0);
+
+        Assert.Single(since);
+        Assert.Equal(-60, since[0].Rssi);
+    }
+
+    [Fact]
+    public void Since_ordena_por_tiempo_aunque_lleguen_desordenadas()
+    {
+        var h = Create(Retention, out _);
+        h.Add(-70, T0.AddSeconds(-1));     // llega primero la mas nueva
+        h.Add(-50, T0.AddSeconds(-3));
+
+        var since = h.Since(T0.AddSeconds(-5));
+
+        Assert.Equal(2, since.Count);
+        Assert.Equal(-50, since[0].Rssi);
+        Assert.Equal(-70, since[1].Rssi);
+    }
+
+    [Fact]
+    public void Since_sin_novedades_devuelve_vacio()
+    {
+        var h = Create(Retention, out _);
+        h.Add(-50, T0.AddSeconds(-10));
+
+        Assert.Empty(h.Since(T0.AddSeconds(-5)));
+    }
 }

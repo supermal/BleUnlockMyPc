@@ -19,9 +19,6 @@ public sealed record ConfigValidationResult(bool IsValid, IReadOnlyList<ConfigEr
 /// </summary>
 public static class ConfigValidator
 {
-    /// <summary>镜像 HelperProtocol.MaxTimeoutSeconds。</summary>
-    public const double MaxPromptTimeoutSeconds = 600;
-
     /// <summary>镜像 HelperProtocol.MaxSnoozeMinutes。</summary>
     public const double MaxSnoozeMinutes = 240;
 
@@ -127,16 +124,23 @@ public static class ConfigValidator
                 $"{ConfigFields.ProximityUnlockThresholdDbm} 必须大于 LockThresholdDbm，否则死区为负"));
         }
 
-        if (p.LockWindowSeconds <= 0)
+        // 批次个数（触发读数不计入，收满 N 个取平均）：下限 1，上限防止收集阶段拖得过长
+        if (p.UnlockSampleCount is < 1 or > 20)
         {
-            errors.Add(new ConfigError(ConfigFields.ProximityLockWindowSeconds,
-                $"{ConfigFields.ProximityLockWindowSeconds} 必须为正数"));
+            errors.Add(new ConfigError(ConfigFields.ProximityUnlockSampleCount,
+                $"{ConfigFields.ProximityUnlockSampleCount} 必须在 1 到 20 之间"));
         }
-        if (p.UnlockWindowSeconds <= 0)
+        if (p.LockPromptSampleCount is < 1 or > 50)
         {
-            errors.Add(new ConfigError(ConfigFields.ProximityUnlockWindowSeconds,
-                $"{ConfigFields.ProximityUnlockWindowSeconds} 必须为正数"));
+            errors.Add(new ConfigError(ConfigFields.ProximityLockPromptSampleCount,
+                $"{ConfigFields.ProximityLockPromptSampleCount} 必须在 1 到 50 之间"));
         }
+        if (p.LockConfirmSampleCount is < 1 or > 50)
+        {
+            errors.Add(new ConfigError(ConfigFields.ProximityLockConfirmSampleCount,
+                $"{ConfigFields.ProximityLockConfirmSampleCount} 必须在 1 到 50 之间"));
+        }
+
         if (p.StartupGraceSeconds < 0)
         {
             errors.Add(new ConfigError(ConfigFields.ProximityStartupGraceSeconds,
@@ -147,26 +151,9 @@ public static class ConfigValidator
             errors.Add(new ConfigError(ConfigFields.ProximityUnlockPendingTimeoutSeconds,
                 $"{ConfigFields.ProximityUnlockPendingTimeoutSeconds} 必须为正数"));
         }
-        if (p.MinSamples < 1)
-        {
-            errors.Add(new ConfigError(ConfigFields.ProximityMinSamples,
-                $"{ConfigFields.ProximityMinSamples} 必须大于等于 1"));
-        }
 
         var n = config.Notification;
         // 上限与服务端 HelperProtocol 一致：辅助进程会拒绝超限值，静默拒绝会导致锁屏而无提示
-        if (!(n.PromptTimeoutSeconds > 0))
-        {
-            errors.Add(new ConfigError(ConfigFields.NotificationPromptTimeoutSeconds,
-                $"{ConfigFields.NotificationPromptTimeoutSeconds} 必须为正数"));
-        }
-        else if (n.PromptTimeoutSeconds > MaxPromptTimeoutSeconds)
-        {
-            errors.Add(new ConfigError(ConfigFields.NotificationPromptTimeoutSeconds,
-                string.Create(CultureInfo.InvariantCulture,
-                    $"{ConfigFields.NotificationPromptTimeoutSeconds} 不能超过 {MaxPromptTimeoutSeconds:0} 秒")));
-        }
-
         if (n.RejectSnoozeSeconds <= 0)
         {
             errors.Add(new ConfigError(ConfigFields.NotificationRejectSnoozeSeconds,

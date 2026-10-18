@@ -46,7 +46,7 @@ public static class ConfigInput
         return true;
     }
 
-    /// <summary>解析整数（MinSamples 等；“3.5”视为无效）。</summary>
+    /// <summary>解析整数（批次个数等；“3.5”视为无效）。</summary>
     public static bool TryParseCount(string? text, out int value)
     {
         value = 0;

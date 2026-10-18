@@ -127,6 +127,22 @@ public class OptionsGateTests
     }
 
     [Fact]
+    public void Un_cambio_solo_de_los_conteos_dispara_recarga_sin_marcar_dispositivo_ni_credenciales()
+    {
+        var (gate, time, changes) = Build();
+        var nuevo = Options();
+        nuevo.Proximity.LockConfirmSampleCount = 12;
+
+        gate.Submit(nuevo);
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Single(changes);
+        Assert.False(changes[0].DeviceChanged);
+        Assert.False(changes[0].CredentialsChanged);
+        Assert.Equal(12, gate.Current.Proximity.LockConfirmSampleCount);
+    }
+
+    [Fact]
     public void Un_envio_identico_al_vigente_no_dispara_evento()
     {
         var (gate, time, changes) = Build();

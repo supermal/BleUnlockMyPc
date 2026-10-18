@@ -6,24 +6,27 @@ public enum PromptOutcome { Reject, Snooze, Timeout, Dismissed }
 
 public abstract record HelperCommand
 {
-    public sealed record Prompt(int Id, double TimeoutSeconds, double SnoozeMinutes) : HelperCommand;
+    public sealed record Prompt(int Id, double SnoozeMinutes) : HelperCommand;
     public sealed record Cancel(int Id) : HelperCommand;
     public sealed record Lock : HelperCommand;
     public sealed record Notify(string Message) : HelperCommand;
 }
 
 // Protocolo de texto entre el servicio y el ayudante de sesion.
-// Los numeros van siempre en cultura invariante: la maquina puede usar coma decimal
+// Los numeros van siempre en cultura invariante: la maquina puede usar coma decimal.
+// 判定改版：PROMPT ya no lleva plazo——el aviso queda en pantalla hasta que el usuario
+// responda o el servicio lo retire (CANCEL / nuevo Prompt / cierre del canal)
 public static class HelperProtocol
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-    // Limites razonables: un plazo mayor es un error del emisor, no una orden valida
+    // Tope de plazo para el dialogo degradado (WTSSendMessage interpreta 0 como
+    // "esperar para siempre": nunca se envia 0)
     public const double MaxTimeoutSeconds = 600;
     public const double MaxSnoozeMinutes = 240;
 
-    public static string BuildPrompt(int id, double timeoutSeconds, double snoozeMinutes) =>
-        string.Create(Inv, $"PROMPT {id} {timeoutSeconds} {snoozeMinutes}\n");
+    public static string BuildPrompt(int id, double snoozeMinutes) =>
+        string.Create(Inv, $"PROMPT {id} {snoozeMinutes}\n");
 
     public static string BuildCancel(int id) => string.Create(Inv, $"CANCEL {id}\n");
 
@@ -61,14 +64,12 @@ public static class HelperProtocol
 
             case "PROMPT":
                 var args = rest.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (args.Length != 3) return false;
+                if (args.Length != 2) return false;
                 if (!int.TryParse(args[0], NumberStyles.Integer, Inv, out var id)) return false;
-                if (!double.TryParse(args[1], NumberStyles.Float, Inv, out var timeout)) return false;
-                if (!double.TryParse(args[2], NumberStyles.Float, Inv, out var snooze)) return false;
+                if (!double.TryParse(args[1], NumberStyles.Float, Inv, out var snooze)) return false;
                 // NaN, infinito, negativo o por encima del maximo no son plazos validos
-                if (!double.IsFinite(timeout) || timeout < 0 || timeout > MaxTimeoutSeconds) return false;
                 if (!double.IsFinite(snooze) || snooze < 0 || snooze > MaxSnoozeMinutes) return false;
-                command = new HelperCommand.Prompt(id, timeout, snooze);
+                command = new HelperCommand.Prompt(id, snooze);
                 return true;
 
             default:

@@ -5,6 +5,8 @@ using Xunit;
 
 namespace AutoUnlockService.Tests;
 
+// 判定改版（2026-10-18）：批次个数平均。触发读数不计入；锁定侧的静默
+//（连续无读数超过 3 s 宽限）每秒注入一个极低值并计入当前批次，静默本身即触发
 public class ProximityStateMachineLockTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 13, 12, 0, 0, TimeSpan.Zero);
@@ -18,7 +20,7 @@ public class ProximityStateMachineLockTests
         return (sm, time, history);
     }
 
-    // Rellena la ventana con muestras del nivel indicado, una por segundo hacia atras
+    // Rellena con muestras del nivel indicado, una por segundo hacia atras
     private static void Fill(RssiHistory h, FakeTimeProvider time, short rssi, int count)
     {
         var now = time.GetUtcNow();
@@ -57,43 +59,117 @@ public class ProximityStateMachineLockTests
     }
 
     [Fact]
-    public void Pide_confirmacion_cuando_desaparece_la_senal()
+    public void El_silencio_llena_el_lote_y_pide_confirmacion()
     {
         var (sm, time, history) = Build();
         history.Add(-50, T0);
-        time.Advance(TimeSpan.FromSeconds(30));    // pasada la gracia y la ventana de 10 s
+        time.Advance(TimeSpan.FromSeconds(30));    // pasada la gracia: 27 s de silencio
 
         var change = sm.Evaluate(history);
 
         Assert.NotNull(change);
         Assert.Equal(ProximityState.PendingLock, change.To);
         Assert.Equal(ProximityAction.ShowLockPrompt, change.Action);
-        Assert.Contains("无信号", change.Reason);
+        Assert.Contains("静默", change.Reason);    // 5 个极低值全部来自静默注入
     }
 
     [Fact]
-    public void Pide_confirmacion_cuando_la_media_baja_del_umbral()
+    public void Pide_confirmacion_tras_el_disparador_y_cinco_lecturas_bajas()
     {
         var (sm, time, history) = Build();
         history.Add(-50, T0);
         time.Advance(TimeSpan.FromSeconds(20));
-        Fill(history, time, -85, 5);               // media -85 < -80
+        Fill(history, time, -85, 6);               // 1 触发（不计入）+ 5 计入 → 平均 -85 < -80
 
         var change = sm.Evaluate(history);
 
         Assert.Equal(ProximityState.PendingLock, change?.To);
         Assert.Contains("-85", change!.Reason);
+        Assert.DoesNotContain("静默", change.Reason);
     }
 
     [Fact]
-    public void No_bloquea_con_menos_muestras_que_el_minimo()
+    public void El_disparador_no_cuenta_para_el_lote()
     {
         var (sm, time, history) = Build();
         history.Add(-50, T0);
         time.Advance(TimeSpan.FromSeconds(20));
-        Fill(history, time, -85, 2);               // MinSamples = 3
+        Fill(history, time, -85, 5);               // 触发 + 4 → 还差一个
 
         Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.Unlocked, sm.State);
+    }
+
+    [Fact]
+    public void Un_lote_que_no_confirma_se_descarta_entero_y_hace_falta_otro_disparo()
+    {
+        var (sm, time, history) = Build();
+        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(20));
+
+        history.Add(-85, time.GetUtcNow());        // disparador
+        Assert.Null(sm.Evaluate(history));
+
+        for (var i = 0; i < 5; i++)                // 5 个 -70：平均不达标
+        {
+            time.Advance(TimeSpan.FromSeconds(1));
+            history.Add(-70, time.GetUtcNow());
+        }
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.Unlocked, sm.State);
+
+        // 整批作废；新触发后从零开始，凑满 5 个才确认
+        for (var i = 0; i < 6; i++)
+        {
+            time.Advance(TimeSpan.FromSeconds(1));
+            history.Add(-85, time.GetUtcNow());
+            var change = sm.Evaluate(history);
+            if (i < 5) Assert.Null(change);
+            else Assert.Equal(ProximityState.PendingLock, change?.To);
+        }
+    }
+
+    [Fact]
+    public void El_silencio_completa_un_lote_a_medias()
+    {
+        var (sm, time, history) = Build();
+        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(20));
+
+        history.Add(-85, time.GetUtcNow());        // disparador
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-84, time.GetUtcNow());        // 计入 1
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-83, time.GetUtcNow());        // 计入 2
+        Assert.Null(sm.Evaluate(history));
+
+        // El usuario se va: 3 个静默注入 completan los 5
+        time.Advance(TimeSpan.FromSeconds(6));
+        var change = sm.Evaluate(history);
+
+        Assert.Equal(ProximityState.PendingLock, change?.To);
+        Assert.Contains("静默", change!.Reason);
+    }
+
+    [Fact]
+    public void La_gracia_de_silencio_retrasa_las_inyecciones()
+    {
+        var (sm, time, history) = Build();
+        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(20));
+
+        history.Add(-85, time.GetUtcNow());        // disparador
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-84, time.GetUtcNow());        // 计入 1
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-83, time.GetUtcNow());        // 计入 2
+        Assert.Null(sm.Evaluate(history));
+
+        time.Advance(TimeSpan.FromSeconds(5));     // 5 s de silencio → solo 2 inyecciones
+        Assert.Null(sm.Evaluate(history));
+
+        time.Advance(TimeSpan.FromSeconds(1));     // 6 s → 3 inyecciones → lote completo
+        Assert.Equal(ProximityState.PendingLock, sm.Evaluate(history)?.To);
     }
 
     [Fact]
@@ -105,8 +181,9 @@ public class ProximityStateMachineLockTests
         sm.Evaluate(history);
         Assert.Equal(ProximityState.PendingLock, sm.State);
 
-        time.Advance(TimeSpan.FromSeconds(2));
-        Fill(history, time, -40, 5);               // media -40 > -45
+        // 恢复：触发 -40 + 3 个 -40 → 平均 > -45
+        time.Advance(TimeSpan.FromSeconds(5));
+        Fill(history, time, -40, 5);
 
         var change = sm.Evaluate(history);
 
@@ -115,18 +192,56 @@ public class ProximityStateMachineLockTests
     }
 
     [Fact]
-    public void Bloquea_cuando_vence_el_plazo_del_aviso()
+    public void Tres_lecturas_fuertes_no_cancelan_el_aviso_si_falta_una()
+    {
+        var (sm, time, history) = Build();
+        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(30));
+        sm.Evaluate(history);
+        Assert.Equal(ProximityState.PendingLock, sm.State);
+
+        time.Advance(TimeSpan.FromSeconds(4));
+        Fill(history, time, -30, 3);               // 触发 + 2 计入 → 还差一个
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.PendingLock, sm.State);
+    }
+
+    [Fact]
+    public void Tras_el_aviso_el_silencio_confirma_el_bloqueo()
     {
         var (sm, time, history) = Build();
         history.Add(-50, T0);
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
 
-        time.Advance(TimeSpan.FromSeconds(15));    // PromptTimeoutSeconds = 15
+        time.Advance(TimeSpan.FromSeconds(2));     // dentro de la gracia de silencio
+        Assert.Null(sm.Evaluate(history));
+
+        time.Advance(TimeSpan.FromSeconds(11));    // 13 s → 10 inyecciones completan el lote
         var change = sm.Evaluate(history);
 
         Assert.Equal(ProximityState.LockedWaitingDeparture, change?.To);
         Assert.Equal(ProximityAction.LockScreen, change!.Action);
+    }
+
+    [Fact]
+    public void Las_lecturas_en_zona_muerta_mantienen_el_aviso_y_no_bloquean()
+    {
+        var (sm, time, history) = Build();
+        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(30));
+        sm.Evaluate(history);
+        Assert.Equal(ProximityState.PendingLock, sm.State);
+
+        // -80 ~ -65：ni cerca ni lejos. El aviso se queda; nada lo bloquea por tiempo
+        for (var i = 0; i < 6; i++)
+        {
+            time.Advance(TimeSpan.FromSeconds(5));
+            Fill(history, time, -70, 5);
+            Assert.Null(sm.Evaluate(history));
+            Assert.Equal(ProximityState.PendingLock, sm.State);
+        }
     }
 
     [Fact]
@@ -164,20 +279,26 @@ public class ProximityStateMachineLockTests
         Assert.Equal(ProximityState.Unlocked, sm.Evaluate(history)?.To);
     }
 
-    [Theory]
-    [InlineData(PromptResponse.Timeout)]
-    [InlineData(PromptResponse.Dismissed)]
-    public void Timeout_y_descarte_bloquean_la_pantalla(PromptResponse response)
+    [Fact]
+    public void Cerrar_la_notificacion_bloquea_la_pantalla()
     {
-        var (sm, time, history) = Build();
-        history.Add(-50, T0);
-        time.Advance(TimeSpan.FromSeconds(30));
-        sm.Evaluate(history);
+        var (sm, _, _) = BuildPending();
 
-        var change = sm.OnPromptResponse(response);
+        var change = sm.OnPromptResponse(PromptResponse.Dismissed);
 
         Assert.Equal(ProximityState.LockedWaitingDeparture, change?.To);
         Assert.Equal(ProximityAction.LockScreen, change!.Action);
+    }
+
+    [Fact]
+    public void El_timeout_de_la_notificacion_ya_no_bloquea()
+    {
+        var (sm, _, _) = BuildPending();
+
+        // La espera no tiene plazo automatico: el timeout solo indica que el dialogo
+        // degradado se cerro solo. El bloqueo lo deciden las lecturas o el usuario
+        Assert.Null(sm.OnPromptResponse(PromptResponse.Timeout));
+        Assert.Equal(ProximityState.PendingLock, sm.State);
     }
 
     [Fact]
@@ -237,11 +358,11 @@ public class ProximityStateMachineLockTests
         Assert.Null(sm.Evaluate(history));         // no bloquea nada mas abrir la tapa
         Assert.Equal(ProximityState.Unlocked, sm.State);
 
-        time.Advance(TimeSpan.FromSeconds(16));
+        time.Advance(TimeSpan.FromSeconds(16));    // 16 s de silencio tras la gracia reabierta
         Assert.Equal(ProximityState.PendingLock, sm.Evaluate(history)?.To);
     }
 
-    // Deja la maquina en PendingLock con la ventana de desbloqueo vacia
+    // Deja la maquina en PendingLock con el aviso en pantalla
     private static (ProximityStateMachine Sm, FakeTimeProvider Time, RssiHistory History) BuildPending()
     {
         var b = Build();
@@ -253,21 +374,10 @@ public class ProximityStateMachineLockTests
     }
 
     [Fact]
-    public void Una_ventana_vacia_no_cancela_el_aviso_pendiente()
+    public void Una_pausa_corta_no_cancela_el_aviso_pendiente()
     {
         var (sm, time, history) = BuildPending();
-        time.Advance(TimeSpan.FromSeconds(2));     // dentro del plazo, sin muestras nuevas
-
-        Assert.Null(sm.Evaluate(history));
-        Assert.Equal(ProximityState.PendingLock, sm.State);
-    }
-
-    [Fact]
-    public void Menos_muestras_que_el_minimo_no_cancelan_el_aviso_aunque_sean_fuertes()
-    {
-        var (sm, time, history) = BuildPending();
-        time.Advance(TimeSpan.FromSeconds(2));
-        Fill(history, time, -30, 2);               // muy por encima de -45, pero MinSamples = 3
+        time.Advance(TimeSpan.FromSeconds(2));     // dentro de la gracia de silencio
 
         Assert.Null(sm.Evaluate(history));
         Assert.Equal(ProximityState.PendingLock, sm.State);
@@ -278,7 +388,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = BuildPending();
 
-        time.Advance(TimeSpan.FromHours(3));       // el plazo del aviso ya vencio de largo
+        time.Advance(TimeSpan.FromHours(3));       // el aviso llevaba horas en pantalla
         history.Clear();
         var change = sm.OnResume();
 

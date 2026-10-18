@@ -81,12 +81,11 @@ Start-Service AutoUnlockService
 
 | 参数 | 默认值 | 说明 |
 |------|-------|------|
-| `LockThresholdDbm` | -80 | 低于此值判定为远离 |
-| `LockWindowSeconds` | 10 | 远离判定时间窗 |
-| `UnlockThresholdDbm` | -45 | 高于此值判定为靠近 |
-| `UnlockWindowSeconds` | 5 | 靠近判定时间窗 |
-| `MinSamples` | 3 | 时间窗内最少有效样本数 |
-| `PromptTimeoutSeconds` | 15 | 通知无响应则锁屏 |
+| `LockThresholdDbm` | -80 | 低于此值视为离开（触发读数不计入批次） |
+| `UnlockThresholdDbm` | -45 | 高于此值视为靠近（触发读数不计入批次） |
+| `UnlockSampleCount` | 3 | 解锁确认个数：触发后再收 N 个高于解锁阈值的读数 |
+| `LockPromptSampleCount` | 5 | 弹窗触发个数：触发后再收 N 个低于锁定阈值的读数（静默每秒按 1 条计入） |
+| `LockConfirmSampleCount` | 10 | 锁屏确认个数：弹窗后新收 N 个读数低于锁定阈值 |
 | `RejectSnoozeSeconds` | 60 | 点「拒绝」后的静默期 |
 | `SnoozeMinutes` | 5 | 点「5 分钟内不锁定」的静默期 |
 | `StartupGraceSeconds` | 15 | 启动后不评估锁屏的宽限期 |
@@ -110,16 +109,15 @@ Start-Service AutoUnlockService
     },
     "Proximity": {
       "LockThresholdDbm": -80,
-      "LockWindowSeconds": 10,
       "UnlockThresholdDbm": -45,
-      "UnlockWindowSeconds": 5,
-      "MinSamples": 3,
+      "UnlockSampleCount": 3,
+      "LockPromptSampleCount": 5,
+      "LockConfirmSampleCount": 10,
       "StartupGraceSeconds": 15,
       "UnlockPendingTimeoutSeconds": 20
     },
     "Notification": {
       "Mode": "Toast",
-      "PromptTimeoutSeconds": 15,
       "RejectSnoozeSeconds": 60,
       "SnoozeMinutes": 5
     }
@@ -129,7 +127,7 @@ Start-Service AutoUnlockService
 
 生效方式：
 
-- 阈值 / 窗口 / 超时：下一次评估直接采用新值。
+- 阈值 / 批次个数 / 超时：下一次评估直接采用新值。旧键（`LockWindowSeconds`、`UnlockWindowSeconds`、`MinSamples`、`PromptTimeoutSeconds`）留在文件里但不再生效；管理端保存时既不写回也不删除它们。
 - `Irk` / `IrkByteOrder` / `IdentityAddress`：变更会重建解析缓存并清空 RSSI 历史。
 - 凭据（`UserName` / `Password`）：变更会重新预验证，通过则解除停摆。
 - `Notification.Mode`：在服务启动时读取，修改后需重启服务生效。

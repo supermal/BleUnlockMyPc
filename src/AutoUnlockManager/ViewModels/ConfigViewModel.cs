@@ -76,14 +76,13 @@ public sealed partial class ConfigViewModel : ObservableObject
     [ObservableProperty] public partial string UserNameText { get; set; }
     [ObservableProperty] public partial string PasswordText { get; set; }
     [ObservableProperty] public partial string LockThresholdText { get; set; }
-    [ObservableProperty] public partial string LockWindowText { get; set; }
     [ObservableProperty] public partial string UnlockThresholdText { get; set; }
-    [ObservableProperty] public partial string UnlockWindowText { get; set; }
-    [ObservableProperty] public partial string MinSamplesText { get; set; }
+    [ObservableProperty] public partial string UnlockCountText { get; set; }
+    [ObservableProperty] public partial string LockPromptCountText { get; set; }
+    [ObservableProperty] public partial string LockConfirmCountText { get; set; }
     [ObservableProperty] public partial string StartupGraceText { get; set; }
     [ObservableProperty] public partial string UnlockPendingTimeoutText { get; set; }
     [ObservableProperty] public partial int NotifierModeIndex { get; set; }
-    [ObservableProperty] public partial string PromptTimeoutText { get; set; }
     [ObservableProperty] public partial string RejectSnoozeText { get; set; }
     [ObservableProperty] public partial string SnoozeText { get; set; }
 
@@ -110,20 +109,20 @@ public sealed partial class ConfigViewModel : ObservableObject
     public partial string LockThresholdError { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasLockWindowError))]
-    public partial string LockWindowError { get; set; }
-
-    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUnlockThresholdError))]
     public partial string UnlockThresholdError { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasUnlockWindowError))]
-    public partial string UnlockWindowError { get; set; }
+    [NotifyPropertyChangedFor(nameof(HasUnlockCountError))]
+    public partial string UnlockCountError { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasMinSamplesError))]
-    public partial string MinSamplesError { get; set; }
+    [NotifyPropertyChangedFor(nameof(HasLockPromptCountError))]
+    public partial string LockPromptCountError { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLockConfirmCountError))]
+    public partial string LockConfirmCountError { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasStartupGraceError))]
@@ -132,10 +131,6 @@ public sealed partial class ConfigViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUnlockPendingTimeoutError))]
     public partial string UnlockPendingTimeoutError { get; set; }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasPromptTimeoutError))]
-    public partial string PromptTimeoutError { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasRejectSnoozeError))]
@@ -150,13 +145,12 @@ public sealed partial class ConfigViewModel : ObservableObject
     public bool HasUserNameError => UserNameError.Length > 0;
     public bool HasPasswordError => PasswordError.Length > 0;
     public bool HasLockThresholdError => LockThresholdError.Length > 0;
-    public bool HasLockWindowError => LockWindowError.Length > 0;
     public bool HasUnlockThresholdError => UnlockThresholdError.Length > 0;
-    public bool HasUnlockWindowError => UnlockWindowError.Length > 0;
-    public bool HasMinSamplesError => MinSamplesError.Length > 0;
+    public bool HasUnlockCountError => UnlockCountError.Length > 0;
+    public bool HasLockPromptCountError => LockPromptCountError.Length > 0;
+    public bool HasLockConfirmCountError => LockConfirmCountError.Length > 0;
     public bool HasStartupGraceError => StartupGraceError.Length > 0;
     public bool HasUnlockPendingTimeoutError => UnlockPendingTimeoutError.Length > 0;
-    public bool HasPromptTimeoutError => PromptTimeoutError.Length > 0;
     public bool HasRejectSnoozeError => RejectSnoozeError.Length > 0;
     public bool HasSnoozeError => SnoozeError.Length > 0;
 
@@ -173,13 +167,12 @@ public sealed partial class ConfigViewModel : ObservableObject
         UserNameText = "";
         PasswordText = "";
         LockThresholdText = "";
-        LockWindowText = "";
         UnlockThresholdText = "";
-        UnlockWindowText = "";
-        MinSamplesText = "";
+        UnlockCountText = "";
+        LockPromptCountText = "";
+        LockConfirmCountText = "";
         StartupGraceText = "";
         UnlockPendingTimeoutText = "";
-        PromptTimeoutText = "";
         RejectSnoozeText = "";
         SnoozeText = "";
         IrkError = "";
@@ -187,13 +180,12 @@ public sealed partial class ConfigViewModel : ObservableObject
         UserNameError = "";
         PasswordError = "";
         LockThresholdError = "";
-        LockWindowError = "";
         UnlockThresholdError = "";
-        UnlockWindowError = "";
-        MinSamplesError = "";
+        UnlockCountError = "";
+        LockPromptCountError = "";
+        LockConfirmCountError = "";
         StartupGraceError = "";
         UnlockPendingTimeoutError = "";
-        PromptTimeoutError = "";
         RejectSnoozeError = "";
         SnoozeError = "";
     }
@@ -474,14 +466,14 @@ public sealed partial class ConfigViewModel : ObservableObject
         var p = config.Proximity;
         if (TryGetNumber(LockThresholdText, ConfigFields.ProximityLockThresholdDbm, errors, out var lockThreshold))
             p.LockThresholdDbm = lockThreshold;
-        if (TryGetNumber(LockWindowText, ConfigFields.ProximityLockWindowSeconds, errors, out var lockWindow))
-            p.LockWindowSeconds = lockWindow;
         if (TryGetNumber(UnlockThresholdText, ConfigFields.ProximityUnlockThresholdDbm, errors, out var unlockThreshold))
             p.UnlockThresholdDbm = unlockThreshold;
-        if (TryGetNumber(UnlockWindowText, ConfigFields.ProximityUnlockWindowSeconds, errors, out var unlockWindow))
-            p.UnlockWindowSeconds = unlockWindow;
-        if (TryGetCount(MinSamplesText, ConfigFields.ProximityMinSamples, errors, out var minSamples))
-            p.MinSamples = minSamples;
+        if (TryGetCount(UnlockCountText, ConfigFields.ProximityUnlockSampleCount, errors, out var unlockCount))
+            p.UnlockSampleCount = unlockCount;
+        if (TryGetCount(LockPromptCountText, ConfigFields.ProximityLockPromptSampleCount, errors, out var lockPromptCount))
+            p.LockPromptSampleCount = lockPromptCount;
+        if (TryGetCount(LockConfirmCountText, ConfigFields.ProximityLockConfirmSampleCount, errors, out var lockConfirmCount))
+            p.LockConfirmSampleCount = lockConfirmCount;
         if (TryGetNumber(StartupGraceText, ConfigFields.ProximityStartupGraceSeconds, errors, out var startupGrace))
             p.StartupGraceSeconds = startupGrace;
         if (TryGetNumber(UnlockPendingTimeoutText, ConfigFields.ProximityUnlockPendingTimeoutSeconds, errors, out var unlockPending))
@@ -489,8 +481,6 @@ public sealed partial class ConfigViewModel : ObservableObject
 
         var n = config.Notification;
         n.Mode = (NotifierMode)Math.Clamp(NotifierModeIndex, 0, 1);
-        if (TryGetNumber(PromptTimeoutText, ConfigFields.NotificationPromptTimeoutSeconds, errors, out var promptTimeout))
-            n.PromptTimeoutSeconds = promptTimeout;
         if (TryGetNumber(RejectSnoozeText, ConfigFields.NotificationRejectSnoozeSeconds, errors, out var rejectSnooze))
             n.RejectSnoozeSeconds = rejectSnooze;
         if (TryGetNumber(SnoozeText, ConfigFields.NotificationSnoozeMinutes, errors, out var snooze))
@@ -507,14 +497,13 @@ public sealed partial class ConfigViewModel : ObservableObject
         UserNameText = config.Credentials.UserName;
         PasswordText = config.Credentials.Password;
         LockThresholdText = ConfigInput.FormatNumber(config.Proximity.LockThresholdDbm);
-        LockWindowText = ConfigInput.FormatNumber(config.Proximity.LockWindowSeconds);
         UnlockThresholdText = ConfigInput.FormatNumber(config.Proximity.UnlockThresholdDbm);
-        UnlockWindowText = ConfigInput.FormatNumber(config.Proximity.UnlockWindowSeconds);
-        MinSamplesText = ConfigInput.FormatCount(config.Proximity.MinSamples);
+        UnlockCountText = ConfigInput.FormatCount(config.Proximity.UnlockSampleCount);
+        LockPromptCountText = ConfigInput.FormatCount(config.Proximity.LockPromptSampleCount);
+        LockConfirmCountText = ConfigInput.FormatCount(config.Proximity.LockConfirmSampleCount);
         StartupGraceText = ConfigInput.FormatNumber(config.Proximity.StartupGraceSeconds);
         UnlockPendingTimeoutText = ConfigInput.FormatNumber(config.Proximity.UnlockPendingTimeoutSeconds);
         NotifierModeIndex = Math.Clamp((int)config.Notification.Mode, 0, 1);
-        PromptTimeoutText = ConfigInput.FormatNumber(config.Notification.PromptTimeoutSeconds);
         RejectSnoozeText = ConfigInput.FormatNumber(config.Notification.RejectSnoozeSeconds);
         SnoozeText = ConfigInput.FormatNumber(config.Notification.SnoozeMinutes);
     }
@@ -571,26 +560,23 @@ public sealed partial class ConfigViewModel : ObservableObject
             case ConfigFields.ProximityLockThresholdDbm:
                 if (LockThresholdError.Length == 0) LockThresholdError = error.Message;
                 break;
-            case ConfigFields.ProximityLockWindowSeconds:
-                if (LockWindowError.Length == 0) LockWindowError = error.Message;
-                break;
             case ConfigFields.ProximityUnlockThresholdDbm:
                 if (UnlockThresholdError.Length == 0) UnlockThresholdError = error.Message;
                 break;
-            case ConfigFields.ProximityUnlockWindowSeconds:
-                if (UnlockWindowError.Length == 0) UnlockWindowError = error.Message;
+            case ConfigFields.ProximityUnlockSampleCount:
+                if (UnlockCountError.Length == 0) UnlockCountError = error.Message;
                 break;
-            case ConfigFields.ProximityMinSamples:
-                if (MinSamplesError.Length == 0) MinSamplesError = error.Message;
+            case ConfigFields.ProximityLockPromptSampleCount:
+                if (LockPromptCountError.Length == 0) LockPromptCountError = error.Message;
+                break;
+            case ConfigFields.ProximityLockConfirmSampleCount:
+                if (LockConfirmCountError.Length == 0) LockConfirmCountError = error.Message;
                 break;
             case ConfigFields.ProximityStartupGraceSeconds:
                 if (StartupGraceError.Length == 0) StartupGraceError = error.Message;
                 break;
             case ConfigFields.ProximityUnlockPendingTimeoutSeconds:
                 if (UnlockPendingTimeoutError.Length == 0) UnlockPendingTimeoutError = error.Message;
-                break;
-            case ConfigFields.NotificationPromptTimeoutSeconds:
-                if (PromptTimeoutError.Length == 0) PromptTimeoutError = error.Message;
                 break;
             case ConfigFields.NotificationRejectSnoozeSeconds:
                 if (RejectSnoozeError.Length == 0) RejectSnoozeError = error.Message;
@@ -610,13 +596,12 @@ public sealed partial class ConfigViewModel : ObservableObject
         UserNameError = "";
         PasswordError = "";
         LockThresholdError = "";
-        LockWindowError = "";
         UnlockThresholdError = "";
-        UnlockWindowError = "";
-        MinSamplesError = "";
+        UnlockCountError = "";
+        LockPromptCountError = "";
+        LockConfirmCountError = "";
         StartupGraceError = "";
         UnlockPendingTimeoutError = "";
-        PromptTimeoutError = "";
         RejectSnoozeError = "";
         SnoozeError = "";
     }
@@ -643,26 +628,23 @@ public sealed partial class ConfigViewModel : ObservableObject
             case nameof(LockThresholdText):
                 if (LockThresholdError is { Length: > 0 }) LockThresholdError = "";
                 break;
-            case nameof(LockWindowText):
-                if (LockWindowError is { Length: > 0 }) LockWindowError = "";
-                break;
             case nameof(UnlockThresholdText):
                 if (UnlockThresholdError is { Length: > 0 }) UnlockThresholdError = "";
                 break;
-            case nameof(UnlockWindowText):
-                if (UnlockWindowError is { Length: > 0 }) UnlockWindowError = "";
+            case nameof(UnlockCountText):
+                if (UnlockCountError is { Length: > 0 }) UnlockCountError = "";
                 break;
-            case nameof(MinSamplesText):
-                if (MinSamplesError is { Length: > 0 }) MinSamplesError = "";
+            case nameof(LockPromptCountText):
+                if (LockPromptCountError is { Length: > 0 }) LockPromptCountError = "";
+                break;
+            case nameof(LockConfirmCountText):
+                if (LockConfirmCountError is { Length: > 0 }) LockConfirmCountError = "";
                 break;
             case nameof(StartupGraceText):
                 if (StartupGraceError is { Length: > 0 }) StartupGraceError = "";
                 break;
             case nameof(UnlockPendingTimeoutText):
                 if (UnlockPendingTimeoutError is { Length: > 0 }) UnlockPendingTimeoutError = "";
-                break;
-            case nameof(PromptTimeoutText):
-                if (PromptTimeoutError is { Length: > 0 }) PromptTimeoutError = "";
                 break;
             case nameof(RejectSnoozeText):
                 if (RejectSnoozeError is { Length: > 0 }) RejectSnoozeError = "";

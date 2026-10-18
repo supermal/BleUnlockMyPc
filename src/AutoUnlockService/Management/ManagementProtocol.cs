@@ -54,13 +54,13 @@ public sealed record SnapshotScan(string? Status, string? Detail);
 
 public sealed record SnapshotConnection(bool Connected);
 
-// 当前生效阈值（含热重载后的新值）
+// 当前生效阈值与批次参数（含热重载后的新值）；管理端曲线只使用前两个
 public sealed record SnapshotThresholds(
     double LockDbm,
     double UnlockDbm,
-    double LockWinSec,
-    double UnlockWinSec,
-    int MinSamples);
+    int UnlockCount,
+    int LockPromptCount,
+    int LockConfirmCount);
 
 // w5/w10 为 5s/10s 窗口均值（null = 无样本）；n5/n10 为窗口内样本数
 public sealed record SnapshotAverages(double? W5, double? W10, int N5, int N10);

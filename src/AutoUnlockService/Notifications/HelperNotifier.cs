@@ -7,39 +7,32 @@ namespace AutoUnlockService.Notifications;
 // nada, usa el dialogo"; los resultados normales y la cancelacion del llamante no la lanzan
 public sealed class HelperNotifier : INotifier
 {
-    // Margen sobre el plazo del Toast para que el ayudante responda Timeout por si mismo; si ni
-    // asi contesta, esta colgado y el usuario no esta viendo nada fiable
-    private static readonly TimeSpan ResponseGrace = TimeSpan.FromSeconds(10);
-
     private readonly HelperPipeServer _pipe;
     private readonly ILogger<HelperNotifier> _log;
-    private readonly TimeProvider _time;
     private readonly object _lock = new();
     private TaskCompletionSource<PromptOutcome>? _pending;
     private int _pendingId;
     private int _nextId;
 
-    public HelperNotifier(HelperPipeServer pipe, ILogger<HelperNotifier> log, TimeProvider? time = null)
+    public HelperNotifier(HelperPipeServer pipe, ILogger<HelperNotifier> log)
     {
         _pipe = pipe;
         _log = log;
-        _time = time ?? TimeProvider.System;
 
         // Se suscribe aqui y no en un metodo aparte: olvidar llamarlo dejaria las esperas sin romper nunca.
-        // Si el ayudante muere a mitad de la cuenta atras, el usuario no ha visto nada:
+        // Si el ayudante muere con el aviso en pantalla, el usuario no ha visto nada:
         // hay que romper la espera para que ResilientNotifier vuelva a preguntar ya
         _pipe.ResponseReceived += OnResponse;
         _pipe.Disconnected += OnDisconnected;
     }
 
-    public async Task<PromptOutcome> PromptAsync(TimeSpan timeout, double snoozeMinutes, CancellationToken ct)
+    public async Task<PromptOutcome> PromptAsync(double snoozeMinutes, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         if (!_pipe.IsConnected) throw new HelperUnavailableException("助手未连接");
 
-        // El ayudante descarta los PROMPT fuera de rango: se ajusta aqui para que un plazo
+        // El ayudante descarta los PROMPT fuera de rango: se ajusta aqui para que un valor
         // grande no se convierta en un aviso que nunca aparece
-        var timeoutSeconds = Math.Clamp(timeout.TotalSeconds, 0, HelperProtocol.MaxTimeoutSeconds);
         var snooze = double.IsFinite(snoozeMinutes) ? Math.Clamp(snoozeMinutes, 0, HelperProtocol.MaxSnoozeMinutes) : 0;
 
         var tcs = new TaskCompletionSource<PromptOutcome>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -60,7 +53,7 @@ public sealed class HelperNotifier : INotifier
             // Si el ayudante cayo justo antes de registrar la espera, el evento ya paso: se comprueba aqui
             if (!_pipe.IsConnected) throw new HelperUnavailableException("助手在发送提示前已断开");
 
-            if (!await _pipe.SendAsync(HelperProtocol.BuildPrompt(id, timeoutSeconds, snooze), ct))
+            if (!await _pipe.SendAsync(HelperProtocol.BuildPrompt(id, snooze), ct))
             {
                 ct.ThrowIfCancellationRequested();
                 throw new HelperUnavailableException("向助手发送提示指令失败");
@@ -69,14 +62,9 @@ public sealed class HelperNotifier : INotifier
             // Se pudo desconectar mientras se enviaba
             if (!_pipe.IsConnected) throw new HelperUnavailableException("助手在发送提示时断开");
 
-            try
-            {
-                return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(timeoutSeconds) + ResponseGrace, _time, ct);
-            }
-            catch (TimeoutException)
-            {
-                throw new HelperUnavailableException("助手未在预期时间内响应提示");
-            }
+            // 改版：没有自动期限。等待只由以下之一结束：用户响应、CancelAsync、
+            // 助手断开（HelperUnavailableException）或调用方取消（ct）
+            return await tcs.Task.WaitAsync(ct);
         }
         catch (OperationCanceledException)
         {

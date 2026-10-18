@@ -224,8 +224,7 @@ public sealed class Worker(
             {
                 case ProximityAction.ShowLockPrompt:
                     var n = options.Current.Notification;
-                    var outcome = await notifier.PromptAsync(
-                        TimeSpan.FromSeconds(n.PromptTimeoutSeconds), n.SnoozeMinutes, CancellationToken.None);
+                    var outcome = await notifier.PromptAsync(n.SnoozeMinutes, CancellationToken.None);
                     Transition(() => _machine.OnPromptResponse(ToPromptResponse(outcome)));
                     break;
 
@@ -304,13 +303,14 @@ public sealed class Worker(
         if (now - _lastSummary < SummaryInterval) return;
         _lastSummary = now;
 
-        var p = options.Current.Proximity;
-        var stats = _history.InWindow(now, TimeSpan.FromSeconds(p.UnlockWindowSeconds));
+        // 固定 30 秒窗口仅用于观察：判定本身不再依赖时间窗
+        var stats = _history.InWindow(now, TimeSpan.FromSeconds(30));
         var sinceMatch = TimeSpan.FromTicks(now.UtcTicks - Volatile.Read(ref _lastMatchTicks)).TotalSeconds;
+        var batch = _machine.BatchProgressText;
 
         log.LogInformation(
-            "摘要：状态 {State}，最近 {Window:0} 秒 {Count} 个读数，平均 {Average:0.0} dBm，距上次匹配 {Since:0} 秒",
-            _machine.State, p.UnlockWindowSeconds, stats.Count,
+            "摘要：状态 {State}{Batch}，最近 30 秒 {Count} 个读数，平均 {Average:0.0} dBm，距上次匹配 {Since:0} 秒",
+            _machine.State, batch.Length == 0 ? "" : $"（{batch}）", stats.Count,
             stats.Count == 0 ? double.NaN : stats.Average, sinceMatch);
 
         if (sinceMatch > TimeSpan.FromMinutes(5).TotalSeconds)

@@ -222,9 +222,9 @@ public sealed class TelemetryHub
                 new SnapshotThresholds(
                     p.LockThresholdDbm,
                     p.UnlockThresholdDbm,
-                    p.LockWindowSeconds,
-                    p.UnlockWindowSeconds,
-                    p.MinSamples),
+                    p.UnlockSampleCount,
+                    p.LockPromptSampleCount,
+                    p.LockConfirmSampleCount),
                 new SnapshotAverages(
                     w5.Count == 0 ? null : w5.Average,
                     w10.Count == 0 ? null : w10.Average,

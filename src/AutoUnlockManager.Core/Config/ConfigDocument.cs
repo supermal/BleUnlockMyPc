@@ -76,7 +76,8 @@ public static class ConfigDocument
     }
 
     /// <summary>
-    /// 保存（校验通过后调用）：原位改写 <c>AutoUnlock</c> 下全部 16 字段，未知字段保留；
+    /// 保存（校验通过后调用）：原位改写 <c>AutoUnlock</c> 下全部 15 字段，未知字段保留；
+    /// 已废弃的旧键（窗口/最小样本/提示超时）不写入也不删除，留在文件里不影响服务端绑定。
     /// Irk 归一化为 32 位小写十六进制，IdentityAddress 留空写 <c>null</c>、否则归一化为 12 位小写十六进制。
     /// 原子替换失败（服务正在读取的瞬态锁）自动重试 <see cref="ReplaceAttempts"/> 次后抛异常。
     /// </summary>
@@ -103,15 +104,14 @@ public static class ConfigDocument
         Set(credentials, "Password", JsonValue.Create(config.Credentials.Password));
 
         Set(proximity, "LockThresholdDbm", JsonValue.Create(config.Proximity.LockThresholdDbm));
-        Set(proximity, "LockWindowSeconds", JsonValue.Create(config.Proximity.LockWindowSeconds));
         Set(proximity, "UnlockThresholdDbm", JsonValue.Create(config.Proximity.UnlockThresholdDbm));
-        Set(proximity, "UnlockWindowSeconds", JsonValue.Create(config.Proximity.UnlockWindowSeconds));
-        Set(proximity, "MinSamples", JsonValue.Create(config.Proximity.MinSamples));
+        Set(proximity, "UnlockSampleCount", JsonValue.Create(config.Proximity.UnlockSampleCount));
+        Set(proximity, "LockPromptSampleCount", JsonValue.Create(config.Proximity.LockPromptSampleCount));
+        Set(proximity, "LockConfirmSampleCount", JsonValue.Create(config.Proximity.LockConfirmSampleCount));
         Set(proximity, "StartupGraceSeconds", JsonValue.Create(config.Proximity.StartupGraceSeconds));
         Set(proximity, "UnlockPendingTimeoutSeconds", JsonValue.Create(config.Proximity.UnlockPendingTimeoutSeconds));
 
         Set(notification, "Mode", JsonValue.Create(config.Notification.Mode.ToString()));
-        Set(notification, "PromptTimeoutSeconds", JsonValue.Create(config.Notification.PromptTimeoutSeconds));
         Set(notification, "RejectSnoozeSeconds", JsonValue.Create(config.Notification.RejectSnoozeSeconds));
         Set(notification, "SnoozeMinutes", JsonValue.Create(config.Notification.SnoozeMinutes));
 

@@ -64,21 +64,21 @@ public static class OptionsValidator
         if (p.UnlockThresholdDbm <= p.LockThresholdDbm)
             errors.Add("Proximity.UnlockThresholdDbm 必须大于 LockThresholdDbm，否则死区为负");
 
-        if (p.LockWindowSeconds <= 0)   errors.Add("Proximity.LockWindowSeconds 必须为正数");
-        if (p.UnlockWindowSeconds <= 0) errors.Add("Proximity.UnlockWindowSeconds 必须为正数");
+        // 批次个数（触发读数不计入，收满 N 个取平均）：下限 1，上限防止收集阶段拖得过长
+        if (p.UnlockSampleCount is < 1 or > 20)
+            errors.Add("Proximity.UnlockSampleCount 必须在 1 到 20 之间");
+        if (p.LockPromptSampleCount is < 1 or > 50)
+            errors.Add("Proximity.LockPromptSampleCount 必须在 1 到 50 之间");
+        if (p.LockConfirmSampleCount is < 1 or > 50)
+            errors.Add("Proximity.LockConfirmSampleCount 必须在 1 到 50 之间");
+
         if (p.StartupGraceSeconds < 0)  errors.Add("Proximity.StartupGraceSeconds 不能为负数");
         if (p.UnlockPendingTimeoutSeconds <= 0)
             errors.Add("Proximity.UnlockPendingTimeoutSeconds 必须为正数");
-        if (p.MinSamples < 1)           errors.Add("Proximity.MinSamples 必须大于等于 1");
 
         var n = o.Notification;
-        // Los maximos viven en HelperProtocol: el ayudante rechaza lo que los supere,
+        // El maximo vive en HelperProtocol: el ayudante rechaza lo que lo supere,
         // y un aviso rechazado en silencio acabaria en bloqueo sin que el usuario lo viera
-        if (!(n.PromptTimeoutSeconds > 0))
-            errors.Add("Notification.PromptTimeoutSeconds 必须为正数");
-        else if (n.PromptTimeoutSeconds > HelperProtocol.MaxTimeoutSeconds)
-            errors.Add(string.Create(CultureInfo.InvariantCulture,
-                $"Notification.PromptTimeoutSeconds 不能超过 {HelperProtocol.MaxTimeoutSeconds:0} 秒"));
         if (n.RejectSnoozeSeconds <= 0)  errors.Add("Notification.RejectSnoozeSeconds 必须为正数");
         if (!(n.SnoozeMinutes > 0))
             errors.Add("Notification.SnoozeMinutes 必须为正数");

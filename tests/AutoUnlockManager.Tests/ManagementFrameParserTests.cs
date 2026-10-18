@@ -23,7 +23,7 @@ public sealed class ManagementFrameParserTests
              "state":{"name":"LockedArmed","sinceMs":1760647911250},
              "scan":{"status":"BLE 扫描已启动","detail":null},
              "helper":{"connected":true},"cred":{"connected":true},
-             "thr":{"lockDbm":-65,"unlockDbm":-45,"lockWinSec":10,"unlockWinSec":5,"minSamples":3},
+             "thr":{"lockDbm":-65,"unlockDbm":-45,"unlockCount":3,"lockPromptCount":5,"lockConfirmCount":10},
              "avg":{"w5":-57.3,"w10":-58.1,"n5":6,"n10":14},
              "lastMatchMs":420,
              "samples":[[1760647975000,-61],[1760647976250,-59]]}
@@ -43,7 +43,9 @@ public sealed class ManagementFrameParserTests
         Assert.True(snapshot.Cred?.Connected);
         Assert.Equal(-65, snapshot.Thr?.LockDbm);
         Assert.Equal(-45, snapshot.Thr?.UnlockDbm);
-        Assert.Equal(10, snapshot.Thr?.LockWinSec);
+        Assert.Equal(3, snapshot.Thr?.UnlockCount);
+        Assert.Equal(5, snapshot.Thr?.LockPromptCount);
+        Assert.Equal(10, snapshot.Thr?.LockConfirmCount);
         Assert.Equal(-57.3, snapshot.Avg?.W5);
         Assert.Equal(6, snapshot.Avg?.N5);
         Assert.Equal(420, snapshot.LastMatchMs);

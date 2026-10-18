@@ -7,13 +7,8 @@ namespace AutoUnlockService.Notifications;
 public sealed class ResilientNotifier(
     INotifier primary,
     INotifier fallback,
-    ILogger<ResilientNotifier> log,
-    TimeProvider time) : INotifier
+    ILogger<ResilientNotifier> log) : INotifier
 {
-    // Suelo deliberado: un aviso recien mostrado necesita una ventana legible, asi que
-    // un plazo restante menor (o un plazo original menor) se amplia a este valor
-    public static readonly TimeSpan MinimumFallbackTimeout = TimeSpan.FromSeconds(5);
-
     private int _degraded;
 
     // Distingue "el orquestador retira el aviso" (se propaga) de "Degrade() retiro el aviso del
@@ -38,42 +33,32 @@ public sealed class ResilientNotifier(
         catch (Exception ex) { log.LogDebug(ex, "No se pudo retirar el aviso pendiente del primario"); }
     }
 
-    public async Task<PromptOutcome> PromptAsync(TimeSpan timeout, double snoozeMinutes, CancellationToken ct)
+    public async Task<PromptOutcome> PromptAsync(double snoozeMinutes, CancellationToken ct)
     {
         if (UsingFallback)
-            return await fallback.PromptAsync(timeout, snoozeMinutes, ct);
+            return await fallback.PromptAsync(snoozeMinutes, ct);
 
-        var startedAt = time.GetUtcNow();
         Volatile.Write(ref _cancelRequested, 0);
         try
         {
-            return await primary.PromptAsync(timeout, snoozeMinutes, ct);
+            return await primary.PromptAsync(snoozeMinutes, ct);
         }
         catch (HelperUnavailableException ex)
         {
             // Un cierre del servicio no es motivo para degradar de forma permanente
             ct.ThrowIfCancellationRequested();
             Degrade(ex.Message);
-            return await PromptFallbackAsync(startedAt, timeout, snoozeMinutes, ct);
+            // El usuario no llego a ver nada: se vuelve a preguntar ya mismo por el respaldo
+            return await fallback.PromptAsync(snoozeMinutes, ct);
         }
         catch (OperationCanceledException)
             when (!ct.IsCancellationRequested && UsingFallback && Volatile.Read(ref _cancelRequested) == 0)
         {
             // Degrade() retiro el aviso del primario mientras estaba pendiente y nadie mas lo cancelo:
-            // el usuario ya no ve nada, asi que se pregunta por el respaldo con lo que quedaba de plazo
+            // el usuario ya no ve nada, asi que se pregunta por el respaldo
             log.LogWarning("通知方式在提示进行中降级，改用对话框重新提示");
-            return await PromptFallbackAsync(startedAt, timeout, snoozeMinutes, ct);
+            return await fallback.PromptAsync(snoozeMinutes, ct);
         }
-    }
-
-    // El usuario no llego a ver nada: se vuelve a preguntar ya mismo con lo
-    // que quedaba de plazo, en vez de dejarle sin aviso hasta el bloqueo
-    private Task<PromptOutcome> PromptFallbackAsync(
-        DateTimeOffset startedAt, TimeSpan timeout, double snoozeMinutes, CancellationToken ct)
-    {
-        var remaining = timeout - (time.GetUtcNow() - startedAt);
-        if (remaining < MinimumFallbackTimeout) remaining = MinimumFallbackTimeout;
-        return fallback.PromptAsync(remaining, snoozeMinutes, ct);
     }
 
     public async Task CancelAsync()

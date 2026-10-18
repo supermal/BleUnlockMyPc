@@ -30,10 +30,13 @@ public sealed class CredentialOptions
 public sealed class ProximityOptions
 {
     public double LockThresholdDbm { get; set; } = -80;
-    public double LockWindowSeconds { get; set; } = 10;
     public double UnlockThresholdDbm { get; set; } = -45;
-    public double UnlockWindowSeconds { get; set; } = 5;
-    public int MinSamples { get; set; } = 3;
+
+    // 判定改为批次个数平均（2026-10-18 改版）：触发读数不计入，收满 N 个取平均
+    public int UnlockSampleCount { get; set; } = 3;          // 靠近确认：解锁
+    public int LockPromptSampleCount { get; set; } = 5;      // 离开确认：弹窗（也是 Win+L 后的待命判定）
+    public int LockConfirmSampleCount { get; set; } = 10;    // 弹窗后锁屏确认
+
     public double StartupGraceSeconds { get; set; } = 15;
     public double UnlockPendingTimeoutSeconds { get; set; } = 20;
 }
@@ -41,7 +44,6 @@ public sealed class ProximityOptions
 public sealed class NotificationOptions
 {
     public NotifierMode Mode { get; set; } = NotifierMode.Toast;
-    public double PromptTimeoutSeconds { get; set; } = 15;
     public double RejectSnoozeSeconds { get; set; } = 60;
     public double SnoozeMinutes { get; set; } = 5;
 }

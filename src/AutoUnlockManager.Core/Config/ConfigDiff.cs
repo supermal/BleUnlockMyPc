@@ -59,18 +59,15 @@ public static class ConfigDiff
 
         AddNumber(changes, ConfigFields.ProximityLockThresholdDbm,
             from.Proximity.LockThresholdDbm, to.Proximity.LockThresholdDbm);
-        AddNumber(changes, ConfigFields.ProximityLockWindowSeconds,
-            from.Proximity.LockWindowSeconds, to.Proximity.LockWindowSeconds);
         AddNumber(changes, ConfigFields.ProximityUnlockThresholdDbm,
             from.Proximity.UnlockThresholdDbm, to.Proximity.UnlockThresholdDbm);
-        AddNumber(changes, ConfigFields.ProximityUnlockWindowSeconds,
-            from.Proximity.UnlockWindowSeconds, to.Proximity.UnlockWindowSeconds);
 
-        if (from.Proximity.MinSamples != to.Proximity.MinSamples)
-        {
-            changes.Add(new ConfigChange(ConfigFields.ProximityMinSamples, GetDisplayName(ConfigFields.ProximityMinSamples),
-                ConfigInput.FormatCount(from.Proximity.MinSamples), ConfigInput.FormatCount(to.Proximity.MinSamples), IsSensitive: false));
-        }
+        AddCount(changes, ConfigFields.ProximityUnlockSampleCount,
+            from.Proximity.UnlockSampleCount, to.Proximity.UnlockSampleCount);
+        AddCount(changes, ConfigFields.ProximityLockPromptSampleCount,
+            from.Proximity.LockPromptSampleCount, to.Proximity.LockPromptSampleCount);
+        AddCount(changes, ConfigFields.ProximityLockConfirmSampleCount,
+            from.Proximity.LockConfirmSampleCount, to.Proximity.LockConfirmSampleCount);
 
         AddNumber(changes, ConfigFields.ProximityStartupGraceSeconds,
             from.Proximity.StartupGraceSeconds, to.Proximity.StartupGraceSeconds);
@@ -83,8 +80,6 @@ public static class ConfigDiff
                 FormatNotifierMode(from.Notification.Mode), FormatNotifierMode(to.Notification.Mode), IsSensitive: false));
         }
 
-        AddNumber(changes, ConfigFields.NotificationPromptTimeoutSeconds,
-            from.Notification.PromptTimeoutSeconds, to.Notification.PromptTimeoutSeconds);
         AddNumber(changes, ConfigFields.NotificationRejectSnoozeSeconds,
             from.Notification.RejectSnoozeSeconds, to.Notification.RejectSnoozeSeconds);
         AddNumber(changes, ConfigFields.NotificationSnoozeMinutes,
@@ -102,14 +97,13 @@ public static class ConfigDiff
         ConfigFields.CredentialsUserName => "凭据用户名",
         ConfigFields.CredentialsPassword => "凭据密码",
         ConfigFields.ProximityLockThresholdDbm => "锁定阈值（dBm）",
-        ConfigFields.ProximityLockWindowSeconds => "锁定窗口（秒）",
         ConfigFields.ProximityUnlockThresholdDbm => "解锁阈值（dBm）",
-        ConfigFields.ProximityUnlockWindowSeconds => "解锁窗口（秒）",
-        ConfigFields.ProximityMinSamples => "最小样本数",
+        ConfigFields.ProximityUnlockSampleCount => "解锁确认个数",
+        ConfigFields.ProximityLockPromptSampleCount => "弹窗触发个数",
+        ConfigFields.ProximityLockConfirmSampleCount => "锁屏确认个数",
         ConfigFields.ProximityStartupGraceSeconds => "启动宽限（秒）",
         ConfigFields.ProximityUnlockPendingTimeoutSeconds => "解锁等待超时（秒）",
         ConfigFields.NotificationMode => "通知方式",
-        ConfigFields.NotificationPromptTimeoutSeconds => "提示超时（秒）",
         ConfigFields.NotificationRejectSnoozeSeconds => "拒绝后暂缓（秒）",
         ConfigFields.NotificationSnoozeMinutes => "稍后提醒（分钟）",
         _ => field,
@@ -138,6 +132,15 @@ public static class ConfigDiff
         {
             changes.Add(new ConfigChange(field, GetDisplayName(field),
                 ConfigInput.FormatNumber(from), ConfigInput.FormatNumber(to), IsSensitive: false));
+        }
+    }
+
+    private static void AddCount(List<ConfigChange> changes, string field, int from, int to)
+    {
+        if (from != to)
+        {
+            changes.Add(new ConfigChange(field, GetDisplayName(field),
+                ConfigInput.FormatCount(from), ConfigInput.FormatCount(to), IsSensitive: false));
         }
     }
 
