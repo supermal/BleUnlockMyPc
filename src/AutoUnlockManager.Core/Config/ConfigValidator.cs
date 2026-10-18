@@ -124,7 +124,7 @@ public static class ConfigValidator
                 $"{ConfigFields.ProximityUnlockThresholdDbm} 必须大于 LockThresholdDbm，否则死区为负"));
         }
 
-        // 批次个数（触发读数不计入，收满 N 个取平均）：下限 1，上限防止收集阶段拖得过长
+        // 批次个数（触发读数不计入，全数达标判定）：下限 1，上限防止收集阶段拖得过长
         if (p.UnlockSampleCount is < 1 or > 20)
         {
             errors.Add(new ConfigError(ConfigFields.ProximityUnlockSampleCount,

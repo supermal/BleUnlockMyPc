@@ -77,7 +77,7 @@ public sealed class ProximityConfig
     public double LockThresholdDbm { get; set; } = -80;
     public double UnlockThresholdDbm { get; set; } = -45;
 
-    // 批次个数（镜像服务端判定：触发读数不计入，收满 N 个取平均）
+    // 批次个数（镜像服务端判定：触发读数不计入，批内每条都需达标）
     public int UnlockSampleCount { get; set; } = 3;
     public int LockPromptSampleCount { get; set; } = 5;
     public int LockConfirmSampleCount { get; set; } = 10;
