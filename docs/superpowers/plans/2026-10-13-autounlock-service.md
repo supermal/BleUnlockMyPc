@@ -6208,3 +6208,36 @@ git commit -m "docs: 记录 AutoUnlockService 实机验收结果"
 - [x] **Step 5: 构建与自动化测试全绿**
 - [ ] **Step 6: 发布并重装（管理员运行 `scripts/install.ps1`）**
 - [ ] **Step 7: 实机验收（新版验收单）并记录结果**
+
+### Task 21: 敏感字段静态加密（IRK / 凭据密码，DPAPI 机器范围）
+
+安全收尾：`Device.Irk` 与 `Credentials.Password` 原先明文存于 `appsettings.json`，文件被备份/外发/拷贝即泄露。本任务改为 Windows DPAPI（机器范围）加密存储，密文格式 `dpapi:v1:{Base64}`；迁移策略「管理端保存时自动加密、服务端兼容明文并告警」。
+
+**决策（2026-10-18 用户四问拍板）**
+
+- 方案：DPAPI 机器范围（`CRYPTPROTECT_LOCAL_MACHINE`），密文仍存 `appsettings.json`；不引入凭据管理器（改动小，热重载/安装保留配置等现有流程全不动）。
+- 范围：`Device.Irk` + `Credentials.Password` 一起（用户名、地址不加密）。
+- 迁移：服务端兼容明文（启动/热重载记警告「以明文存储，建议在管理端保存一次以加密」）；管理端任一有效保存即把两字段整体加密（已是密文或空值的字段原样保留）。
+- 边界（已向用户明示）：只防配置文件被拷贝/外发/备份后的明文泄露；本机管理员或 SYSTEM 权限程序仍可解密（服务必须能还原密码，原理上无法避免）。跨机器拷贝密文不可解密 → 服务拒绝启动（热重载保留原配置），管理端加载时横幅提示重新输入。
+- 管理端交互：密文不回显——字段留空 = 保持不变，输入 = 替换；保存确认差异按明文计算（IRK 旧值显示「（已加密）」，密码仍为「已修改」敏感行）。
+
+**实现要点**
+
+- 共享：`Config/SecretProtector.cs`（P/Invoke `CryptProtectData`/`CryptUnprotectData`，`UI_FORBIDDEN`，应用熵 `AutoUnlock.MyPc.Secrets.v1`；`IsProtected`/`Protect`/`TryUnprotect`），由 `AutoUnlockManager.Core.csproj` 以 `<Compile Link>` 共享编译——格式与熵单一实现、不会漂移。
+- 服务端：`Config/OptionsSecrets.cs` 的 `TryResolve` 在 `Program`（早校验 + DI 工厂）与 `OptionsGate.Apply` 把密文就地解密为明文；解密失败按配置无效处理——热重载走「配置校验失败，已保留原配置：…」同一日志路径（管理端保存确认直接显示拒绝原因），启动记 FTL 并以退出码 1 拒绝。
+- 管理端：`Core/Config/ConfigSecrets.cs`（`DisplayText`/`ResolveInput`/`ProtectNewValues`/`HintText`/`IsUnreadableOnThisMachine`）；`ConfigValidator` 对密文 IRK 跳过十六进制校验（服务端校验永远运行在明文上，跳过分支仅管理端存在）；`ConfigDiff` 密文 IRK 显示「（已加密）」；`ConfigViewModel`（加载横幅、字段提示、保存前加密）；`ConfigPage.xaml`（两处提示行、密码静态说明更新）。
+
+**Files:**
+- Add: `src/AutoUnlockService/Config/SecretProtector.cs`（共享）、`Config/OptionsSecrets.cs`、`src/AutoUnlockManager.Core/Config/ConfigSecrets.cs`
+- Modify: `src/AutoUnlockService/`（Program、Config/OptionsGate）、`src/AutoUnlockManager.Core/`（csproj Link、ConfigValidator、ConfigDiff）、`src/AutoUnlockManager/`（ConfigViewModel、Views/ConfigPage.xaml、ConfigPage.xaml.cs）
+- Tests: 服务端 +14（SecretProtector 7、OptionsSecrets 4、OptionsGate 3）；管理端 +11（SecretProtector 2、ConfigSecrets 5、ConfigValidator 1、ConfigDiff 2、ConfigDocument 1）
+- Modify: `README.md`、本文件
+
+**结果**（提交 `8b4747f`）：全量构建 0 警 0 错；测试 **服务 348 + 管理端 212 = 560 全绿**。发布产物已重建（服务 Release 10/18 23:23；管理端 publish 532 文件 / 232.9 MB，10/18 23:25）。与 Task 20 三次修订合并一次重装、全量验收（桌面执行单新增「五、凭据加密」）。
+
+- [x] **Step 1: 共享加密实现与服务端解析接入**
+- [x] **Step 2: 管理端保留/加密/提示全链路**
+- [x] **Step 3: 测试全量更新**
+- [x] **Step 4: 构建与自动化测试全绿**
+- [ ] **Step 5: 发布并重装（管理员运行 `scripts/install.ps1`，与 Task 20 合并一次）**
+- [ ] **Step 6: 实机验收（验收单全单含「五、凭据加密」）并记录结果**

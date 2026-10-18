@@ -133,9 +133,18 @@ Start-Service AutoUnlockService
 
 - 阈值 / 批次个数 / 超时：下一次评估直接采用新值。旧键（`LockWindowSeconds`、`UnlockWindowSeconds`、`MinSamples`、`PromptTimeoutSeconds`）留在文件里但不再生效；管理端保存时既不写回也不删除它们。
 - `Irk` / `IrkByteOrder` / `IdentityAddress`：变更会重建解析缓存并清空 RSSI 历史。
-- 凭据（`UserName` / `Password`）：变更会重新预验证，通过则解除停摆。
+- 凭据（`UserName` / `Password`）：变更会重新预验证，通过则解除停摆；密文无法解密（如跨机器拷贝）按配置无效处理（热重载保留原配置）。
 - `Notification.Mode`：在服务启动时读取，修改后需重启服务生效。
 - 配置无效时服务拒绝启动（退出码 1，日志记 `[FTL] 配置无效，服务拒绝启动：…`，事件源 `AutoUnlock`）。
+
+### 敏感字段加密（IRK / 密码）
+
+`Device.Irk` 与 `Credentials.Password` 以 Windows DPAPI（机器范围）加密存储，密文形如 `dpapi:v1:…`：
+
+- 管理端保存时自动把明文替换为密文；旧配置里的明文仍被服务兼容，但启动日志会给出一条「以明文存储，建议在管理端保存一次以加密」的警告。
+- 管理端不回显已加密的值：字段留空表示「保持不变」，输入新值表示「替换」。
+- 密文与当前机器绑定：配置文件被拷贝到别的机器将无法解密（服务拒绝启动并提示重新输入）；备份/外发文件不会泄露明文。
+- 该加密防的是配置文件被拷贝/外发后的明文泄露；本机管理员或 SYSTEM 权限的程序仍可解密（服务运行时必须能还原密码，原理上无法避免）。
 
 ## 获取 IRK 与调阈值
 
