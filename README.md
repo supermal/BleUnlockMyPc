@@ -84,14 +84,16 @@ Start-Service AutoUnlockService
 | `LockThresholdDbm` | -80 | 低于此值视为离开（触发读数不计入批次） |
 | `UnlockThresholdDbm` | -45 | 高于此值视为靠近（触发读数不计入批次） |
 | `UnlockSampleCount` | 3 | 解锁确认个数：触发后再收 N 个读数，**全部**高于解锁阈值才推送凭据 |
-| `LockPromptSampleCount` | 5 | 弹窗触发个数：触发后再收 N 个读数，**全部**低于锁定阈值才弹窗（静默每秒按 1 条计入） |
-| `LockConfirmSampleCount` | 10 | 锁屏确认个数：弹窗后新收 N 个读数**全部**低于锁定阈值才锁屏 |
+| `LockPromptSampleCount` | 5 | 弹窗触发个数：触发后再收 N 个读数，**全部**低于锁定阈值才弹窗（静默补点仅在信号先变弱或完全无读数 60 s+ 时启用，见下） |
+| `LockConfirmSampleCount` | 10 | 锁屏确认个数：弹窗后新收 N 个读数**全部**低于锁定阈值才锁屏（静默补点规则同上） |
 | `RejectSnoozeSeconds` | 60 | 点「拒绝」后的静默期 |
 | `SnoozeMinutes` | 5 | 点「5 分钟内不锁定」的静默期 |
 | `StartupGraceSeconds` | 15 | 启动后不评估锁屏的宽限期 |
 | `UnlockPendingTimeoutSeconds` | 20 | 等待认证结果的超时 |
 
 判定采用「全数达标」：批次里任何一条读数不达标就整批作废、重新触发，不取平均值（避免偶发低读数把平均值拉低造成误弹窗；代价是信号在临界值抖动时判定会偏慢——宁可慢，不误判）。
+
+静默补点（连续无读数超过 3 s 宽限后每秒注入 1 条）只在两种情况下启用：①停播前最后一条读数已低于锁定阈值（信号先变弱再消失＝真离开的形状）；②完全没有任何读数达到 60 s（设备关机/被拿走/跑出范围）。信号还强时的停播只是设备周期性省电打盹，不算离开。RSSI 哨兵值（-127/-128/+127，协议里表示「强度不可用」）在入口即被过滤，不进入判定与遥测。
 
 `IrkByteOrder` 取 `Auto` / `Normal` / `Reversed`；`Mode` 取 `Toast` / `Dialog`；`IdentityAddress` 可选——已配对设备可能被 Windows 直接报告身份地址，此时按地址匹配。
 
