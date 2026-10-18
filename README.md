@@ -83,13 +83,15 @@ Start-Service AutoUnlockService
 |------|-------|------|
 | `LockThresholdDbm` | -80 | 低于此值视为离开（触发读数不计入批次） |
 | `UnlockThresholdDbm` | -45 | 高于此值视为靠近（触发读数不计入批次） |
-| `UnlockSampleCount` | 3 | 解锁确认个数：触发后再收 N 个高于解锁阈值的读数 |
-| `LockPromptSampleCount` | 5 | 弹窗触发个数：触发后再收 N 个低于锁定阈值的读数（静默每秒按 1 条计入） |
-| `LockConfirmSampleCount` | 10 | 锁屏确认个数：弹窗后新收 N 个读数低于锁定阈值 |
+| `UnlockSampleCount` | 3 | 解锁确认个数：触发后再收 N 个读数，**全部**高于解锁阈值才推送凭据 |
+| `LockPromptSampleCount` | 5 | 弹窗触发个数：触发后再收 N 个读数，**全部**低于锁定阈值才弹窗（静默每秒按 1 条计入） |
+| `LockConfirmSampleCount` | 10 | 锁屏确认个数：弹窗后新收 N 个读数**全部**低于锁定阈值才锁屏 |
 | `RejectSnoozeSeconds` | 60 | 点「拒绝」后的静默期 |
 | `SnoozeMinutes` | 5 | 点「5 分钟内不锁定」的静默期 |
 | `StartupGraceSeconds` | 15 | 启动后不评估锁屏的宽限期 |
 | `UnlockPendingTimeoutSeconds` | 20 | 等待认证结果的超时 |
+
+判定采用「全数达标」：批次里任何一条读数不达标就整批作废、重新触发，不取平均值（避免偶发低读数把平均值拉低造成误弹窗；代价是信号在临界值抖动时判定会偏慢——宁可慢，不误判）。
 
 `IrkByteOrder` 取 `Auto` / `Normal` / `Reversed`；`Mode` 取 `Toast` / `Dialog`；`IdentityAddress` 可选——已配对设备可能被 Windows 直接报告身份地址，此时按地址匹配。
 

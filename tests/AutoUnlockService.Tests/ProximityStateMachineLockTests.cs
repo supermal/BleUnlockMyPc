@@ -5,8 +5,9 @@ using Xunit;
 
 namespace AutoUnlockService.Tests;
 
-// 判定改版（2026-10-18）：批次个数平均。触发读数不计入；锁定侧的静默
-//（连续无读数超过 3 s 宽限）每秒注入一个极低值并计入当前批次，静默本身即触发
+// 判定改版（2026-10-18，二次修订）：批次全数达标（每条读数都需达标，不取平均）。
+// 触发读数不计入；锁定侧的静默（连续无读数超过 3 s 宽限）每秒注入一个极低值并
+// 计入当前批次，静默本身即触发
 public class ProximityStateMachineLockTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 13, 12, 0, 0, TimeSpan.Zero);
@@ -79,12 +80,12 @@ public class ProximityStateMachineLockTests
         var (sm, time, history) = Build();
         history.Add(-50, T0);
         time.Advance(TimeSpan.FromSeconds(20));
-        Fill(history, time, -85, 6);               // 1 触发（不计入）+ 5 计入 → 平均 -85 < -80
+        Fill(history, time, -85, 6);               // 1 触发（不计入）+ 5 计入 → 全部 < -80
 
         var change = sm.Evaluate(history);
 
         Assert.Equal(ProximityState.PendingLock, change?.To);
-        Assert.Contains("-85", change!.Reason);
+        Assert.Contains("5 个读数全部 < -80 dBm", change!.Reason);
         Assert.DoesNotContain("静默", change.Reason);
     }
 
@@ -110,7 +111,7 @@ public class ProximityStateMachineLockTests
         history.Add(-85, time.GetUtcNow());        // disparador
         Assert.Null(sm.Evaluate(history));
 
-        for (var i = 0; i < 5; i++)                // 5 个 -70：平均不达标
+        for (var i = 0; i < 5; i++)                // 5 个 -70：每条不达标 → 整批作废
         {
             time.Advance(TimeSpan.FromSeconds(1));
             history.Add(-70, time.GetUtcNow());
@@ -127,6 +128,28 @@ public class ProximityStateMachineLockTests
             if (i < 5) Assert.Null(change);
             else Assert.Equal(ProximityState.PendingLock, change?.To);
         }
+    }
+
+    [Fact]
+    public void Una_lectura_en_zona_muerta_dentro_del_lote_anula_toda_la_confirmacion()
+    {
+        // 回归：偶尔一条偏高的抖动读数（信号恢复一拍）不应把整批判成「离开」——
+        // 旧的平均值实现会因 (−85×4 + −70)/5 = −82 < −80 而误弹窗；全数达标不会
+        var (sm, time, history) = Build();
+        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(20));
+
+        history.Add(-85, time.GetUtcNow());        // 触发
+        for (var i = 1; i <= 4; i++)
+        {
+            time.Advance(TimeSpan.FromSeconds(1));
+            history.Add(-85, time.GetUtcNow());    // 计入 4
+        }
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-70, time.GetUtcNow());        // 抖动：不达标 → 整批作废
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.Unlocked, sm.State);
     }
 
     [Fact]
@@ -181,7 +204,7 @@ public class ProximityStateMachineLockTests
         sm.Evaluate(history);
         Assert.Equal(ProximityState.PendingLock, sm.State);
 
-        // 恢复：触发 -40 + 3 个 -40 → 平均 > -45
+        // 恢复：触发 -40 + 3 个 -40 → 全部 > -45
         time.Advance(TimeSpan.FromSeconds(5));
         Fill(history, time, -40, 5);
 

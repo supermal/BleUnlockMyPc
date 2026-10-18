@@ -38,9 +38,9 @@ public sealed record AuthResult(bool Success, uint NtStatus);
 // Toda la politica de bloqueo y desbloqueo vive aqui. No toca Windows ni la red:
 // devuelve la accion que el orquestador debe ejecutar.
 //
-// 判定改版（2026-10-18）：批次个数平均（触发读数不计入）。
+// 判定改版（2026-10-18，二次修订）：批次全数达标（触发读数不计入，不取平均）。
 //   - 触发：低于锁定阈值的读数，或静默（连续无读数超过宽限）；
-//   - 收满 N 个取平均判定；不达标整批作废，等下一个触发重来；
+//   - 触发后收满 N 个读数，且每一个都达到阈值才算成立；任一条不达标整批作废，等下一个触发重来；
 //   - 静默每 1 秒注入一个极低值并计入当前批次（只在锁定侧：没有信号永远不是解锁证据）；
 //   - 弹窗不再自动超时：锁定只由「弹窗后新收的一批」或用户点击决定。
 public sealed class ProximityStateMachine
@@ -59,7 +59,6 @@ public sealed class ProximityStateMachine
     // —— 锁定侧批次（Unlocked / PendingLock / LockedWaitingDeparture） ——
     private bool _lockBatchActive;
     private int _lockBatchCount;
-    private double _lockBatchSum;
     private int _lockBatchSilentCount;      // 当前批次里的静默值个数（日志用）
     private DateTimeOffset _lockWatermark;  // 已消费到的读数时间（批次水位线）
     private DateTimeOffset _lockSilenceFrom; // 静默计时基准：最近一条读数或进入当前状态的时刻
@@ -68,7 +67,6 @@ public sealed class ProximityStateMachine
     // —— 解锁侧批次（PendingLock 的信号恢复判定 / LockedArmed） ——
     private bool _unlockBatchActive;
     private int _unlockBatchCount;
-    private double _unlockBatchSum;
     private DateTimeOffset _unlockWatermark;
     private DateTimeOffset _unlockLastValueAt; // 批次内上一个值（或触发）的时间：间隙过大时旧值作废
 
@@ -145,7 +143,7 @@ public sealed class ProximityStateMachine
             return Transition(ProximityState.Unlocked, ProximityAction.CancelLockPrompt,
                 $"信号恢复：{nearReason}");
 
-        // 弹窗后新收的一批（弹窗前的读数不参与）：平均低于阈值才锁屏。
+        // 弹窗后新收的一批（弹窗前的读数不参与）：全部低于阈值才锁屏。
         // 等待期没有任何自动超时：只有这批读数或用户点击能决定
         if (LockBatchConfirmed(history, now, Proximity.LockConfirmSampleCount, out var reason))
         {
@@ -321,8 +319,8 @@ public sealed class ProximityStateMachine
     // —— 批次判定 ——
 
     // 锁定侧：消费新读数（第一个低于阈值的只做触发、不计入）；静默超过宽限后
-    // 每 1 秒注入一个极低值（静默本身即触发，注入值计入）。收满 size 个取平均，
-    // 低于阈值 → true；否则整批作废，等下一个触发
+    // 每 1 秒注入一个极低值（静默本身即触发，注入值计入）。触发后收满 size 个
+    // 且每一个都低于阈值 → true；任一条不达标整批作废，等下一个触发重来
     private bool LockBatchConfirmed(RssiHistory history, DateTimeOffset now, int target, out string reason)
     {
         reason = "";
@@ -343,16 +341,17 @@ public sealed class ProximityStateMachine
                 continue;
             }
 
+            if (rssi >= threshold)
+            {
+                ResetLockBatch();       // 全数达标：一条不达标即整批作废
+                continue;
+            }
+
             _lockBatchCount++;
-            _lockBatchSum += rssi;
             if (_lockBatchCount >= size)
             {
-                if (_lockBatchSum / _lockBatchCount < threshold)
-                {
-                    reason = DescribeLockBatch(size, threshold);
-                    return true;
-                }
-                ResetLockBatch();
+                reason = DescribeLockBatch(size, threshold);
+                return true;
             }
         }
 
@@ -367,24 +366,19 @@ public sealed class ProximityStateMachine
             if (!_lockBatchActive) StartLockBatch();
 
             _lockBatchCount++;
-            _lockBatchSum += SilentValueDbm;
             _lockBatchSilentCount++;
             if (_lockBatchCount >= size)
             {
-                if (_lockBatchSum / _lockBatchCount < threshold)
-                {
-                    reason = DescribeLockBatch(size, threshold);
-                    return true;
-                }
-                ResetLockBatch();
+                reason = DescribeLockBatch(size, threshold);
+                return true;
             }
         }
 
         return false;
     }
 
-    // 解锁侧：第一个高于阈值的读数只做触发、不计入；之后收满 size 个取平均，
-    // 高于阈值才算靠近。间隙超过静默宽限的旧值作废：宁可重新数，不拿陈旧证据解锁
+    // 解锁侧：第一个高于阈值的读数只做触发、不计入；之后每个读数都必须高于阈值，
+    // 收满 size 个才算靠近。间隙超过静默宽限的旧值作废：宁可重新数，不拿陈旧证据解锁
     private bool UnlockBatchNear(RssiHistory history, int target, out string reason)
     {
         reason = "";
@@ -403,22 +397,22 @@ public sealed class ProximityStateMachine
                 if (rssi <= threshold) continue;
                 _unlockBatchActive = true;
                 _unlockBatchCount = 0;
-                _unlockBatchSum = 0;
                 _unlockLastValueAt = at;   // 触发读数不计入
                 continue;
             }
 
+            if (rssi <= threshold)
+            {
+                ResetUnlockBatch();        // 全数达标：一条不达标即整批作废
+                continue;
+            }
+
             _unlockBatchCount++;
-            _unlockBatchSum += rssi;
             _unlockLastValueAt = at;
             if (_unlockBatchCount >= size)
             {
-                if (_unlockBatchSum / _unlockBatchCount > threshold)
-                {
-                    reason = $"{size} 个读数平均 {_unlockBatchSum / _unlockBatchCount:0.0} dBm > {threshold:0}";
-                    return true;
-                }
-                ResetUnlockBatch();
+                reason = $"{size} 个读数全部 > {threshold:0} dBm";
+                return true;
             }
         }
 
@@ -429,7 +423,6 @@ public sealed class ProximityStateMachine
     {
         _lockBatchActive = true;
         _lockBatchCount = 0;
-        _lockBatchSum = 0;
         _lockBatchSilentCount = 0;
     }
 
@@ -437,7 +430,6 @@ public sealed class ProximityStateMachine
     {
         _lockBatchActive = false;
         _lockBatchCount = 0;
-        _lockBatchSum = 0;
         _lockBatchSilentCount = 0;
     }
 
@@ -445,13 +437,12 @@ public sealed class ProximityStateMachine
     {
         _unlockBatchActive = false;
         _unlockBatchCount = 0;
-        _unlockBatchSum = 0;
     }
 
     private string DescribeLockBatch(int count, double threshold) =>
         _lockBatchSilentCount > 0
-            ? $"{count} 个读数平均 {_lockBatchSum / _lockBatchCount:0.0} dBm（含 {_lockBatchSilentCount} 个静默值）< {threshold:0}"
-            : $"{count} 个读数平均 {_lockBatchSum / _lockBatchCount:0.0} dBm < {threshold:0}";
+            ? $"{count} 个读数全部 < {threshold:0} dBm（含 {_lockBatchSilentCount} 个静默值）"
+            : $"{count} 个读数全部 < {threshold:0} dBm";
 
     // 每次转换都从零开始：批次属于状态，跨状态不继承任何收集。
     // 例外：进入 PendingLock 立即启动「弹窗后」的确认批次（不需要触发读数）

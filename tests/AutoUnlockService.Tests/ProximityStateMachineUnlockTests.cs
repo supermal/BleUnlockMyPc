@@ -6,8 +6,8 @@ using Xunit;
 
 namespace AutoUnlockService.Tests;
 
-// 判定改版（2026-10-18）：解锁 = 第一条 > 阈值触发（不计入）+ 再收 3 条平均 > 阈值。
-// 批次内间隙超过静默宽限（3 s）时旧值作废，重新触发
+// 判定改版（2026-10-18，二次修订）：解锁 = 第一条 > 阈值触发（不计入）+ 再收 3 条
+// 且全部 > 阈值（不取平均）。批次内间隙超过静默宽限（3 s）时旧值作废，重新触发
 public class ProximityStateMachineUnlockTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 13, 12, 0, 0, TimeSpan.Zero);
@@ -333,7 +333,7 @@ public class ProximityStateMachineUnlockTests
         for (var i = 0; i < 3; i++)
         {
             time.Advance(TimeSpan.FromSeconds(1));
-            history.Add(-50, time.GetUtcNow());    // -50 ≤ umbral: el promedio no alcanza
+            history.Add(-50, time.GetUtcNow());    // -50 ≤ umbral: 第一条即作废整批
         }
         Assert.Null(sm.Evaluate(history));
 
@@ -346,6 +346,27 @@ public class ProximityStateMachineUnlockTests
             if (i < 3) Assert.Null(change);
             else Assert.Equal(ProximityAction.SendCredentials, change?.Action);
         }
+    }
+
+    [Fact]
+    public void Una_lectura_baja_dentro_del_lote_de_aproximacion_anula_la_confirmacion()
+    {
+        // 回归：确认批次里一条 -50 不应把整批「平均」到可以解锁——
+        // (−40 −40 −50)/3 = −43.3 > −45：旧平均值实现会发送凭据；全数达标不会
+        var (sm, time, history) = Build();
+        Arm(sm, time, history);
+
+        time.Advance(TimeSpan.FromSeconds(5));
+        history.Add(-40, time.GetUtcNow());        // 触发
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-40, time.GetUtcNow());        // 计入 1
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-40, time.GetUtcNow());        // 计入 2
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-50, time.GetUtcNow());        // 掉档：整批作废
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.LockedArmed, sm.State);
     }
 
     [Theory]
