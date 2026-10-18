@@ -4,27 +4,31 @@ using Xunit;
 
 namespace AutoUnlockManager.Tests;
 
-/// <summary>敏感字段管理端约定测试：「留空保持不变」、保存前加密、字段提示与不可解密判定。</summary>
+/// <summary>敏感字段管理端约定测试：解密回显、保存前加密、字段提示、不可解密判定与差异比较取值。</summary>
 public sealed class ConfigSecretsTests
 {
     [Fact]
-    public void DisplayText_HidesProtected_ShowsPlain()
+    public void DisplayText_DecryptsProtected_ShowsPlain()
     {
-        Assert.Equal("", ConfigSecrets.DisplayText(SecretProtector.Protect("x")));
+        var cipher = SecretProtector.Protect("valor");
+
+        Assert.Equal("valor", ConfigSecrets.DisplayText(cipher));                     // 密文 → 明文回显
+        Assert.Equal("", ConfigSecrets.DisplayText(SecretTestData.Tampered(cipher))); // 解不开 → 空（提示重新输入）
         Assert.Equal("", ConfigSecrets.DisplayText(""));
         Assert.Equal("plain", ConfigSecrets.DisplayText("plain"));
     }
 
     [Fact]
-    public void ResolveInput_EmptyKeepsProtected_OtherwiseUsesText()
+    public void DecryptForCompare_DecryptsOrReturnsRaw()
     {
-        var cipher = SecretProtector.Protect("x");
+        var cipher = SecretProtector.Protect("valor");
+        var tampered = SecretTestData.Tampered(cipher);
 
-        Assert.Equal(cipher, ConfigSecrets.ResolveInput("", cipher));       // 留空 = 保留密文
-        Assert.Equal(cipher, ConfigSecrets.ResolveInput(null, cipher));
-        Assert.Equal("nuevo", ConfigSecrets.ResolveInput("nuevo", cipher)); // 输入 = 替换
-        Assert.Equal("", ConfigSecrets.ResolveInput("", "plain"));          // 明文被清空 = 空
-        Assert.Equal("", ConfigSecrets.ResolveInput("", ""));
+        Assert.Equal("valor", ConfigSecrets.DecryptForCompare(cipher));
+        Assert.Equal(tampered, ConfigSecrets.DecryptForCompare(tampered)); // 解不开原样（与任何明文都不等 → 视为变更）
+        Assert.Equal("plain", ConfigSecrets.DecryptForCompare("plain"));
+        Assert.Equal("", ConfigSecrets.DecryptForCompare(null));
+        Assert.Equal("", ConfigSecrets.DecryptForCompare(""));
     }
 
     [Fact]
@@ -49,11 +53,11 @@ public sealed class ConfigSecretsTests
     }
 
     [Fact]
-    public void HintText_OnlyForProtected_AndWarnsWhenUnreadable()
+    public void HintText_PlainProtectedAndUnreadable()
     {
-        Assert.Equal("", ConfigSecrets.HintText("plain"));
         Assert.Equal("", ConfigSecrets.HintText(""));
-        Assert.Contains("留空保持不变", ConfigSecrets.HintText(SecretProtector.Protect("x")));
+        Assert.Contains("以明文存储", ConfigSecrets.HintText("plain"));
+        Assert.Contains("已加密存储", ConfigSecrets.HintText(SecretProtector.Protect("x")));
         Assert.Contains("无法在本机解密",
             ConfigSecrets.HintText(SecretTestData.Tampered(SecretProtector.Protect("x"))));
     }

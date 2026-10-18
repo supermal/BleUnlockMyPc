@@ -9,7 +9,8 @@ namespace AutoUnlockManager.Views;
 
 /// <summary>
 /// 配置页（Task 5）：全字段表单（4 组 15 字段）+ 校验（镜像服务端规则）+ 差异确认对话框 +
-/// 原子保存与热重载确认 + 服务启停辅助。敏感字段（IRK/密码）以 dpapi 密文存储，界面不回显（留空保持不变）。
+/// 原子保存与热重载确认 + 服务启停辅助。敏感字段（IRK/密码）以 dpapi 密文存储；界面回显当前值
+/// （密文在本机解密后填入，默认遮点，可点眼睛查看明文），修改后保存自动重新加密。
 /// ViewModel 全程 UI 线程、无后台任务，无需 Dispose。
 /// </summary>
 public sealed partial class ConfigPage : Page

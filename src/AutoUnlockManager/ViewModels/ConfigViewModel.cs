@@ -154,7 +154,7 @@ public sealed partial class ConfigViewModel : ObservableObject
     public bool HasRejectSnoozeError => RejectSnoozeError.Length > 0;
     public bool HasSnoozeError => SnoozeError.Length > 0;
 
-    // —— 敏感字段加密提示（空串 = 无提示；IRK/密码以 dpapi 密文存储时展示） ——
+    // —— 敏感字段存储提示（空串 = 无提示；已加密/明文/不可解密三种形态） ——
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasIrkHint))]
@@ -480,14 +480,15 @@ public sealed partial class ConfigViewModel : ObservableObject
         var config = new AutoUnlockConfig();
         var errors = new List<ConfigError>();
 
-        // 敏感字段「留空保持不变」：留空 + 已加载密文 = 保留原密文；否则用表单文本
-        config.Device.Irk = ConfigSecrets.ResolveInput(IrkText.Trim(), _loadedConfig.Device.Irk);
+        // 敏感字段：表单显示当前值（磁盘密文已在 ApplyToFields 解密回显）；
+        // 直接用表单文本构建，保存时由 ProtectNewValues 重新加密
+        config.Device.Irk = IrkText.Trim();
         config.Device.IrkByteOrder = (IrkByteOrder)Math.Clamp(IrkByteOrderIndex, 0, 2);
         config.Device.IdentityAddress = string.IsNullOrWhiteSpace(IdentityAddressText)
             ? null
             : IdentityAddressText.Trim();
         config.Credentials.UserName = UserNameText;
-        config.Credentials.Password = ConfigSecrets.ResolveInput(PasswordText, _loadedConfig.Credentials.Password);
+        config.Credentials.Password = PasswordText;
 
         var p = config.Proximity;
         if (TryGetNumber(LockThresholdText, ConfigFields.ProximityLockThresholdDbm, errors, out var lockThreshold))

@@ -14,7 +14,8 @@ public sealed record ConfigChange(
     bool IsSensitive);
 
 /// <summary>
-/// 配置差异计算：比较归一化后的值（Irk 重排版不算变更）；输出顺序与表单字段一致。
+/// 配置差异计算：比较归一化后的值（Irk 重排版不算变更）；敏感字段按解密后的明文比较
+/// （磁盘密文与表单回显的明文同值不算变更）；输出顺序与表单字段一致。
 /// 「无差异」判定同时用于「没有需要保存的更改」提示与编辑脏标记。
 /// </summary>
 public static class ConfigDiff
@@ -24,8 +25,10 @@ public static class ConfigDiff
     {
         var changes = new List<ConfigChange>();
 
-        var oldIrk = ConfigValidator.NormalizeIrk(from.Device.Irk) ?? from.Device.Irk;
-        var newIrk = ConfigValidator.NormalizeIrk(to.Device.Irk) ?? to.Device.Irk;
+        var oldIrkPlain = ConfigSecrets.DecryptForCompare(from.Device.Irk);
+        var newIrkPlain = ConfigSecrets.DecryptForCompare(to.Device.Irk);
+        var oldIrk = ConfigValidator.NormalizeIrk(oldIrkPlain) ?? oldIrkPlain;
+        var newIrk = ConfigValidator.NormalizeIrk(newIrkPlain) ?? newIrkPlain;
         if (!string.Equals(oldIrk, newIrk, StringComparison.Ordinal))
         {
             changes.Add(new ConfigChange(ConfigFields.DeviceIrk, GetDisplayName(ConfigFields.DeviceIrk),
@@ -52,7 +55,8 @@ public static class ConfigDiff
                 FormatText(from.Credentials.UserName), FormatText(to.Credentials.UserName), IsSensitive: false));
         }
 
-        if (!string.Equals(from.Credentials.Password, to.Credentials.Password, StringComparison.Ordinal))
+        if (!string.Equals(ConfigSecrets.DecryptForCompare(from.Credentials.Password),
+                ConfigSecrets.DecryptForCompare(to.Credentials.Password), StringComparison.Ordinal))
         {
             // 密码不进入对话框文本
             changes.Add(new ConfigChange(ConfigFields.CredentialsPassword, GetDisplayName(ConfigFields.CredentialsPassword),
@@ -146,7 +150,7 @@ public static class ConfigDiff
         }
     }
 
-    /// <summary>密文不展开显示（「（已加密）」），明文按敏感键截断。</summary>
+    /// <summary>差异比较已完成解密：仅无法解密的密文兜底显示「（已加密）」，其余按敏感键截断。</summary>
     private static string FormatKeyOrProtected(string value)
         => SecretProtector.IsProtected(value) ? "（已加密）" : FormatKey(value);
 

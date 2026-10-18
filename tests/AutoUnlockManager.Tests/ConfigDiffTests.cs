@@ -199,7 +199,7 @@ public sealed class ConfigDiffTests
     }
 
     [Fact]
-    public void Compute_ProtectedIrk_ShowsEncryptedPlaceholder()
+    public void Compute_ProtectedIrk_Changed_ShowsDecryptedValues()
     {
         var from = Baseline();
         from.Device.Irk = SecretProtector.Protect("00112233445566778899aabbccddeeff");
@@ -209,9 +209,35 @@ public sealed class ConfigDiffTests
         var change = Assert.Single(ConfigDiff.Compute(from, to));
 
         Assert.Equal(ConfigFields.DeviceIrk, change.Field);
-        Assert.Equal("（已加密）", change.OldText);   // 密文不展开
-        Assert.Equal("ffeebbaa…ffee", change.NewText); // 新值（明文）照常截断显示
+        Assert.Equal("00112233…eeff", change.OldText);  // 密文解密后截断显示
+        Assert.Equal("ffeebbaa…ffee", change.NewText);
         Assert.False(change.IsSensitive);
+    }
+
+    [Fact]
+    public void Compute_ProtectedIrk_SameValueAsPlain_NoChange()
+    {
+        // 磁盘密文 vs 表单回显的同值明文：不算变更（否则每次保存都误报 IRK/密码已改）
+        var from = Baseline();
+        from.Device.Irk = SecretProtector.Protect("00112233445566778899aabbccddeeff");
+        from.Credentials.Password = SecretProtector.Protect("pw1");
+        var to = Baseline();
+
+        Assert.Empty(ConfigDiff.Compute(from, to));
+    }
+
+    [Fact]
+    public void Compute_UnreadableCipher_OldShowsEncryptedPlaceholder()
+    {
+        var from = Baseline();
+        from.Device.Irk = SecretTestData.Tampered(SecretProtector.Protect("00112233445566778899aabbccddeeff"));
+        var to = Baseline();
+
+        var change = Assert.Single(ConfigDiff.Compute(from, to));
+
+        Assert.Equal(ConfigFields.DeviceIrk, change.Field);
+        Assert.Equal("（已加密）", change.OldText);      // 解不开：不展开
+        Assert.Equal("00112233…eeff", change.NewText);
     }
 
     [Fact]
@@ -220,8 +246,21 @@ public sealed class ConfigDiffTests
         var from = Baseline();
         from.Device.Irk = SecretProtector.Protect("00112233445566778899aabbccddeeff");
         from.Credentials.Password = SecretProtector.Protect("pw1");
-        var to = from.Clone(); // 密文原样（表单留空 → 保留）
+        var to = from.Clone(); // 密文原样（未编辑）
 
         Assert.Empty(ConfigDiff.Compute(from, to));
+    }
+
+    [Fact]
+    public void Compute_ProtectedPassword_Changed_SensitiveRow()
+    {
+        var from = Baseline();
+        from.Credentials.Password = SecretProtector.Protect("pw1");
+        var to = Baseline();
+        to.Credentials.Password = "pw2";
+
+        var change = Assert.Single(ConfigDiff.Compute(from, to));
+        Assert.Equal(ConfigFields.CredentialsPassword, change.Field);
+        Assert.True(change.IsSensitive);
     }
 }
