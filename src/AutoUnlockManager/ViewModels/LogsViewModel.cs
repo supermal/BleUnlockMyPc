@@ -53,8 +53,9 @@ public sealed partial class LogsViewModel : ObservableObject
         AutoScroll = true;
     }
 
-    /// <summary>追加/过滤刷新后触发（页面用于自动滚动到底）。</summary>
-    public event Action? ViewRefreshed;
+    /// <summary>过滤视图整体重建后触发（过滤/加载/裁剪）；增量追加不触发——
+    /// 跟随滚动交给列表的 ItemsUpdatingScrollMode（底部才跟随）。</summary>
+    public event Action? ViewRebuilt;
 
     // —— 文件清单 / 状态 ——
 
@@ -465,7 +466,6 @@ public sealed partial class LogsViewModel : ObservableObject
 
         PruneIfNeeded();
         UpdateStatusText();
-        ViewRefreshed?.Invoke();
     }
 
     private void PruneIfNeeded()
@@ -497,7 +497,7 @@ public sealed partial class LogsViewModel : ObservableObject
     {
         VisibleEntries = new ObservableCollection<LogEntry>(LogFilter.Apply(_all, CurrentLevelFilter(), Keyword));
         UpdateStatusText();
-        ViewRefreshed?.Invoke();
+        ViewRebuilt?.Invoke();
     }
 
     private void ClearEntries()

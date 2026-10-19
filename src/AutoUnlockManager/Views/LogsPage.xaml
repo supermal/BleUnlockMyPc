@@ -56,7 +56,7 @@
                         Click="OnTogglePauseClicked"
                         IsEnabled="{x:Bind ViewModel.CanFollow, Mode=OneWay}" />
                 <ToggleButton IsChecked="{x:Bind ViewModel.AutoScroll, Mode=TwoWay}"
-                              ToolTipService.ToolTip="新行到达时自动滚动到底">
+                              ToolTipService.ToolTip="停在底部时新行自动跟随；向上翻看时保持位置">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon Glyph="&#xE8FB;" FontSize="14" />
                         <TextBlock Text="自动滚动" />
