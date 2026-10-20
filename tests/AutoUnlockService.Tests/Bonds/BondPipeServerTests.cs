@@ -92,6 +92,24 @@ public class BondPipeServerTests : IDisposable
     }
 
     [Fact]
+    public void La_respuesta_usa_las_claves_camelCase_del_contrato_v1()
+    {
+        var line = BondProtocol.SerializeLine(BondProtocol.OkList(3, new[]
+        {
+            new BondedBleDevice("55:A2:DC:A6:30:DB", "Apple Watch", "00112233445566778899AABBCCDDEEFF"),
+        }));
+
+        Assert.EndsWith("\n", line);
+        Assert.Contains("\"t\":\"res\"", line);
+        Assert.Contains("\"id\":3", line);
+        Assert.Contains("\"ok\":true", line);
+        Assert.Contains(
+            "\"devices\":[{\"addr\":\"55:A2:DC:A6:30:DB\",\"name\":\"Apple Watch\",\"irk\":\"00112233445566778899AABBCCDDEEFF\"}]",
+            line);
+        Assert.Contains("\"error\":null", line);
+    }
+
+    [Fact]
     public void La_DACL_de_produccion_solo_permite_a_SYSTEM_y_Administrators()
     {
         var rules = BondPipeServer.CreateDefaultSecurity()
