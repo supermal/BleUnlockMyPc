@@ -1,5 +1,7 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using AutoUnlockManager.Core;
+using AutoUnlockManager.Core.Bonds;
 using AutoUnlockManager.Core.Config;
 using AutoUnlockManager.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -21,6 +23,8 @@ public enum ConfigBannerAction
 /// <summary>
 /// 配置页视图模型（设计 §5.3 配置页）：全字段表单 + 校验（镜像服务端）+ 保存流水线
 /// （差异确认 → 原子写盘 → 服务热重载日志确认）+ 辅助操作（重新加载/打开文件夹/服务启停）。
+/// 设备 IRK 不再手工输入：从「已配对 BLE 设备」下拉框选择，IRK 由服务从 Windows
+/// 蓝牙配对库读取（SYSTEM 权限），保存时仍按 Task 21 的 DPAPI 链路加密。
 /// 全部逻辑在 UI 线程（无后台事件）；服务控制复用 <see cref="ServiceControlService"/>（后台线程执行）。
 /// </summary>
 public sealed partial class ConfigViewModel : ObservableObject
@@ -28,6 +32,12 @@ public sealed partial class ConfigViewModel : ObservableObject
     private static readonly TimeSpan ReloadWaitTimeout = TimeSpan.FromSeconds(5);
 
     private readonly ServiceControlService _serviceControl = new();
+    private readonly BleBondClient _bondClient = new();
+
+    /// <summary>程序化设置下拉选中项时抑制写回（避免加载即被判定为“已修改”）。</summary>
+    private bool _suppressBondSelection;
+
+    private bool _loadingBonds;
 
     /// <summary>最近一次成功读盘/写盘的快照（差异与「无更改」判定基准）。</summary>
     private AutoUnlockConfig _loadedConfig = new();
@@ -73,6 +83,18 @@ public sealed partial class ConfigViewModel : ObservableObject
     [ObservableProperty] public partial string IrkText { get; set; }
     [ObservableProperty] public partial int IrkByteOrderIndex { get; set; }
     [ObservableProperty] public partial string IdentityAddressText { get; set; }
+
+    /// <summary>已与 Windows 配对的 BLE 设备（服务从配对库读取；可能含一条「当前配置」合成项）。</summary>
+    public ObservableCollection<BleBondDevice> BondedDevices { get; } = [];
+
+    [ObservableProperty] public partial BleBondDevice? SelectedBondDevice { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasBondStatus))]
+    public partial string BondStatusText { get; set; }
+
+    public bool HasBondStatus => BondStatusText.Length > 0;
+
     [ObservableProperty] public partial string UserNameText { get; set; }
     [ObservableProperty] public partial string PasswordText { get; set; }
     [ObservableProperty] public partial string LockThresholdText { get; set; }
@@ -188,6 +210,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         UnlockPendingTimeoutText = "";
         RejectSnoozeText = "";
         SnoozeText = "";
+        BondStatusText = "";
         IrkError = "";
         IdentityAddressError = "";
         UserNameError = "";
@@ -265,13 +288,121 @@ public sealed partial class ConfigViewModel : ObservableObject
                 ConfigSecrets.IsUnreadableOnThisMachine(_loadedConfig.Credentials.Password))
             {
                 ShowBanner(InfoBarSeverity.Warning, "检测到无法解密的加密值",
-                    "设备 IRK 或凭据密码包含无法在本机解密的密文（可能来自其他机器）；请重新输入并保存，否则服务会拒绝启动。");
+                    "设备 IRK 或凭据密码包含无法在本机解密的密文（可能来自其他机器）；请重新选择 BLE 设备（或重新输入密码）并保存，否则服务会拒绝启动。");
             }
         }
         catch (Exception ex)
         {
             SetUnavailable($"无法读取配置文件：{DescribeException(ex)}");
         }
+
+        // 设备下拉框独立于配置文件加载：即使服务未运行，也会在状态行给出可读原因
+        _ = LoadBondedDevicesAsync();
+    }
+
+    /// <summary>
+    /// 重新读取 Windows 已配对 BLE 设备（服务以 SYSTEM 读取配对库）。
+    /// 失败不抛异常：状态行显示原因，并保留「当前配置」合成项以免丢失已有 IRK。
+    /// </summary>
+    public async Task LoadBondedDevicesAsync()
+    {
+        if (_loadingBonds)
+        {
+            return;
+        }
+
+        _loadingBonds = true;
+        BondStatusText = "正在读取 Windows 配对设备…";
+        try
+        {
+            var result = await _bondClient.ListAsync();
+            var currentIrk = IrkText.Trim();
+            var items = new List<BleBondDevice>();
+
+            if (result.Error is null)
+            {
+                items.AddRange(result.Devices);
+            }
+
+            // 当前配置的 IRK 不在配对库里（旧设备/跨机器/手工录入）：保留一条可选中的合成项
+            if (currentIrk.Length > 0 &&
+                !items.Any(d => string.Equals(d.Irk, currentIrk, StringComparison.OrdinalIgnoreCase)))
+            {
+                items.Add(new BleBondDevice("", "当前配置（不在 Windows 配对列表中）", currentIrk));
+            }
+
+            var selected = currentIrk.Length == 0
+                ? null
+                : items.FirstOrDefault(d =>
+                    string.Equals(d.Irk, currentIrk, StringComparison.OrdinalIgnoreCase));
+
+            _suppressBondSelection = true;
+            try
+            {
+                BondedDevices.Clear();
+                foreach (var item in items)
+                {
+                    BondedDevices.Add(item);
+                }
+
+                SelectedBondDevice = selected;
+            }
+            finally
+            {
+                _suppressBondSelection = false;
+            }
+
+            var pairedCount = items.Count(d => d.Address.Length > 0);
+            BondStatusText = result.Error is not null
+                ? $"无法读取已配对设备：{result.Error}"
+                : pairedCount == 0
+                    ? "未发现已配对的 BLE 设备；请先在 Windows 中完成配对。"
+                    : $"已读取 {pairedCount} 台已配对设备（来自 Windows 蓝牙配对库）。";
+
+            IrkHint = BuildIrkHint();
+        }
+        catch (Exception ex)
+        {
+            BondStatusText = $"读取已配对设备失败：{ex.Message}";
+        }
+        finally
+        {
+            _loadingBonds = false;
+        }
+    }
+
+    /// <summary>用户从下拉框选择设备：IRK 与身份地址随之更新（IRK 不在界面明文显示）。</summary>
+    partial void OnSelectedBondDeviceChanged(BleBondDevice? value)
+    {
+        if (_suppressBondSelection || value is null || value.Irk.Length == 0)
+        {
+            return;
+        }
+
+        IrkText = value.Irk;
+        if (value.Address.Length > 0)
+        {
+            IdentityAddressText = value.Address;
+        }
+
+        IrkHint = BuildIrkHint();
+    }
+
+    /// <summary>IRK 字段提示（下拉选择语义；无法解密的密文单独提示）。</summary>
+    private string BuildIrkHint(string? storedIrk = null)
+    {
+        var raw = storedIrk ?? IrkText;
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return "请从下拉框选择一台已与 Windows 配对的 BLE 设备。";
+        }
+
+        if (ConfigSecrets.IsUnreadableOnThisMachine(raw))
+        {
+            return "当前 IRK 无法在本机解密，请从下拉框选择设备后保存。";
+        }
+
+        return "IRK 由所选设备自动提供；保存时加密存储。";
     }
 
     /// <summary>
@@ -533,7 +664,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         NotifierModeIndex = Math.Clamp((int)config.Notification.Mode, 0, 1);
         RejectSnoozeText = ConfigInput.FormatNumber(config.Notification.RejectSnoozeSeconds);
         SnoozeText = ConfigInput.FormatNumber(config.Notification.SnoozeMinutes);
-        IrkHint = ConfigSecrets.HintText(config.Device.Irk);
+        IrkHint = BuildIrkHint(config.Device.Irk);
         PasswordHint = ConfigSecrets.HintText(config.Credentials.Password);
     }
 

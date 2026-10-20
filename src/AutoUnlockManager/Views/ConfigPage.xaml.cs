@@ -9,8 +9,8 @@ namespace AutoUnlockManager.Views;
 
 /// <summary>
 /// 配置页（Task 5）：全字段表单（4 组 15 字段）+ 校验（镜像服务端规则）+ 差异确认对话框 +
-/// 原子保存与热重载确认 + 服务启停辅助。敏感字段（IRK/密码）以 dpapi 密文存储；界面回显当前值
-/// （密文在本机解密后填入，默认遮点，可点眼睛查看明文），修改后保存自动重新加密。
+/// 原子保存与热重载确认 + 服务启停辅助。敏感字段以 dpapi 密文存储；IRK 不再手工输入，
+/// 从「已配对 BLE 设备」下拉框选择（服务读取 Windows 配对库），密码仍以掩码+眼睛回显。
 /// ViewModel 全程 UI 线程、无后台任务，无需 Dispose。
 /// </summary>
 public sealed partial class ConfigPage : Page
@@ -42,7 +42,6 @@ public sealed partial class ConfigPage : Page
 
             await ViewModel.SaveAsync();
             RevealToggle.IsChecked = false;    // 保存后回到掩码显示（安全卫生，评审 M5）
-            IrkRevealToggle.IsChecked = false; // IRK 同规则（用户要求）
         }
         catch (Exception ex)
         {
@@ -111,10 +110,17 @@ public sealed partial class ConfigPage : Page
             ? PasswordRevealMode.Visible
             : PasswordRevealMode.Hidden;
 
-    private void OnIrkRevealChanged(object sender, RoutedEventArgs e)
-        => IrkInput.PasswordRevealMode = IrkRevealToggle.IsChecked == true
-            ? PasswordRevealMode.Visible
-            : PasswordRevealMode.Hidden;
+    private async void OnRefreshBondsClicked(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await ViewModel.LoadBondedDevicesAsync();
+        }
+        catch (Exception ex)
+        {
+            ViewModel.ShowError("读取设备列表失败", ex.Message); // async void 兜底
+        }
+    }
 
     /// <summary>差异摘要确认对话框（凭据密码仅显示「已修改」）。</summary>
     private async Task<bool> ConfirmChangesAsync(IReadOnlyList<ConfigChange> changes)

@@ -49,7 +49,7 @@
                                 <ColumnDefinition Width="200" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="设备 IRK" Margin="0,8,0,0" VerticalAlignment="Top"
+                            <TextBlock Text="蓝牙设备" Margin="0,8,0,0" VerticalAlignment="Top"
                                        Style="{StaticResource BodyTextBlockStyle}" />
                             <StackPanel Grid.Column="1" Spacing="4">
                                 <Grid ColumnSpacing="8">
@@ -57,17 +57,22 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <PasswordBox x:Name="IrkInput"
-                                                 Password="{x:Bind ViewModel.IrkText, Mode=TwoWay}"
-                                                 PasswordRevealMode="Hidden"
-                                                 FontFamily="Consolas" />
-                                    <ToggleButton x:Name="IrkRevealToggle" Grid.Column="1"
-                                                  MinWidth="40"
-                                                  Checked="OnIrkRevealChanged" Unchecked="OnIrkRevealChanged"
-                                                  ToolTipService.ToolTip="显示/隐藏 IRK">
-                                        <FontIcon Glyph="&#xE7B3;" FontSize="14" />
-                                    </ToggleButton>
+                                    <ComboBox x:Name="BleDevicePicker"
+                                              HorizontalAlignment="Stretch"
+                                              MinWidth="360"
+                                              ItemsSource="{x:Bind ViewModel.BondedDevices, Mode=OneWay}"
+                                              SelectedItem="{x:Bind ViewModel.SelectedBondDevice, Mode=TwoWay}"
+                                              DisplayMemberPath="DisplayName"
+                                              PlaceholderText="选择一台已与 Windows 配对的 BLE 设备" />
+                                    <Button Grid.Column="1" Content="刷新列表"
+                                            Click="OnRefreshBondsClicked"
+                                            ToolTipService.ToolTip="从服务重新读取 Windows 蓝牙配对库" />
                                 </Grid>
+                                <TextBlock Text="{x:Bind ViewModel.BondStatusText, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasBondStatus, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
                                 <TextBlock Text="{x:Bind ViewModel.IrkError, Mode=OneWay}"
                                            Visibility="{x:Bind ViewModel.HasIrkError, Mode=OneWay}"
                                            Style="{StaticResource CaptionTextBlockStyle}"
@@ -75,10 +80,6 @@
                                            TextWrapping="Wrap" />
                                 <TextBlock Text="{x:Bind ViewModel.IrkHint, Mode=OneWay}"
                                            Visibility="{x:Bind ViewModel.HasIrkHint, Mode=OneWay}"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           TextWrapping="Wrap" />
-                                <TextBlock Text="32 位十六进制；可含空格、冒号、连字符或 0x 前缀（保存前自动归一化）。"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap" />
@@ -119,7 +120,7 @@
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                            TextWrapping="Wrap" />
-                                <TextBlock Text="留空，或 6 字节 MAC 地址（可含分隔符；保存前归一化）。"
+                                <TextBlock Text="选择上方设备后自动填入；一般无需修改（留空也可）。"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap" />

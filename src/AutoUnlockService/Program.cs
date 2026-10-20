@@ -1,4 +1,5 @@
 using AutoUnlockService.Ble;
+using AutoUnlockService.Bonds;
 using AutoUnlockService.Config;
 using AutoUnlockService.Core;
 using AutoUnlockService.Credentials;
@@ -121,8 +122,11 @@ public static class Program
                 sp.GetRequiredService<ProcessScreenLocker>(),
                 sp.GetRequiredService<ILogger<HelperScreenLocker>>()));
 
+            builder.Services.AddSingleton<IBondedDeviceSource, WindowsBondedDeviceSource>();
+
             builder.Services.AddHostedService<Worker>();
             builder.Services.AddHostedService<ManagementPipeServer>();
+            builder.Services.AddHostedService<BondPipeServer>();
 
             builder.Build().Run();
         }
