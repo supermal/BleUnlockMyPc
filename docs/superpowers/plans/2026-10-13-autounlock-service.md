@@ -6243,3 +6243,33 @@ git commit -m "docs: 记录 AutoUnlockService 实机验收结果"
 - [x] **Step 4: 构建与自动化测试全绿**
 - [ ] **Step 5: 发布并重装（管理员运行 `scripts/install.ps1`，与 Task 20 合并一次）**
 - [ ] **Step 6: 实机验收（验收单全单含「五、凭据加密」）并记录结果**
+
+### Task 22: 配置页 IRK → 「已配对 BLE 设备」下拉框（Step 1：直接读取 Windows 配对库）
+
+用户需求（2026-10-20）：配置页去掉 IRK 手工输入框，改为下拉框选择已匹配的 BLE 设备；长期目标是不再手工输入 IRK，参考 `Task19/BleHealthIrk` 的「电脑作为 BLE 外设配对取 IRK」思路。
+
+**本步范围（Step 1，已完成）**：只做「已配对设备列表 + 下拉框」。本机 iPhone（`59:93:E1:AA:B7:89`）与 Apple Watch（`55:A2:DC:A6:30:DB`）已经在 Windows 蓝牙配对库中，因此下拉框立即可用；IRK 手工输入与眼睛查看被移除（密码眼睛保留）。
+**Step 2（待做，需用户拍板细节）**：「配对新设备…」向导——管理端以 `GattServiceProvider` 广播 0x180D 心率服务（用户会话；BleHealthIrk 已在本机验证 `peripheral=True`），用户在手机/手表侧完成配对后，向导轮询服务管道的新设备差集并自动选中；另需决定 iPhone 广播地址的「按名称兜底」、配对成功后是否保留绑定（保留才能继续出现在下拉框，建议保留）。
+
+**实现要点**
+
+- 服务端（只有 SYSTEM 能读 `HKLM\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Keys`，管理员通常被拒）：
+  - `Bonds/BondedDeviceStore.cs`：`WindowsBondedDeviceSource` 遍历适配器/设备，取 16 字节且非全 0/FF 的 `IRK`；名称优先 `Parameters\Devices\<地址>\Name`（REG_BINARY UTF-8，兼容字符串/字符串数组），否则设备键的 `Name`；地址规范化、按地址去重、按显示名排序。
+  - `Bonds/BondProtocol.cs`：v1 单行 JSON，请求 `{"t":"req","id":1,"op":"list"}`，响应 `devices:[{addr,name,irk}]`；错误帧带可读原因。
+  - `Bonds/BondPipeServer.cs`：`\\.\pipe\AutoUnlockBleBonds`，DACL 仅 SYSTEM+Administrators 完全控制；单连接可连续请求、空闲 10s 回收、异常只记日志（IRK 绝不入日志）。
+  - `Program.cs`：注册 `IBondedDeviceSource` 单例与 `BondPipeServer` hosted service。
+- 管理端 Core：`Bonds/BleBondClient.cs` 一次性连接/请求/响应（默认 3s 超时），失败返回 `BleBondListResult.Error`（不抛异常）；`BleBondDevice.DisplayName` = `名称（地址）`。
+- 管理端 UI：`ConfigPage.xaml` 的 IRK PasswordBox+眼睛 → `ComboBox` + 「刷新列表」+ 状态行；`ConfigViewModel` 加载时按当前 IRK 自动选中设备（程序化选择抑制写回，避免「无改动保存」被误判为已修改）；当前 IRK 不在配对库时保留「当前配置（不在 Windows 配对列表中）」合成项，避免丢值；用户选择设备时回填 IRK（界面不显示明文）与 `Device.IdentityAddress`；保存/差异确认/DPAPI 加密链路不变。
+- 文档：README 新增「选择解锁设备与调阈值」（先配对、再下拉选择）、敏感字段说明改为下拉框语义、管理端配置页描述。
+
+**测试**：服务端 +17（读取辅助函数 11、管道 6）；管理端 +6（客户端真管道：正常/服务错误/坏 JSON/未知帧/超时/显示名）。全量 **365 + 221 = 586** 全绿；构建 0 警告 0 错误。
+**产物**：服务 Release 10/20 19:45；管理端 publish 532 文件 / 232.9 MB（exe 10/20 19:55）。
+**提交**：`2221835`（代码）。
+
+- [x] **Step 1: 服务端配对库读取 + 只读管道 + 测试**
+- [x] **Step 2: 管理端 Core 客户端 + 测试**
+- [x] **Step 3: 配置页下拉框、自动选中、当前值兜底**
+- [x] **Step 4: 构建、全量测试、发布**
+- [ ] **Step 5: 用户重装并验收（执行单新增「六、BLE 设备下拉框」D1–D4）**
+- [ ] **Step 6（后续）：「配对新设备…」向导**
+
