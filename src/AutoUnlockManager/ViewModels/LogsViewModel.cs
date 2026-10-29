@@ -10,7 +10,7 @@ using Wpf.Ui.Controls;
 namespace AutoUnlockManager.ViewModels;
 
 /// <summary>
-/// 日志页视图模型（设计 §5.3 日志页）：文件清单/选择、实时跟随（后台轮询 + DispatcherQueue 投递）、
+/// 日志页视图模型（设计 §5.3 日志页）：文件清单/选择、实时跟随（后台轮询 + Dispatcher 投递）、
 /// 暂停冻结/继续追上、四级别开关 + 关键字过滤（250ms 防抖）、行数上限裁剪、导出当前过滤视图。
 /// 生命周期：页面导航离开时调用 <see cref="Stop"/>（不缓存页面）。
 /// </summary>
