@@ -74,6 +74,8 @@ public static class ConfigDiff
             from.Proximity.LockPromptSampleCount, to.Proximity.LockPromptSampleCount);
         AddCount(changes, ConfigFields.ProximityLockConfirmSampleCount,
             from.Proximity.LockConfirmSampleCount, to.Proximity.LockConfirmSampleCount);
+        AddCount(changes, ConfigFields.ProximitySampleIntervalMs,
+            from.Proximity.SampleIntervalMs, to.Proximity.SampleIntervalMs);
 
         AddNumber(changes, ConfigFields.ProximityStartupGraceSeconds,
             from.Proximity.StartupGraceSeconds, to.Proximity.StartupGraceSeconds);
@@ -107,6 +109,7 @@ public static class ConfigDiff
         ConfigFields.ProximityUnlockSampleCount => "解锁确认个数",
         ConfigFields.ProximityLockPromptSampleCount => "弹窗触发个数",
         ConfigFields.ProximityLockConfirmSampleCount => "锁屏确认个数",
+        ConfigFields.ProximitySampleIntervalMs => "RSSI 采样间隔（毫秒）",
         ConfigFields.ProximityStartupGraceSeconds => "启动宽限（秒）",
         ConfigFields.ProximityUnlockPendingTimeoutSeconds => "解锁等待超时（秒）",
         ConfigFields.NotificationMode => "通知方式",

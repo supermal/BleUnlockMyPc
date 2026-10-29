@@ -4,7 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    NavigationCacheMode="Required">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="36,20,36,36">
         <StackPanel Spacing="16" MaxWidth="860" HorizontalAlignment="Left">
@@ -68,6 +69,15 @@
                                             Click="OnRefreshBondsClicked"
                                             ToolTipService.ToolTip="从服务重新读取 Windows 蓝牙配对库" />
                                 </Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="配对新设备…"
+                                            Click="OnPairDeviceClicked"
+                                            ToolTipService.ToolTip="手机/手表由设备发起配对，耳机/鼠标由电脑扫描配对" />
+                                    <Button Content="解除匹配"
+                                            Click="OnUnpairDeviceClicked"
+                                            IsEnabled="{x:Bind ViewModel.CanUnpairSelectedDevice, Mode=OneWay}"
+                                            ToolTipService.ToolTip="解除所选设备与 Windows 的蓝牙配对" />
+                                </StackPanel>
                                 <TextBlock Text="{x:Bind ViewModel.BondStatusText, Mode=OneWay}"
                                            Visibility="{x:Bind ViewModel.HasBondStatus, Mode=OneWay}"
                                            Style="{StaticResource CaptionTextBlockStyle}"
@@ -298,6 +308,28 @@
                                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                            TextWrapping="Wrap" />
                                 <TextBlock Text="弹窗出现后新收的读数个数（弹窗前的读数不计入），取值范围 1-50。"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="RSSI 采样间隔（毫秒）" Margin="0,8,0,0" VerticalAlignment="Top"
+                                       Style="{StaticResource BodyTextBlockStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBox Text="{x:Bind ViewModel.SampleIntervalText, Mode=TwoWay}"
+                                         MaxWidth="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.SampleIntervalError, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.HasSampleIntervalError, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="同一设备两次计入判定的读数至少间隔这么久；0 = 每条广播都采样，范围 0-2000。调大可降低抖动，但会变慢。"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap" />

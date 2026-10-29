@@ -132,6 +132,28 @@ public class OptionsValidatorTests
         Assert.Contains("Proximity.LockConfirmSampleCount 必须在 1 到 50 之间", r.Errors);
     }
 
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(2001)]
+    public void Validate_rechaza_SampleIntervalMs_fuera_de_rango(int interval)
+    {
+        var o = Valid();
+        o.Proximity.SampleIntervalMs = interval;
+        var r = OptionsValidator.Validate(o);
+        Assert.False(r.IsValid);
+        Assert.Contains("Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）", r.Errors);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2000)]
+    public void Validate_acepta_los_limites_de_SampleIntervalMs(int interval)
+    {
+        var o = Valid();
+        o.Proximity.SampleIntervalMs = interval;
+        Assert.True(OptionsValidator.Validate(o).IsValid);
+    }
+
     [Fact]
     public void Los_limites_exactos_de_los_conteos_se_aceptan()
     {

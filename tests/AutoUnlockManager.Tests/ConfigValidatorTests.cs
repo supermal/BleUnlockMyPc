@@ -192,6 +192,24 @@ public sealed class ConfigValidatorTests
     }
 
     [Fact]
+    public void Validate_SampleIntervalMs_Boundaries()
+    {
+        var config = Valid();
+        config.Proximity.SampleIntervalMs = 0;
+        Assert.True(ConfigValidator.Validate(config).IsValid);
+        config.Proximity.SampleIntervalMs = 2000;
+        Assert.True(ConfigValidator.Validate(config).IsValid);
+
+        config.Proximity.SampleIntervalMs = -1;
+        Assert.Equal("Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）",
+            Assert.Single(ConfigValidator.Validate(config).Errors).Message);
+
+        config.Proximity.SampleIntervalMs = 2001;
+        Assert.Equal("Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）",
+            Assert.Single(ConfigValidator.Validate(config).Errors).Message);
+    }
+
+    [Fact]
     public void Validate_StartupGrace_Boundaries()
     {
         var config = Valid();

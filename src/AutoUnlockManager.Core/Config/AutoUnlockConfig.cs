@@ -32,6 +32,7 @@ public sealed class AutoUnlockConfig
             UnlockSampleCount = Proximity.UnlockSampleCount,
             LockPromptSampleCount = Proximity.LockPromptSampleCount,
             LockConfirmSampleCount = Proximity.LockConfirmSampleCount,
+            SampleIntervalMs = Proximity.SampleIntervalMs,
             StartupGraceSeconds = Proximity.StartupGraceSeconds,
             UnlockPendingTimeoutSeconds = Proximity.UnlockPendingTimeoutSeconds,
         },
@@ -81,6 +82,9 @@ public sealed class ProximityConfig
     public int UnlockSampleCount { get; set; } = 3;
     public int LockPromptSampleCount { get; set; } = 5;
     public int LockConfirmSampleCount { get; set; } = 10;
+
+    /// <summary>RSSI 采样间隔（毫秒）：0 = 每条广播都采样；上限 2000（见服务端注释）。</summary>
+    public int SampleIntervalMs { get; set; } = 0;
 
     public double StartupGraceSeconds { get; set; } = 15;
     public double UnlockPendingTimeoutSeconds { get; set; } = 20;

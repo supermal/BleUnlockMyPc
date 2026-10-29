@@ -2,8 +2,10 @@ using System.Diagnostics;
 using AutoUnlockManager.Core;
 using AutoUnlockManager.Core.Config;
 using AutoUnlockManager.ViewModels;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 
 namespace AutoUnlockManager.Views;
 
@@ -15,15 +17,52 @@ namespace AutoUnlockManager.Views;
 /// </summary>
 public sealed partial class ConfigPage : Page
 {
+    private bool _loadedOnce;
+    private bool _loadPending;
+
     public ConfigPage()
     {
         ViewModel = new ConfigViewModel();
         InitializeComponent();
-        ViewModel.Initialize();
     }
 
     /// <summary>视图模型（x:Bind 数据源）。</summary>
     public ConfigViewModel ViewModel { get; }
+
+    /// <summary>
+    /// 页面缓存后，首次进入仍要等导航完成再读配置，避免在导航动画期间同步做
+    /// 文件读取/DPAPI 解密/绑定刷新；再次进入时刷新磁盘值，但有未保存修改时保留表单。
+    /// </summary>
+    protected override void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+
+        if (_loadPending)
+        {
+            return;
+        }
+
+        _loadPending = true;
+        if (!DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, LoadForNavigation))
+        {
+            _loadPending = false;
+            LoadForNavigation();
+        }
+    }
+
+    private void LoadForNavigation()
+    {
+        _loadPending = false;
+        if (!_loadedOnce)
+        {
+            _loadedOnce = true;
+            ViewModel.Initialize();
+        }
+        else if (!ViewModel.IsDirty || !ViewModel.CanEdit)
+        {
+            ViewModel.ReloadFromDisk();
+        }
+    }
 
     private async void OnSaveClicked(object sender, RoutedEventArgs e)
     {
@@ -122,6 +161,59 @@ public sealed partial class ConfigPage : Page
         }
     }
 
+    private async void OnPairDeviceClicked(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dialog = new PairDeviceDialog { XamlRoot = XamlRoot };
+            await dialog.ShowAsync();
+            if (dialog.PairedDevice is not { } device)
+            {
+                return;
+            }
+
+            if (await ViewModel.SelectBondedDeviceAsync(device.Address))
+            {
+                ViewModel.ShowBanner(InfoBarSeverity.Success, "配对成功",
+                    $"已选择「{device.DisplayName}」；请保存配置使其生效。");
+            }
+        }
+        catch (Exception ex)
+        {
+            ViewModel.ShowError("配对失败", ex.Message);
+        }
+    }
+
+    private async void OnUnpairDeviceClicked(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var device = ViewModel.SelectedBondDevice;
+            if (device is null || device.Address.Length == 0)
+            {
+                return;
+            }
+
+            var active = ViewModel.IsSelectedDeviceActive;
+            var content = active
+                ? $"解除与「{device.DisplayName}」的 Windows 蓝牙配对？\n\n" +
+                  "该设备正是磁盘配置当前使用的设备：将同时清空 IRK/设备地址，自动解锁暂停（服务继续运行以读取配对库）。" +
+                  (ViewModel.IsDirty ? "\n\n当前未保存的其他修改也会丢失。" : "")
+                : $"解除与「{device.DisplayName}」的 Windows 蓝牙配对？\n\n当前服务配置不受影响。";
+
+            if (!await ConfirmAsync("解除配对", content, "解除配对"))
+            {
+                return;
+            }
+
+            await ViewModel.UnpairSelectedDeviceAsync();
+        }
+        catch (Exception ex)
+        {
+            ViewModel.ShowError("解除配对失败", ex.Message);
+        }
+    }
+
     /// <summary>差异摘要确认对话框（凭据密码仅显示「已修改」）。</summary>
     private async Task<bool> ConfirmChangesAsync(IReadOnlyList<ConfigChange> changes)
     {
@@ -159,7 +251,7 @@ public sealed partial class ConfigPage : Page
         var dialog = new ContentDialog
         {
             Title = title,
-            Content = content,
+            Content = new TextBlock { Text = content, TextWrapping = TextWrapping.Wrap },
             PrimaryButtonText = primary,
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Close,

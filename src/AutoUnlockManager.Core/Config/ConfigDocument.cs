@@ -108,6 +108,7 @@ public static class ConfigDocument
         Set(proximity, "UnlockSampleCount", JsonValue.Create(config.Proximity.UnlockSampleCount));
         Set(proximity, "LockPromptSampleCount", JsonValue.Create(config.Proximity.LockPromptSampleCount));
         Set(proximity, "LockConfirmSampleCount", JsonValue.Create(config.Proximity.LockConfirmSampleCount));
+        Set(proximity, "SampleIntervalMs", JsonValue.Create(config.Proximity.SampleIntervalMs));
         Set(proximity, "StartupGraceSeconds", JsonValue.Create(config.Proximity.StartupGraceSeconds));
         Set(proximity, "UnlockPendingTimeoutSeconds", JsonValue.Create(config.Proximity.UnlockPendingTimeoutSeconds));
 

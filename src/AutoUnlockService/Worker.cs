@@ -32,6 +32,7 @@ public sealed class Worker(
 
     private readonly RssiHistory _history = new(HistoryRetention, time);
     private readonly CredentialAttemptBudget _credentialBudget = new(MaxCredentialAttempts);
+    private readonly SampleIntervalGate _sampleGate = new(time);
     private readonly object _gate = new();
     private ProximityStateMachine _machine = null!;
     private DateTimeOffset _lastSummary;
@@ -123,6 +124,9 @@ public sealed class Worker(
         // 哨兵值不是测量结果：放进来会凭空凑出「信号变弱」（实测曾疑似造成误弹窗），
         // 也不该出现在遥测曲线里
         if (!HasUsableRssi(sample.Rssi)) return;
+        // 采样间隔限流放在匹配与哨兵过滤之后：只影响计入判定的频率，
+        // 不会让非目标设备占用限流窗口
+        if (!_sampleGate.ShouldAccept(options.Current.Proximity.SampleIntervalMs)) return;
         _history.Add(sample.Rssi, sample.Timestamp);
         telemetry.OnSample(sample.Timestamp.ToUnixTimeMilliseconds(), sample.Rssi);
         Volatile.Write(ref _lastMatchTicks, time.GetUtcNow().UtcTicks);
@@ -149,6 +153,7 @@ public sealed class Worker(
     {
         // El reloj puede haber saltado horas: el historico ya no representa nada
         log.LogInformation("系统已从睡眠中恢复，清空 RSSI 历史并重新进入宽限期");
+        _sampleGate.Reset();
         _history.Clear();
         telemetry.OnHistoryReset();   // 遥测：历史作废，管理端据 gen 变化清空曲线
         Transition(() => _machine.OnResume());
@@ -184,6 +189,7 @@ public sealed class Worker(
             if (change.DeviceChanged)
             {
                 matcher.Configure(change.Options.Device);
+                _sampleGate.Reset();
                 _history.Reset();
                 telemetry.OnHistoryReset();   // 遥测：设备变更，历史作废，管理端据 gen 变化清空曲线
                 _credentialBudget.Reset();

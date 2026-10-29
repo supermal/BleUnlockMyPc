@@ -4,6 +4,7 @@ using AutoUnlockManager.Core;
 using AutoUnlockManager.Core.Bonds;
 using AutoUnlockManager.Core.Config;
 using AutoUnlockManager.Services;
+using AutoUnlockManager.Services.Ble;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml.Controls;
 
@@ -87,7 +88,15 @@ public sealed partial class ConfigViewModel : ObservableObject
     /// <summary>已与 Windows 配对的 BLE 设备（服务从配对库读取；可能含一条「当前配置」合成项）。</summary>
     public ObservableCollection<BleBondDevice> BondedDevices { get; } = [];
 
-    [ObservableProperty] public partial BleBondDevice? SelectedBondDevice { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanUnpairSelectedDevice))]
+    public partial BleBondDevice? SelectedBondDevice { get; set; }
+
+    /// <summary>「解除匹配」可用：仅真实的 Windows 配对设备（合成项地址为空）。</summary>
+    public bool CanUnpairSelectedDevice => SelectedBondDevice is { Address.Length: > 0 };
+
+    /// <summary>当前下拉选中项是否就是磁盘配置正在使用的设备（解除配对时要清空配置/停服务）。</summary>
+    public bool IsSelectedDeviceActive => SelectedBondDevice is { } device && IsLoadedDevice(device);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBondStatus))]
@@ -102,6 +111,7 @@ public sealed partial class ConfigViewModel : ObservableObject
     [ObservableProperty] public partial string UnlockCountText { get; set; }
     [ObservableProperty] public partial string LockPromptCountText { get; set; }
     [ObservableProperty] public partial string LockConfirmCountText { get; set; }
+    [ObservableProperty] public partial string SampleIntervalText { get; set; }
     [ObservableProperty] public partial string StartupGraceText { get; set; }
     [ObservableProperty] public partial string UnlockPendingTimeoutText { get; set; }
     [ObservableProperty] public partial int NotifierModeIndex { get; set; }
@@ -147,6 +157,10 @@ public sealed partial class ConfigViewModel : ObservableObject
     public partial string LockConfirmCountError { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSampleIntervalError))]
+    public partial string SampleIntervalError { get; set; }
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasStartupGraceError))]
     public partial string StartupGraceError { get; set; }
 
@@ -171,6 +185,7 @@ public sealed partial class ConfigViewModel : ObservableObject
     public bool HasUnlockCountError => UnlockCountError.Length > 0;
     public bool HasLockPromptCountError => LockPromptCountError.Length > 0;
     public bool HasLockConfirmCountError => LockConfirmCountError.Length > 0;
+    public bool HasSampleIntervalError => SampleIntervalError.Length > 0;
     public bool HasStartupGraceError => StartupGraceError.Length > 0;
     public bool HasUnlockPendingTimeoutError => UnlockPendingTimeoutError.Length > 0;
     public bool HasRejectSnoozeError => RejectSnoozeError.Length > 0;
@@ -206,6 +221,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         UnlockCountText = "";
         LockPromptCountText = "";
         LockConfirmCountText = "";
+        SampleIntervalText = "";
         StartupGraceText = "";
         UnlockPendingTimeoutText = "";
         RejectSnoozeText = "";
@@ -220,6 +236,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         UnlockCountError = "";
         LockPromptCountError = "";
         LockConfirmCountError = "";
+        SampleIntervalError = "";
         StartupGraceError = "";
         UnlockPendingTimeoutError = "";
         RejectSnoozeError = "";
@@ -317,6 +334,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         {
             var result = await _bondClient.ListAsync();
             var currentIrk = IrkText.Trim();
+            var noDevice = string.Equals(currentIrk, ConfigValidator.NoDeviceIrk, StringComparison.OrdinalIgnoreCase);
             var items = new List<BleBondDevice>();
 
             if (result.Error is null)
@@ -325,13 +343,15 @@ public sealed partial class ConfigViewModel : ObservableObject
             }
 
             // 当前配置的 IRK 不在配对库里（旧设备/跨机器/手工录入）：保留一条可选中的合成项
-            if (currentIrk.Length > 0 &&
+            // 未选择设备时使用的全零占位 IRK 不算「当前设备」，不显示合成项
+            if (!noDevice &&
+                currentIrk.Length > 0 &&
                 !items.Any(d => string.Equals(d.Irk, currentIrk, StringComparison.OrdinalIgnoreCase)))
             {
                 items.Add(new BleBondDevice("", "当前配置（不在 Windows 配对列表中）", currentIrk));
             }
 
-            var selected = currentIrk.Length == 0
+            var selected = currentIrk.Length == 0 || noDevice
                 ? null
                 : items.FirstOrDefault(d =>
                     string.Equals(d.Irk, currentIrk, StringComparison.OrdinalIgnoreCase));
@@ -357,7 +377,9 @@ public sealed partial class ConfigViewModel : ObservableObject
                 ? $"无法读取已配对设备：{result.Error}"
                 : pairedCount == 0
                     ? "未发现已配对的 BLE 设备；请先在 Windows 中完成配对。"
-                    : $"已读取 {pairedCount} 台已配对设备（来自 Windows 蓝牙配对库）。";
+                    : noDevice
+                        ? $"已读取 {pairedCount} 台已配对设备；当前未选择设备，自动解锁已暂停。"
+                        : $"已读取 {pairedCount} 台已配对设备（来自 Windows 蓝牙配对库）。";
 
             IrkHint = BuildIrkHint();
         }
@@ -385,13 +407,184 @@ public sealed partial class ConfigViewModel : ObservableObject
             IdentityAddressText = value.Address;
         }
 
+        IrkByteOrderIndex = 0;
         IrkHint = BuildIrkHint();
+    }
+
+    /// <summary>
+    /// 配对向导返回后调用：重新读取配对库，按地址选中新设备并回填 IRK/地址。
+    /// 保存由用户确认，避免向导直接改动服务配置。
+    /// </summary>
+    public async Task<bool> SelectBondedDeviceAsync(string address)
+    {
+        await LoadBondedDevicesAsync();
+        var device = BondDiff.FindByAddress(BondedDevices, address);
+        if (device is null)
+        {
+            ShowError("未找到新配对设备",
+                "Windows 已完成配对，但服务没有返回该设备的 IRK。请确认服务正在运行后点「刷新列表」；" +
+                "如果该设备不提供 IRK，则无法用于自动解锁。");
+            return false;
+        }
+
+        SelectedBondDevice = device;
+        IrkText = device.Irk;
+        if (device.Address.Length > 0)
+        {
+            IdentityAddressText = device.Address;
+        }
+
+        IrkByteOrderIndex = 0;
+        IrkHint = BuildIrkHint();
+        return true;
+    }
+
+    /// <summary>
+    /// 解除当前选中设备的 Windows 配对。若它就是磁盘配置正在使用的设备：
+    /// 写入全零占位 IRK（服务仍可启动/读取配对库，但没有任何设备可匹配，自动解锁暂停），
+    /// 并确保服务在运行，以便随后打开配对向导。若只是未保存的下拉项，则只移除配对。
+    /// </summary>
+    public async Task<bool> UnpairSelectedDeviceAsync()
+    {
+        var device = SelectedBondDevice;
+        if (device is null || device.Address.Length == 0)
+        {
+            return false;
+        }
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        BlePairingResult unpair;
+        try
+        {
+            unpair = await BlePairingService.UnpairAsync(device.Address, cts.Token);
+        }
+        catch (Exception ex)
+        {
+            ShowError("解除配对失败", ex.Message);
+            return false;
+        }
+
+        if (!unpair.Success)
+        {
+            ShowError("解除配对失败", unpair.Message);
+            return false;
+        }
+
+        var wasActive = IsLoadedDevice(device);
+        if (!wasActive)
+        {
+            await LoadBondedDevicesAsync();
+            var formStillUses = string.Equals(
+                ConfigSecrets.DecryptForCompare(IrkText), device.Irk, StringComparison.OrdinalIgnoreCase);
+            ShowBanner(
+                formStillUses ? InfoBarSeverity.Warning : InfoBarSeverity.Success,
+                "已解除配对",
+                formStillUses
+                    ? "已从 Windows 移除该设备；当前表单仍保留它的 IRK（尚未保存），服务继续按磁盘配置运行。若不再使用，请重新选择设备并保存。"
+                    : "已从 Windows 移除该设备；当前配置未受影响。");
+            return true;
+        }
+
+        // 当前设备：写入占位 IRK，保留一个服务可校验、但不会匹配任何真实设备的配置。
+        AutoUnlockConfig cleared;
+        try
+        {
+            cleared = _loadedConfig.Clone();
+            cleared.Device.Irk = ConfigValidator.NoDeviceIrk;
+            cleared.Device.IdentityAddress = null;
+            ConfigSecrets.ProtectNewValues(cleared);
+            ConfigDocument.Save(AppPaths.ConfigFile, cleared);
+        }
+        catch (Exception ex)
+        {
+            // 配置没清掉就不能让旧 IRK 继续生效：先尝试停服务，再让用户重试。
+            try
+            {
+                await _serviceControl.StopAsync();
+            }
+            catch
+            {
+                // 已在错误横幅中提示用户手动确认
+            }
+
+            ShowError("解除配对成功，但清空配置失败",
+                $"{ex.Message}\n为避免旧 IRK 继续生效，已尝试停止服务；请检查配置文件后重试。");
+            await LoadBondedDevicesAsync();
+            return false;
+        }
+
+        _loadedConfig = cleared;
+        ClearFieldErrors();
+        ApplyToFields(cleared);
+
+        ServiceStatusInfo status;
+        try
+        {
+            status = await _serviceControl.GetStatusAsync();
+        }
+        catch
+        {
+            status = new ServiceStatusInfo(ServiceStatusKind.Unknown);
+        }
+
+        var serviceReady = status.Kind == ServiceStatusKind.Running;
+        if (!serviceReady && status.Kind != ServiceStatusKind.NotInstalled)
+        {
+            try
+            {
+                var start = await _serviceControl.StartAsync();
+                serviceReady = start.Status == ServiceOperationStatus.Success;
+            }
+            catch
+            {
+                serviceReady = false;
+            }
+        }
+
+        await LoadBondedDevicesAsync();
+
+        if (serviceReady)
+        {
+            ShowBanner(InfoBarSeverity.Warning, "已解除配对并清空当前设备",
+                "Windows 配对已移除；配置中的 IRK/设备地址已清空，自动解锁暂停（服务仍在运行以读取配对库）。" +
+                "请配对新设备并保存。");
+        }
+        else
+        {
+            ShowBanner(InfoBarSeverity.Error, "已解除配对，但服务未运行",
+                "配置中的 IRK/设备地址已清空（自动解锁暂停）。要使用配对向导读取配对库，请先启动服务；" +
+                "也可以通过下拉框选择其他已配对设备。");
+        }
+
+        return true;
+    }
+
+    /// <summary>判定一个配对库条目是否就是磁盘配置当前使用的设备（IRK 优先，地址兜底）。</summary>
+    private bool IsLoadedDevice(BleBondDevice device)
+    {
+        var loadedIrk = ConfigSecrets.DecryptForCompare(_loadedConfig.Device.Irk);
+        var loadedNormalized = ConfigValidator.NormalizeIrk(loadedIrk);
+        var deviceNormalized = ConfigValidator.NormalizeIrk(device.Irk);
+        if (loadedNormalized is not null && deviceNormalized is not null &&
+            string.Equals(loadedNormalized, deviceNormalized, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var loadedAddress = ConfigValidator.NormalizeAddress(_loadedConfig.Device.IdentityAddress);
+        var deviceAddress = ConfigValidator.NormalizeAddress(device.Address);
+        return loadedAddress is not null && loadedAddress == deviceAddress;
     }
 
     /// <summary>IRK 字段提示（下拉选择语义；无法解密的密文单独提示）。</summary>
     private string BuildIrkHint(string? storedIrk = null)
     {
         var raw = storedIrk ?? IrkText;
+        if (string.Equals(raw.Trim(), ConfigValidator.NoDeviceIrk, StringComparison.OrdinalIgnoreCase))
+        {
+            return "未选择设备（自动解锁已暂停）；请配对/选择新设备并保存。";
+        }
+
         if (string.IsNullOrWhiteSpace(raw))
         {
             return "请从下拉框选择一台已与 Windows 配对的 BLE 设备。";
@@ -632,6 +825,8 @@ public sealed partial class ConfigViewModel : ObservableObject
             p.LockPromptSampleCount = lockPromptCount;
         if (TryGetCount(LockConfirmCountText, ConfigFields.ProximityLockConfirmSampleCount, errors, out var lockConfirmCount))
             p.LockConfirmSampleCount = lockConfirmCount;
+        if (TryGetCount(SampleIntervalText, ConfigFields.ProximitySampleIntervalMs, errors, out var sampleInterval))
+            p.SampleIntervalMs = sampleInterval;
         if (TryGetNumber(StartupGraceText, ConfigFields.ProximityStartupGraceSeconds, errors, out var startupGrace))
             p.StartupGraceSeconds = startupGrace;
         if (TryGetNumber(UnlockPendingTimeoutText, ConfigFields.ProximityUnlockPendingTimeoutSeconds, errors, out var unlockPending))
@@ -659,6 +854,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         UnlockCountText = ConfigInput.FormatCount(config.Proximity.UnlockSampleCount);
         LockPromptCountText = ConfigInput.FormatCount(config.Proximity.LockPromptSampleCount);
         LockConfirmCountText = ConfigInput.FormatCount(config.Proximity.LockConfirmSampleCount);
+        SampleIntervalText = ConfigInput.FormatCount(config.Proximity.SampleIntervalMs);
         StartupGraceText = ConfigInput.FormatNumber(config.Proximity.StartupGraceSeconds);
         UnlockPendingTimeoutText = ConfigInput.FormatNumber(config.Proximity.UnlockPendingTimeoutSeconds);
         NotifierModeIndex = Math.Clamp((int)config.Notification.Mode, 0, 1);
@@ -732,6 +928,9 @@ public sealed partial class ConfigViewModel : ObservableObject
             case ConfigFields.ProximityLockConfirmSampleCount:
                 if (LockConfirmCountError.Length == 0) LockConfirmCountError = error.Message;
                 break;
+            case ConfigFields.ProximitySampleIntervalMs:
+                if (SampleIntervalError.Length == 0) SampleIntervalError = error.Message;
+                break;
             case ConfigFields.ProximityStartupGraceSeconds:
                 if (StartupGraceError.Length == 0) StartupGraceError = error.Message;
                 break;
@@ -760,6 +959,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         UnlockCountError = "";
         LockPromptCountError = "";
         LockConfirmCountError = "";
+        SampleIntervalError = "";
         StartupGraceError = "";
         UnlockPendingTimeoutError = "";
         RejectSnoozeError = "";
@@ -801,6 +1001,9 @@ public sealed partial class ConfigViewModel : ObservableObject
                 break;
             case nameof(LockConfirmCountText):
                 if (LockConfirmCountError is { Length: > 0 }) LockConfirmCountError = "";
+                break;
+            case nameof(SampleIntervalText):
+                if (SampleIntervalError is { Length: > 0 }) SampleIntervalError = "";
                 break;
             case nameof(StartupGraceText):
                 if (StartupGraceError is { Length: > 0 }) StartupGraceError = "";

@@ -20,6 +20,12 @@ public sealed record ConfigValidationResult(bool IsValid, IReadOnlyList<ConfigEr
 /// </summary>
 public static class ConfigValidator
 {
+    /// <summary>
+    /// 未选择设备时的占位 IRK（32 位全零）：保证配置文件仍能通过服务校验，服务照常启动/读取配对库，
+    /// 但没有任何真实设备会匹配它，自动解锁实际处于暂停状态。管理端不会把它显示为一个设备。
+    /// </summary>
+    public const string NoDeviceIrk = "00000000000000000000000000000000";
+
     /// <summary>镜像 HelperProtocol.MaxSnoozeMinutes。</summary>
     public const double MaxSnoozeMinutes = 240;
 
@@ -142,6 +148,12 @@ public static class ConfigValidator
         {
             errors.Add(new ConfigError(ConfigFields.ProximityLockConfirmSampleCount,
                 $"{ConfigFields.ProximityLockConfirmSampleCount} 必须在 1 到 50 之间"));
+        }
+
+        if (p.SampleIntervalMs is < 0 or > 2000)
+        {
+            errors.Add(new ConfigError(ConfigFields.ProximitySampleIntervalMs,
+                "Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）"));
         }
 
         if (p.StartupGraceSeconds < 0)

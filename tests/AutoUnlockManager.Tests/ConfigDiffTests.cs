@@ -160,6 +160,7 @@ public sealed class ConfigDiffTests
         to.Proximity.UnlockSampleCount = 4;
         to.Proximity.LockPromptSampleCount = 6;
         to.Proximity.LockConfirmSampleCount = 11;
+        to.Proximity.SampleIntervalMs = 300;
         to.Proximity.StartupGraceSeconds = 16;
         to.Proximity.UnlockPendingTimeoutSeconds = 21;
         to.Notification.Mode = NotifierMode.Dialog;
@@ -167,14 +168,15 @@ public sealed class ConfigDiffTests
         to.Notification.SnoozeMinutes = 6;
 
         var changes = ConfigDiff.Compute(from, to);
-        Assert.Equal(15, changes.Count);
+        Assert.Equal(16, changes.Count);
         Assert.Equal(
             [
                 ConfigFields.DeviceIrk, ConfigFields.DeviceIrkByteOrder, ConfigFields.DeviceIdentityAddress,
                 ConfigFields.CredentialsUserName, ConfigFields.CredentialsPassword,
                 ConfigFields.ProximityLockThresholdDbm, ConfigFields.ProximityUnlockThresholdDbm,
                 ConfigFields.ProximityUnlockSampleCount, ConfigFields.ProximityLockPromptSampleCount,
-                ConfigFields.ProximityLockConfirmSampleCount, ConfigFields.ProximityStartupGraceSeconds,
+                ConfigFields.ProximityLockConfirmSampleCount, ConfigFields.ProximitySampleIntervalMs,
+                ConfigFields.ProximityStartupGraceSeconds,
                 ConfigFields.ProximityUnlockPendingTimeoutSeconds,
                 ConfigFields.NotificationMode, ConfigFields.NotificationRejectSnoozeSeconds,
                 ConfigFields.NotificationSnoozeMinutes,

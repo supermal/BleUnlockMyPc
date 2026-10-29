@@ -107,6 +107,7 @@ public sealed class OptionsGate : IDisposable
     private static bool OtherDiffers(AutoUnlockOptions a, AutoUnlockOptions b) =>
         a.Proximity.LockThresholdDbm != b.Proximity.LockThresholdDbm ||
         a.Proximity.UnlockThresholdDbm != b.Proximity.UnlockThresholdDbm ||
+        a.Proximity.SampleIntervalMs != b.Proximity.SampleIntervalMs ||
         a.Proximity.UnlockSampleCount != b.Proximity.UnlockSampleCount ||
         a.Proximity.LockPromptSampleCount != b.Proximity.LockPromptSampleCount ||
         a.Proximity.LockConfirmSampleCount != b.Proximity.LockConfirmSampleCount ||

@@ -27,6 +27,7 @@ public sealed class ConfigDocumentTests : IDisposable
               "UnlockSampleCount": 3,
               "LockPromptSampleCount": 5,
               "LockConfirmSampleCount": 10,
+              "SampleIntervalMs": 500,
               "StartupGraceSeconds": 15,
               "UnlockPendingTimeoutSeconds": 20
             },
@@ -84,6 +85,7 @@ public sealed class ConfigDocumentTests : IDisposable
         Assert.Equal(3, config.Proximity.UnlockSampleCount);
         Assert.Equal(5, config.Proximity.LockPromptSampleCount);
         Assert.Equal(10, config.Proximity.LockConfirmSampleCount);
+        Assert.Equal(500, config.Proximity.SampleIntervalMs);
         Assert.Equal(15, config.Proximity.StartupGraceSeconds);
         Assert.Equal(20, config.Proximity.UnlockPendingTimeoutSeconds);
         Assert.Equal(NotifierMode.Toast, config.Notification.Mode);
@@ -158,6 +160,7 @@ public sealed class ConfigDocumentTests : IDisposable
         var config = ConfigDocument.Load(path);
         config.Proximity.LockThresholdDbm = -75;
         config.Proximity.UnlockSampleCount = 4;
+        config.Proximity.SampleIntervalMs = 250;
         config.Notification.Mode = NotifierMode.Dialog;
         config.Device.IdentityAddress = null;
 
@@ -173,6 +176,8 @@ public sealed class ConfigDocumentTests : IDisposable
         Assert.Equal(-75, proximity["LockThresholdDbm"]!.GetValue<double>());
         Assert.Equal(JsonValueKind.Number, proximity["UnlockSampleCount"]!.GetValueKind());
         Assert.Equal(4, proximity["UnlockSampleCount"]!.GetValue<int>());
+        Assert.Equal(JsonValueKind.Number, proximity["SampleIntervalMs"]!.GetValueKind());
+        Assert.Equal(250, proximity["SampleIntervalMs"]!.GetValue<int>());
 
         var notification = root["AutoUnlock"]!["Notification"]!;
         Assert.Equal(JsonValueKind.String, notification["Mode"]!.GetValueKind());

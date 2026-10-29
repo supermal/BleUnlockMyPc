@@ -65,6 +65,9 @@ public static class OptionsValidator
             errors.Add("Proximity.UnlockThresholdDbm 必须大于 LockThresholdDbm，否则死区为负");
 
         // 批次个数（触发读数不计入，全数达标判定）：下限 1，上限防止收集阶段拖得过长
+        if (p.SampleIntervalMs is < 0 or > 2000)
+            errors.Add("Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）");
+
         if (p.UnlockSampleCount is < 1 or > 20)
             errors.Add("Proximity.UnlockSampleCount 必须在 1 到 20 之间");
         if (p.LockPromptSampleCount is < 1 or > 50)

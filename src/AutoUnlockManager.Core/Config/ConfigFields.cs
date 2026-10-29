@@ -15,6 +15,7 @@ public static class ConfigFields
     public const string ProximityUnlockSampleCount = "Proximity.UnlockSampleCount";
     public const string ProximityLockPromptSampleCount = "Proximity.LockPromptSampleCount";
     public const string ProximityLockConfirmSampleCount = "Proximity.LockConfirmSampleCount";
+    public const string ProximitySampleIntervalMs = "Proximity.SampleIntervalMs";
     public const string ProximityStartupGraceSeconds = "Proximity.StartupGraceSeconds";
     public const string ProximityUnlockPendingTimeoutSeconds = "Proximity.UnlockPendingTimeoutSeconds";
     public const string NotificationMode = "Notification.Mode";
