@@ -104,6 +104,44 @@ public sealed class TelemetryModelTests
     }
 
     [Fact]
+    public void TakeReconnected_FirstSnapshot_ReportsOnce()
+    {
+        var model = new TelemetryModel();
+
+        model.Apply(Snapshot());
+
+        Assert.True(model.TakeReconnected());
+        Assert.False(model.TakeReconnected());
+    }
+
+    [Fact]
+    public void TakeReconnected_AfterDisconnect_ReportsAgain()
+    {
+        var model = new TelemetryModel();
+        model.SetConnected(true);
+        model.TakeReconnected();
+
+        model.SetConnected(false);
+        Assert.False(model.TakeReconnected());
+        model.SetConnected(true);
+
+        Assert.True(model.TakeReconnected());
+    }
+
+    [Fact]
+    public void TakeReconnected_WhileConnected_DoesNotRepeat()
+    {
+        var model = new TelemetryModel();
+        model.Apply(Snapshot());
+        model.TakeReconnected();
+
+        model.Apply(Snapshot());
+        model.SetConnected(true);
+
+        Assert.False(model.TakeReconnected());
+    }
+
+    [Fact]
     public void ServiceStopped_TrayStateIsStopped()
     {
         var model = new TelemetryModel { ServiceRunning = false };

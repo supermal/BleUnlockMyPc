@@ -185,6 +185,12 @@ public sealed class TelemetryStore : ObservableObject, IDisposable
 
     private void Publish()
     {
+        // El nombre del dispositivo lo resuelve el servicio: se relee cada vez que el canal se conecta
+        if (_model.TakeReconnected())
+        {
+            _ = _device.RefreshAsync();
+        }
+
         // Cadena vacía = todas las propiedades cambiaron
         OnPropertyChanged(string.Empty);
         Updated?.Invoke(this, EventArgs.Empty);

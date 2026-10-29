@@ -9,6 +9,7 @@ namespace AutoUnlockManager.Core.Telemetry;
 public sealed class TelemetryModel
 {
     private long _lastGen = -1;
+    private bool _reconnected;
 
     public SampleHistory History { get; } = new();
 
@@ -45,7 +46,7 @@ public sealed class TelemetryModel
                 return true;
 
             case SnapshotFrame snapshot:
-                Connected = true;
+                MarkConnected(true);
                 var reset = snapshot.Gen != _lastGen;
                 if (reset)
                 {
@@ -65,12 +66,34 @@ public sealed class TelemetryModel
 
     public void SetConnected(bool connected)
     {
-        Connected = connected;
+        MarkConnected(connected);
         if (!connected)
         {
             // La curva se conserva hasta el próximo saludo; el estado en vivo deja de ser válido
             Snapshot = null;
         }
+    }
+
+    /// <summary>
+    /// true una sola vez tras pasar de desconectado a conectado. Al iniciar sesión el gestor arranca
+    /// antes que el servicio (inicio automático retrasado): lo que depende del servicio, como el nombre
+    /// del dispositivo, debe volver a leerse cuando el canal se conecta.
+    /// </summary>
+    public bool TakeReconnected()
+    {
+        var value = _reconnected;
+        _reconnected = false;
+        return value;
+    }
+
+    private void MarkConnected(bool connected)
+    {
+        if (connected && !Connected)
+        {
+            _reconnected = true;
+        }
+
+        Connected = connected;
     }
 
     public TrayTooltip Tooltip(string deviceName) => TrayStates.Tooltip(
