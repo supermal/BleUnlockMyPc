@@ -59,9 +59,7 @@ public sealed partial class OverviewViewModel : ObservableObject
         _ => "neutral",
     };
 
-    // Se decide por el lote y el estado, no por el SCM: la señal manda aunque la consulta al servicio vaya con retraso
-    private bool IsLeaving =>
-        Telemetry.StateName == "PendingLock" || Telemetry.Batch is { Kind: "leave" or "lockConfirm" };
+    private bool IsLeaving => Telemetry.IsLeaving;
 
     public string StateTone => IsLeaving ? "warn" : "info";
 
