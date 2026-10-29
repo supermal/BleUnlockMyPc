@@ -1,0 +1,46 @@
+<!--  Tokens de diseño independientes del tema (UiDesign.md, sección 8.2)  -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!--  Familias tipográficas  -->
+    <FontFamily x:Key="Ui.Font">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI</FontFamily>
+    <FontFamily x:Key="Ui.Font.Display">Segoe UI Variable Display, Segoe UI, Microsoft YaHei UI</FontFamily>
+    <FontFamily x:Key="Ui.Font.Mono">Cascadia Mono, Consolas</FontFamily>
+
+    <!--  Tamaños de letra  -->
+    <sys:Double x:Key="Ui.Type.Caption">12</sys:Double>
+    <sys:Double x:Key="Ui.Type.Body">14</sys:Double>
+    <sys:Double x:Key="Ui.Type.Subtitle">20</sys:Double>
+    <sys:Double x:Key="Ui.Type.Title">28</sys:Double>
+    <sys:Double x:Key="Ui.Type.Stat">16</sys:Double>
+
+    <!--  Radios de esquina: decrecen con el nivel  -->
+    <CornerRadius x:Key="Ui.Radius.Island">12</CornerRadius>
+    <CornerRadius x:Key="Ui.Radius.Card">8</CornerRadius>
+    <CornerRadius x:Key="Ui.Radius.Control">4</CornerRadius>
+    <!--  WPF no limita radios mayores que el elemento (se vería una elipse):
+         la píldora usa la mitad de la altura habitual (20 px → 10)  -->
+    <CornerRadius x:Key="Ui.Radius.Pill">10</CornerRadius>
+
+    <!--  Espaciado (rejilla de 4 px)  -->
+    <Thickness x:Key="Ui.Island.Margin">0,0,8,8</Thickness>
+    <Thickness x:Key="Ui.Card.Padding">16,12</Thickness>
+    <Thickness x:Key="Ui.Content.Padding.Settings">32,0,32,32</Thickness>
+    <Thickness x:Key="Ui.Content.Padding.Workspace">24,0,24,32</Thickness>
+    <Thickness x:Key="Ui.Content.Padding.Full">24,0,24,24</Thickness>
+    <sys:Double x:Key="Ui.Space.CardGap">4</sys:Double>
+
+    <!--  Dimensiones  -->
+    <sys:Double x:Key="Ui.Size.TopBar">48</sys:Double>
+    <sys:Double x:Key="Ui.Size.Sidebar">260</sys:Double>
+    <sys:Double x:Key="Ui.Size.SidebarCollapsed">48</sys:Double>
+    <sys:Double x:Key="Ui.Size.Rail">48</sys:Double>
+    <sys:Double x:Key="Ui.Size.SideIsland">360</sys:Double>
+    <sys:Double x:Key="Ui.Size.ControlHeight">32</sys:Double>
+    <sys:Double x:Key="Ui.Size.NavItemHeight">36</sys:Double>
+    <sys:Double x:Key="Ui.Size.SettingRow">68</sys:Double>
+    <sys:Double x:Key="Ui.Content.MaxWidth.Settings">1000</sys:Double>
+    <sys:Double x:Key="Ui.Content.MaxWidth.Workspace">1280</sys:Double>
+</ResourceDictionary>

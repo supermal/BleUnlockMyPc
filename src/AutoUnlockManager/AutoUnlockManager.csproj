@@ -9,23 +9,19 @@
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <UseWinUI>true</UseWinUI>
-    <WindowsPackageType>None</WindowsPackageType>
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-    <!-- 官方模板配置：启用单项目 MSIX 工具链，使 dotnet publish 把应用 PRI（内含 XBF 资源）复制进发布目录。
-         缺它时 MrtCore 只生成 bin 下的 <AppName>.pri，publish 目录无 PRI，应用启动数秒后以 0xC000027B 崩溃 -->
-    <EnableMsixTooling>true</EnableMsixTooling>
+    <UseWPF>true</UseWPF>
+    <!-- El proyecto XAML temporal de WPF no carga los analizadores de paquetes por defecto;
+         sin esto el generador de código de MVVM Toolkit no se ejecuta -->
+    <IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
-    <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
+    <PackageReference Include="WPF-UI" Version="4.2.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.13" />
-    <PackageReference Include="System.Drawing.Common" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,8 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- 窗口图标与托盘兜底图标：随发布产物分发（exe 图标由 ApplicationIcon 内嵌） -->
+    <!-- Icono de ventana y de reserva de la bandeja: se distribuye con la publicación -->
     <Content Include="Assets\AppIcon.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Resource Include="Assets\AppIcon.ico" />
   </ItemGroup>
 
 </Project>

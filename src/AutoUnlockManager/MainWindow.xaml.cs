@@ -1,180 +1,116 @@
-using AutoUnlockManager.Services;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Controls;
+using AutoUnlockManager.Models;
 using AutoUnlockManager.Views;
-using Microsoft.UI.Composition.SystemBackdrops;
-using Microsoft.UI.Windowing;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using Windows.Graphics;
+using Microsoft.Extensions.DependencyInjection;
+using Wpf.Ui;
+using Wpf.Ui.Controls;
 
 namespace AutoUnlockManager;
 
-/// <summary>
-/// 主窗口：NavigationView 三页导航（概览/配置/日志）。
-/// 关闭按钮 = 隐藏到托盘；托盘不可用时关闭 = 真实退出（见 <see cref="TrayAvailable"/>，设计 §5.2）。
-/// 真实退出经托盘菜单「退出」→ <see cref="RequestExit"/>。
-/// </summary>
-public sealed partial class MainWindow : Window
+public partial class MainWindow : FluentWindow
 {
-    /// <summary>真实退出标志：仅 <see cref="RequestExit"/> 置位，放行关闭拦截。</summary>
-    private bool _exitRequested;
+    private readonly IServiceProvider _services;
+    private bool _exiting;
+    private bool _syncingSelection;
 
-    /// <summary>
-    /// 托盘可用性（App 在托盘初始化完成后回填）。托盘不可用时关闭窗口 = 真实退出，
-    /// 避免形成无托盘、无入口的隐藏进程；默认 true 保持「关闭=隐藏」语义。
-    /// </summary>
-    public bool TrayAvailable { get; set; } = true;
-
-    public MainWindow()
+    public MainWindow(IServiceProvider services, IContentDialogService dialogs)
     {
+        _services = services;
+
+        MenuItems =
+        [
+            new NavItem(AppPage.Overview, "概览", SymbolRegular.Pulse24),
+            new NavItem(AppPage.Config, "配置", SymbolRegular.Options24),
+            new NavItem(AppPage.Logs, "日志", SymbolRegular.DocumentText24),
+        ];
+        FooterItems = [new NavItem(AppPage.Settings, "设置", SymbolRegular.Settings24)];
+
         InitializeComponent();
+        dialogs.SetDialogHost(RootContentDialog);
 
-        Title = "AutoUnlock 管理器";
-        // 默认尺寸约 1100×750（窗口位置记忆见 backlog，本任务不做）
-        AppWindow.Resize(new SizeInt32(1100, 750));
-        TrySetIcon();
-        TryApplyModernChrome();
-        ThemeService.Initialize(this);
-        AppWindow.Closing += OnAppWindowClosing;
-
-        // 默认选中「概览」（SelectionChanged 触发首页导航）
-        if (NavView.MenuItems[0] is NavigationViewItem first)
-        {
-            NavView.SelectedItem = first;
-        }
-        if (ContentFrame.CurrentSourcePageType is null)
-        {
-            ContentFrame.Navigate(typeof(OverviewPage));
-        }
+        Navigate(AppPage.Overview);
     }
 
+    public ObservableCollection<NavItem> MenuItems { get; }
+
+    public ObservableCollection<NavItem> FooterItems { get; }
+
+    public AppPage CurrentPage { get; private set; }
+
     /// <summary>
-    /// 显示并唤出主窗口（托盘双击/菜单「显示主窗口」、单实例唤醒共用）：
-    /// 已隐藏 → 显示；已最小化 → 还原；随后 Activate 置前。
+    /// true cuando existe icono en la bandeja: cerrar la ventana solo la oculta.
+    /// Sin bandeja, cerrar la ventana termina la aplicación.
     /// </summary>
+    public bool TrayAvailable { get; set; }
+
+    public void Navigate(AppPage page)
+    {
+        CurrentPage = page;
+        PageHost.Content = page switch
+        {
+            AppPage.Overview => _services.GetRequiredService<OverviewPage>(),
+            AppPage.Config => _services.GetRequiredService<ConfigPage>(),
+            AppPage.Logs => _services.GetRequiredService<LogsPage>(),
+            _ => _services.GetRequiredService<SettingsPage>(),
+        };
+
+        // Refleja la página en la navegación sin volver a disparar la selección
+        _syncingSelection = true;
+        MenuList.SelectedItem = MenuItems.FirstOrDefault(i => i.Page == page);
+        FooterList.SelectedItem = FooterItems.FirstOrDefault(i => i.Page == page);
+        _syncingSelection = false;
+    }
+
+    /// <summary>Restaura y trae al frente la ventana (bandeja, segunda instancia).</summary>
     public void ShowMainWindow()
     {
-        try
+        if (!IsVisible)
         {
-            AppWindow.Show();
-            (AppWindow.Presenter as OverlappedPresenter)?.Restore();
-            Activate();
+            Show();
         }
-        catch
+
+        if (WindowState == WindowState.Minimized)
         {
-            // 窗口显示失败不影响调用方（托盘/唤醒链路）
+            WindowState = WindowState.Normal;
         }
+
+        Activate();
     }
 
-    /// <summary>
-    /// 真实退出：置退出标志后关闭窗口（放行关闭拦截），并兜底请求应用退出。
-    /// 调用方（托盘「退出」）应先 <c>TrayIconHost.Dispose()</c> 防托盘残影。
-    /// </summary>
-    public void RequestExit()
+    /// <summary>Salida real (solo desde el menú de la bandeja o sin bandeja).</summary>
+    public void ExitApplication()
     {
-        _exitRequested = true;
-        try
-        {
-            Close();
-        }
-        catch
-        {
-            // 继续走 Exit 兜底
-        }
-        try
-        {
-            Application.Current?.Exit();
-        }
-        catch
-        {
-            // 退出路径忽略异常
-        }
+        _exiting = true;
+        Close();
     }
 
-    /// <summary>关闭按钮拦截：托盘可用 → 取消并隐藏到托盘；托盘不可用 → 放行关闭（真实退出）。</summary>
-    private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    protected override void OnClosing(CancelEventArgs e)
     {
-        if (_exitRequested)
+        if (!_exiting && TrayAvailable)
         {
-            return; // 真实退出：放行
+            e.Cancel = true;
+            Hide();
+            return;
         }
 
-        if (!TrayAvailable)
-        {
-            // 托盘不可用：无唤回入口，关闭即退出（防孤儿隐藏进程；Closed 回调兜底应用退出）
-            _exitRequested = true;
-            return; // 放行本次关闭
-        }
-
-        args.Cancel = true;
-        try
-        {
-            AppWindow.Hide();
-        }
-        catch
-        {
-            // 隐藏失败（极罕见）：保持窗口存在即可
-        }
+        base.OnClosing(e);
     }
 
-    private void OnNavigationSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    protected override void OnClosed(EventArgs e)
     {
-        if (args.SelectedItem is not NavigationViewItem { Tag: string tag })
+        base.OnClosed(e);
+        Application.Current.Shutdown();
+    }
+
+    private void OnNavSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingSelection || sender is not ListBox { SelectedItem: NavItem item })
         {
             return;
         }
 
-        var pageType = tag switch
-        {
-            "config" => typeof(ConfigPage),
-            "logs" => typeof(LogsPage),
-            "settings" => typeof(SettingsPage),
-            _ => typeof(OverviewPage),
-        };
-
-        if (ContentFrame.CurrentSourcePageType != pageType)
-        {
-            ContentFrame.Navigate(pageType);
-        }
-    }
-
-    /// <summary>
-    /// WinUI 3 模板风格外观：Mica 背景（不支持时由 RootGrid 主题化背景兜底）+ 无系统标题栏的扩展标题栏（AppTitleBar 为拖拽区）。
-    /// 标题栏按钮配色由 <see cref="ThemeService"/> 随主题同步；极端环境失败时静默退回默认外观。
-    /// </summary>
-    private void TryApplyModernChrome()
-    {
-        try
-        {
-            if (MicaController.IsSupported())
-            {
-                SystemBackdrop = new MicaBackdrop();
-                RootGrid.Background = null; // 清空兜底背景，让 Mica 透出
-            }
-
-            ExtendsContentIntoTitleBar = true;
-            SetTitleBar(AppTitleBar);
-        }
-        catch
-        {
-            // 新式外观失败仅影响观感
-        }
-    }
-
-    /// <summary>设置窗口图标（Assets\AppIcon.ico，随发布产物分发）；失败不影响功能。</summary>
-    private void TrySetIcon()
-    {
-        try
-        {
-            var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
-            if (File.Exists(iconPath))
-            {
-                AppWindow.SetIcon(iconPath);
-            }
-        }
-        catch
-        {
-            // 图标设置失败仅影响观感
-        }
+        Navigate(item.Page);
     }
 }
