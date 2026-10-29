@@ -63,6 +63,7 @@ public partial class App : Application
         services.AddSingleton<MainWindow>();
         services.AddSingleton<OverviewViewModel>();
         services.AddSingleton<OverviewPage>();
+        services.AddSingleton<ConfigViewModel>();
         services.AddSingleton<ConfigPage>();
         services.AddSingleton<LogsPage>();
         services.AddSingleton<SettingsPage>();

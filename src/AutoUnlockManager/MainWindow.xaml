@@ -218,5 +218,18 @@
             x:Name="RootContentDialog"
             Grid.RowSpan="2"
             Grid.ColumnSpan="2" />
+
+        <!--  Capa modal para diálogos propios (emparejamiento): cubre toda la ventana  -->
+        <Grid
+            x:Name="OverlayLayer"
+            Grid.RowSpan="2"
+            Grid.ColumnSpan="2"
+            Background="{DynamicResource Ui.Bg.Overlay}"
+            Visibility="Collapsed">
+            <ContentPresenter
+                x:Name="OverlayContent"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
+        </Grid>
     </Grid>
 </ui:FluentWindow>

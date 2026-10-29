@@ -68,6 +68,22 @@ public partial class MainWindow : FluentWindow
         _syncingSelection = false;
     }
 
+    /// <summary>Muestra un diálogo propio sobre toda la ventana hasta que <paramref name="closed"/> se complete.</summary>
+    public async Task ShowOverlayAsync(FrameworkElement dialog, Task closed)
+    {
+        OverlayContent.Content = dialog;
+        OverlayLayer.Visibility = Visibility.Visible;
+        try
+        {
+            await closed;
+        }
+        finally
+        {
+            OverlayLayer.Visibility = Visibility.Collapsed;
+            OverlayContent.Content = null;
+        }
+    }
+
     /// <summary>Restaura y trae al frente la ventana (bandeja, segunda instancia).</summary>
     public void ShowMainWindow()
     {

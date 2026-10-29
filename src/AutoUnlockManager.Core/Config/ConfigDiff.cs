@@ -97,6 +97,28 @@ public static class ConfigDiff
     }
 
     /// <summary>字段中文名（表单标签/差异对话框共用）。未知字段回退点号标识。</summary>
+    /// <summary>
+    /// 未保存更改栏的一行摘要：单项「锁屏确认个数 10 → 12」，多项「锁屏确认个数等 3 项」。
+    /// 密码与 IRK 不显示取值（界面不展示 IRK），只写「已修改」。
+    /// </summary>
+    public static string Summarize(IReadOnlyList<ConfigChange> changes)
+    {
+        if (changes.Count == 0)
+        {
+            return "";
+        }
+
+        var first = changes[0];
+        if (changes.Count > 1)
+        {
+            return $"{first.DisplayName}等 {changes.Count} 项";
+        }
+
+        return first.IsSensitive || first.Field == ConfigFields.DeviceIrk
+            ? $"{first.DisplayName} 已修改"
+            : $"{first.DisplayName} {first.OldText} → {first.NewText}";
+    }
+
     public static string GetDisplayName(string field) => field switch
     {
         ConfigFields.DeviceIrk => "设备 IRK",

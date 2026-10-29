@@ -1,0 +1,374 @@
+<UserControl
+    x:Class="AutoUnlockManager.Views.PairDeviceDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Width="640"
+    AutomationProperties.Name="配对新设备"
+    KeyboardNavigation.TabNavigation="Cycle"
+    PreviewKeyDown="OnPreviewKeyDown">
+
+    <UserControl.Resources>
+        <!--  Tarjeta de modo: radio + título + descripción; seleccionada = borde de acento de 2 px  -->
+        <Style x:Key="ModeCard" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource Ui.FocusVisual}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border
+                            x:Name="Card"
+                            Padding="12"
+                            Background="{DynamicResource Ui.Bg.Card}"
+                            BorderBrush="{DynamicResource Ui.Stroke.Card}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource Ui.Radius.Card}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse
+                                    x:Name="Dot"
+                                    Width="16"
+                                    Height="16"
+                                    Margin="0,2,12,0"
+                                    VerticalAlignment="Top"
+                                    Stroke="{DynamicResource Ui.Stroke.Control.Strong}"
+                                    StrokeThickness="1" />
+                                <ContentPresenter Grid.Column="1" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Ui.Primary}" />
+                                <Setter TargetName="Card" Property="BorderThickness" Value="2" />
+                                <Setter TargetName="Card" Property="Padding" Value="11" />
+                                <Setter TargetName="Dot" Property="Stroke" Value="{DynamicResource Ui.Primary}" />
+                                <Setter TargetName="Dot" Property="StrokeThickness" Value="5" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Card" Property="Background" Value="{DynamicResource Ui.Bg.Control.Hover}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--  Número de paso: pendiente (gris), actual (acento) o hecho (✓)  -->
+        <Style x:Key="StepNumber" TargetType="Border">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Background" Value="{DynamicResource Ui.Bg.Badge}" />
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+            <Setter Property="TextElement.FontSize" Value="12" />
+            <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Style.Triggers>
+                <Trigger Property="Tag" Value="now">
+                    <Setter Property="Background" Value="{DynamicResource Ui.Primary}" />
+                    <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.OnPrimary}" />
+                </Trigger>
+                <Trigger Property="Tag" Value="done">
+                    <Setter Property="Background" Value="{DynamicResource Ui.Status.Success.Bg}" />
+                    <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Success.Fg}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DeviceItem" TargetType="ListBoxItem">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource Ui.FocusVisual}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border
+                            x:Name="Row"
+                            MinHeight="48"
+                            Padding="12,6"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource Ui.Stroke.Divider}"
+                            BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="64" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse
+                                    x:Name="Dot"
+                                    Width="16"
+                                    Height="16"
+                                    HorizontalAlignment="Left"
+                                    Stroke="{DynamicResource Ui.Stroke.Control.Strong}"
+                                    StrokeThickness="1" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding Name, TargetNullValue=（未命名设备）}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Grid.Column="2"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource Ui.Font.Mono}"
+                                    Style="{StaticResource Ui.TextStyle.Caption}"
+                                    Text="{Binding Address}" />
+                                <TextBlock
+                                    Grid.Column="3"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource Ui.TextStyle.Caption}">
+                                    <Run Text="{Binding Rssi, Mode=OneWay}" /><Run Text=" dBm" />
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Hover}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Selected}" />
+                                <Setter TargetName="Dot" Property="Stroke" Value="{DynamicResource Ui.Primary}" />
+                                <Setter TargetName="Dot" Property="StrokeThickness" Value="5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Border
+        Background="{DynamicResource Ui.Bg.Island}"
+        BorderBrush="{DynamicResource Ui.Stroke.Card}"
+        BorderThickness="1"
+        CornerRadius="{StaticResource Ui.Radius.Card}">
+        <Border.Effect>
+            <DropShadowEffect
+                BlurRadius="48"
+                Opacity="0.25"
+                ShadowDepth="16" />
+        </Border.Effect>
+        <Grid>
+            <DockPanel>
+                <!--  Pie: aviso a la izquierda, botones a la derecha (principal al final)  -->
+                <Border
+                    Padding="24,16"
+                    Background="{DynamicResource Ui.Bg.Layer}"
+                    BorderBrush="{DynamicResource Ui.Stroke.Divider}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,8,8"
+                    DockPanel.Dock="Bottom">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button x:Name="StopAdvertisingButton" Margin="8,0,0,0" Click="OnStopAdvertisingClicked" Content="停止广播" Style="{StaticResource Ui.Button.Secondary}" />
+                            <Button x:Name="StartScanButton" Margin="8,0,0,0" Click="OnStartScanClicked" Content="开始扫描" Style="{StaticResource Ui.Button.Secondary}" />
+                            <Button x:Name="StopScanButton" Margin="8,0,0,0" Click="OnStopScanClicked" Content="停止扫描" Style="{StaticResource Ui.Button.Secondary}" />
+                            <Button x:Name="CloseButton" Margin="8,0,0,0" Click="OnCloseClicked" Content="关闭" Style="{StaticResource Ui.Button.Secondary}" />
+                            <Button x:Name="StartAdvertisingButton" Margin="8,0,0,0" Click="OnStartAdvertisingClicked" Content="开始广播" Style="{StaticResource Ui.Button.Primary}" />
+                            <Button x:Name="PairSelectedButton" Margin="8,0,0,0" Click="OnPairSelectedClicked" Content="配对所选设备" Style="{StaticResource Ui.Button.Primary}" />
+                        </StackPanel>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Style="{StaticResource Ui.TextStyle.Caption}"
+                            Text="配对确认与 PIN 会在本窗口弹出，不会打开 Windows 设置。"
+                            TextWrapping="Wrap" />
+                    </DockPanel>
+                </Border>
+
+                <StackPanel Margin="24,24,24,20">
+                    <DockPanel Margin="0,0,0,16">
+                        <Button
+                            Width="32"
+                            Height="32"
+                            AutomationProperties.Name="关闭"
+                            Click="OnCloseClicked"
+                            DockPanel.Dock="Right"
+                            Style="{StaticResource Ui.Button.Icon}"
+                            ToolTip="关闭">
+                            <ui:SymbolIcon Symbol="Dismiss16" />
+                        </Button>
+                        <TextBlock Style="{StaticResource Ui.TextStyle.Subtitle}" Text="配对新设备" />
+                    </DockPanel>
+
+                    <UniformGrid Columns="2">
+                        <RadioButton
+                            x:Name="PeripheralModeRadio"
+                            Margin="0,0,4,0"
+                            Checked="OnModeChanged"
+                            GroupName="PairMode"
+                            IsChecked="True"
+                            Style="{StaticResource ModeCard}">
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold" Text="手机 / 手表" />
+                                <TextBlock Style="{StaticResource Ui.TextStyle.Caption}" Text="iPhone、Apple Watch 等，由设备发起连接" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton
+                            x:Name="CentralModeRadio"
+                            Margin="4,0,0,0"
+                            Checked="OnModeChanged"
+                            GroupName="PairMode"
+                            Style="{StaticResource ModeCard}">
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold" Text="耳机 / 鼠标 / 键盘" />
+                                <TextBlock Style="{StaticResource Ui.TextStyle.Caption}" Text="由电脑扫描并发起配对" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </RadioButton>
+                    </UniformGrid>
+
+                    <!--  ===== Modo periférico (teléfono / reloj) =====  -->
+                    <StackPanel x:Name="PeripheralPanel" Margin="0,20,0,0">
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="Step1" Style="{StaticResource StepNumber}"><TextBlock x:Name="Step1Text" HorizontalAlignment="Center" VerticalAlignment="Center" Text="1" /></Border>
+                            <TextBlock Grid.Column="1" Margin="0,2,0,0" Text="在手机或手表的蓝牙设置里「忽略」这台电脑的旧配对。" TextWrapping="Wrap" />
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="Step2" Style="{StaticResource StepNumber}"><TextBlock x:Name="Step2Text" HorizontalAlignment="Center" VerticalAlignment="Center" Text="2" /></Border>
+                            <TextBlock Grid.Column="1" Margin="0,2,0,0" Text="开始广播：电脑临时以「心率设备」身份出现。" TextWrapping="Wrap" />
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="Step3" Style="{StaticResource StepNumber}"><TextBlock x:Name="Step3Text" HorizontalAlignment="Center" VerticalAlignment="Center" Text="3" /></Border>
+                            <StackPanel Grid.Column="1" Margin="0,2,0,0">
+                                <TextBlock FontWeight="SemiBold" Text="在设备上连接这台电脑" />
+                                <TextBlock Style="{StaticResource Ui.TextStyle.Caption}" Text="Apple Watch：设置 › 蓝牙 › 健康设备；iPhone 可用 nRF Connect 连接。" TextWrapping="Wrap" />
+                                <TextBlock x:Name="MachineNameText" Style="{StaticResource Ui.TextStyle.Caption}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="Step4" Style="{StaticResource StepNumber}"><TextBlock x:Name="Step4Text" HorizontalAlignment="Center" VerticalAlignment="Center" Text="4" /></Border>
+                            <TextBlock Grid.Column="1" Margin="0,2,0,0" Foreground="{DynamicResource Ui.Text.Secondary}" Text="配对成功后自动读取 IRK，并在配置页选中该设备（仍需你点「保存更改」）。" TextWrapping="Wrap" />
+                        </Grid>
+
+                        <Border
+                            x:Name="PeripheralStatusBox"
+                            Margin="0,20,0,0"
+                            Padding="12,10"
+                            Background="{DynamicResource Ui.Bg.Layer}"
+                            CornerRadius="{StaticResource Ui.Radius.Card}">
+                            <DockPanel>
+                                <TextBlock x:Name="ElapsedText" DockPanel.Dock="Right" />
+                                <ui:ProgressRing
+                                    x:Name="PeripheralProgress"
+                                    Width="16"
+                                    Height="16"
+                                    Margin="0,0,8,0"
+                                    IsIndeterminate="True"
+                                    Visibility="Collapsed" />
+                                <TextBlock x:Name="PeripheralStatusText" Text="准备好后点「开始广播」。" TextWrapping="Wrap" />
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!--  ===== Modo central (auriculares / ratón) =====  -->
+                    <StackPanel x:Name="CentralPanel" Margin="0,20,0,0" Visibility="Collapsed">
+                        <TextBlock
+                            Margin="0,0,0,12"
+                            Style="{StaticResource Ui.TextStyle.Secondary}"
+                            Text="先让设备进入配对模式（指示灯闪烁），再从下面选择。经典蓝牙耳机不会出现在这个列表中。"
+                            TextWrapping="Wrap" />
+                        <Border
+                            BorderBrush="{DynamicResource Ui.Stroke.Card}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource Ui.Radius.Card}">
+                            <DockPanel>
+                                <Border
+                                    Padding="12,8"
+                                    Background="{DynamicResource Ui.Bg.Layer}"
+                                    BorderBrush="{DynamicResource Ui.Stroke.Divider}"
+                                    BorderThickness="0,0,0,1"
+                                    CornerRadius="8,8,0,0"
+                                    DockPanel.Dock="Top">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Ui.TextStyle.Caption}" Text="信号" />
+                                        <ui:ProgressRing
+                                            x:Name="CentralProgress"
+                                            Width="14"
+                                            Height="14"
+                                            Margin="0,0,8,0"
+                                            IsIndeterminate="True"
+                                            Visibility="Collapsed" />
+                                        <TextBlock x:Name="CentralStatusText" Style="{StaticResource Ui.TextStyle.Caption}" Text="点「开始扫描」查找附近的设备。" TextTrimming="CharacterEllipsis" />
+                                    </DockPanel>
+                                </Border>
+                                <ListBox
+                                    x:Name="DeviceList"
+                                    MinHeight="96"
+                                    MaxHeight="240"
+                                    AutomationProperties.Name="附近的设备"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    ItemContainerStyle="{StaticResource DeviceItem}"
+                                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                    SelectionChanged="OnDeviceSelectionChanged" />
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+
+            <!--  ===== Confirmación / PIN durante el emparejamiento =====  -->
+            <Grid
+                x:Name="PairingPromptOverlay"
+                Background="{DynamicResource Ui.Bg.Overlay}"
+                Visibility="Collapsed">
+                <Border
+                    Width="400"
+                    Padding="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource Ui.Bg.Flyout}"
+                    BorderBrush="{DynamicResource Ui.Stroke.Card}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Ui.Radius.Card}">
+                    <StackPanel>
+                        <TextBlock x:Name="PairingPromptTitle" Style="{StaticResource Ui.TextStyle.Subtitle}" />
+                        <TextBlock x:Name="PairingPromptMessage" Margin="0,8,0,0" Style="{StaticResource Ui.TextStyle.Secondary}" TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="PairingPinDisplay"
+                            Margin="0,16,0,0"
+                            HorizontalAlignment="Center"
+                            FontFamily="{StaticResource Ui.Font.Mono}"
+                            FontSize="28"
+                            FontWeight="SemiBold" />
+                        <ui:TextBox
+                            x:Name="PairingPinBox"
+                            Margin="0,16,0,0"
+                            AutomationProperties.Name="PIN"
+                            FontFamily="{StaticResource Ui.Font.Mono}"
+                            PlaceholderText="请输入设备上显示的 PIN" />
+                        <TextBlock
+                            x:Name="PairingPromptError"
+                            Margin="0,6,0,0"
+                            FontSize="{StaticResource Ui.Type.Caption}"
+                            Foreground="{DynamicResource Ui.Status.Danger.Fg}"
+                            Visibility="Collapsed" />
+                        <StackPanel Margin="0,20,0,0" HorizontalAlignment="Right" Orientation="Horizontal">
+                            <Button x:Name="PairingRejectButton" Click="OnPairingRejectClicked" Content="取消" Style="{StaticResource Ui.Button.Secondary}" />
+                            <Button x:Name="PairingAcceptButton" Margin="8,0,0,0" Click="OnPairingAcceptClicked" Content="配对" Style="{StaticResource Ui.Button.Primary}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

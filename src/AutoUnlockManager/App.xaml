@@ -21,6 +21,10 @@
             <helpers:ToneToSymbolConverter x:Key="ToneToSymbol" />
             <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
             <helpers:NullToCollapsedConverter x:Key="NullToCollapsed" />
+            <helpers:FieldModifiedConverter x:Key="FieldModified" />
+            <helpers:FieldModifiedToVisibilityConverter x:Key="FieldModifiedToVisibility" />
+            <helpers:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+            <helpers:AllTrueConverter x:Key="AllTrue" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
