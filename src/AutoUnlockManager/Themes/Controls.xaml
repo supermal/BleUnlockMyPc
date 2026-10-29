@@ -420,6 +420,33 @@
         <Setter Property="TextElement.FontSize" Value="{StaticResource Ui.Type.Caption}" />
     </Style>
 
+    <!--  Insignia con tono: Tag = ok | warn | danger | info | neutral (por defecto)  -->
+    <Style
+        x:Key="Ui.StatusBadge.Tone"
+        BasedOn="{StaticResource Ui.StatusBadge}"
+        TargetType="Border">
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Style.Triggers>
+            <Trigger Property="Tag" Value="ok">
+                <Setter Property="Background" Value="{DynamicResource Ui.Status.Success.Bg}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Success.Fg}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="warn">
+                <Setter Property="Background" Value="{DynamicResource Ui.Status.Warning.Bg}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Warning.Fg}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="danger">
+                <Setter Property="Background" Value="{DynamicResource Ui.Status.Danger.Bg}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Danger.Fg}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="info">
+                <Setter Property="Background" Value="{DynamicResource Ui.Status.Info.Bg}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Info.Fg}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <!--  ===== Texto editable sin decoración (búsqueda y valores copiables) =====  -->
     <Style x:Key="Ui.PlainTextBox" TargetType="TextBox">
         <Setter Property="Background" Value="Transparent" />

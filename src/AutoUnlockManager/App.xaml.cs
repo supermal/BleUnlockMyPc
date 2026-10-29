@@ -2,6 +2,7 @@ using System.Windows.Threading;
 using AutoUnlockManager.Helpers;
 using AutoUnlockManager.Models;
 using AutoUnlockManager.Services;
+using AutoUnlockManager.ViewModels;
 using AutoUnlockManager.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Wpf.Ui;
@@ -60,6 +61,7 @@ public partial class App : Application
         services.AddSingleton<TelemetryStore>();
 
         services.AddSingleton<MainWindow>();
+        services.AddSingleton<OverviewViewModel>();
         services.AddSingleton<OverviewPage>();
         services.AddSingleton<ConfigPage>();
         services.AddSingleton<LogsPage>();
