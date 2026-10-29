@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Controls;
 using AutoUnlockManager.Models;
+using AutoUnlockManager.Services;
 using AutoUnlockManager.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Wpf.Ui;
@@ -15,9 +16,10 @@ public partial class MainWindow : FluentWindow
     private bool _exiting;
     private bool _syncingSelection;
 
-    public MainWindow(IServiceProvider services, IContentDialogService dialogs)
+    public MainWindow(IServiceProvider services, IContentDialogService dialogs, TelemetryStore telemetry)
     {
         _services = services;
+        Telemetry = telemetry;
 
         MenuItems =
         [
@@ -32,6 +34,9 @@ public partial class MainWindow : FluentWindow
 
         Navigate(AppPage.Overview);
     }
+
+    /// <summary>Telemetría compartida (barra de título y vista rápida del dispositivo).</summary>
+    public TelemetryStore Telemetry { get; }
 
     public ObservableCollection<NavItem> MenuItems { get; }
 

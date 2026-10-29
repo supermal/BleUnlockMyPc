@@ -82,11 +82,34 @@
             Grid.ColumnSpan="2"
             Height="{StaticResource Ui.Size.TopBar}">
             <ui:TitleBar.TrailingContent>
-                <ContentControl
-                    x:Name="ServiceBadgeHost"
+                <!--  Estado del servicio: icono + texto (el color solo acompaña)  -->
+                <Border
                     Margin="0,0,8,0"
                     VerticalAlignment="Center"
-                    Focusable="False" />
+                    DataContext="{Binding Telemetry, RelativeSource={RelativeSource AncestorType=Window}}">
+                    <Border.Style>
+                        <Style BasedOn="{StaticResource Ui.StatusBadge}" TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ServiceBadgeTone}" Value="ok">
+                                    <Setter Property="Background" Value="{DynamicResource Ui.Status.Success.Bg}" />
+                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Success.Fg}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ServiceBadgeTone}" Value="danger">
+                                    <Setter Property="Background" Value="{DynamicResource Ui.Status.Danger.Bg}" />
+                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Danger.Fg}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon
+                            Margin="0,0,4,0"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Symbol="{Binding ServiceBadgeIcon}" />
+                        <TextBlock VerticalAlignment="Center" Text="{Binding ServiceBadgeText}" />
+                    </StackPanel>
+                </Border>
             </ui:TitleBar.TrailingContent>
         </ui:TitleBar>
 
@@ -127,11 +150,41 @@
             Grid.Column="0"
             Margin="0,4,0,8">
             <StackPanel DockPanel.Dock="Bottom">
-                <!--  Vista rápida del dispositivo (se rellena con la telemetría)  -->
-                <ContentControl
-                    x:Name="DeviceGlanceHost"
-                    Margin="8,0,8,8"
-                    Focusable="False" />
+                <!--  Vista rápida del dispositivo: nombre, dBm actual y estado  -->
+                <StackPanel
+                    Margin="20,0,16,12"
+                    AutomationProperties.Name="目标设备速览"
+                    DataContext="{Binding Telemetry, RelativeSource={RelativeSource AncestorType=Window}}">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            Foreground="{DynamicResource Ui.Text.Secondary}"
+                            Symbol="Bluetooth16" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource Ui.TextStyle.Caption}"
+                            Text="{Binding DeviceName}"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <DockPanel Margin="0,4,0,0">
+                        <TextBlock
+                            VerticalAlignment="Bottom"
+                            DockPanel.Dock="Right"
+                            Style="{StaticResource Ui.TextStyle.Caption}"
+                            Text="{Binding StateText}" />
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Text="{Binding CurrentDbmText}" />
+                        <TextBlock
+                            Margin="6,0,0,1"
+                            VerticalAlignment="Bottom"
+                            Style="{StaticResource Ui.TextStyle.Caption}"
+                            Text="dBm" />
+                    </DockPanel>
+                </StackPanel>
                 <ListBox
                     x:Name="FooterList"
                     AutomationProperties.Name="底部导航"

@@ -39,6 +39,8 @@ public partial class App : Application
 
         // La preferencia guardada se aplica en la tarea de ajustes; por ahora se sigue a Windows
         UiTheme.SetMode(AppThemeMode.System);
+
+        _ = _services.GetRequiredService<TargetDeviceService>().RefreshAsync();
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -54,6 +56,8 @@ public partial class App : Application
 
         services.AddSingleton<IContentDialogService, ContentDialogService>();
         services.AddSingleton<ServiceControlService>();
+        services.AddSingleton<TargetDeviceService>();
+        services.AddSingleton<TelemetryStore>();
 
         services.AddSingleton<MainWindow>();
         services.AddSingleton<OverviewPage>();
