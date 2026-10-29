@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using AutoUnlockManager.Models;
 using AutoUnlockManager.Services;
+using AutoUnlockManager.ViewModels;
 using AutoUnlockManager.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Wpf.Ui;
@@ -16,7 +17,7 @@ public partial class MainWindow : FluentWindow
     private bool _exiting;
     private bool _syncingSelection;
 
-    public MainWindow(IServiceProvider services, IContentDialogService dialogs, TelemetryStore telemetry)
+    public MainWindow(IServiceProvider services, IContentDialogService dialogs, TelemetryStore telemetry, LogsViewModel logs)
     {
         _services = services;
         Telemetry = telemetry;
@@ -31,6 +32,16 @@ public partial class MainWindow : FluentWindow
 
         InitializeComponent();
         dialogs.SetDialogHost(RootContentDialog);
+
+        // Contador de advertencias del día junto a «日志» (oculto si no hay)
+        var logsItem = MenuItems.First(i => i.Page == AppPage.Logs);
+        logs.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(LogsViewModel.Counts))
+            {
+                logsItem.Count = logs.Counts.Warning > 0 ? logs.Counts.Warning.ToString("N0") : "";
+            }
+        };
 
         Navigate(AppPage.Overview);
     }

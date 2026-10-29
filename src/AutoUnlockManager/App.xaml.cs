@@ -42,6 +42,9 @@ public partial class App : Application
         UiTheme.SetMode(AppThemeMode.System);
 
         _ = _services.GetRequiredService<TargetDeviceService>().RefreshAsync();
+
+        // El registro se sigue desde el arranque: la navegación muestra las advertencias del día
+        _services.GetRequiredService<LogsViewModel>().Initialize();
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -65,6 +68,7 @@ public partial class App : Application
         services.AddSingleton<OverviewPage>();
         services.AddSingleton<ConfigViewModel>();
         services.AddSingleton<ConfigPage>();
+        services.AddSingleton<LogsViewModel>();
         services.AddSingleton<LogsPage>();
         services.AddSingleton<SettingsPage>();
 
