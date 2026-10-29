@@ -96,6 +96,7 @@ public sealed class Worker(
                 catch (OperationCanceledException) { break; }
 
                 Transition(() => _machine.Evaluate(_history));
+                PublishBatchProgress();
                 WriteSummaryIfDue();
             }
         }
@@ -139,6 +140,14 @@ public sealed class Worker(
     {
         log.LogInformation("BLE 状态：{Status}", status);
         telemetry.OnScanStatus(status);
+    }
+
+    // Telemetría: el progreso del lote se lee bajo el mismo candado que las transiciones
+    private void PublishBatchProgress()
+    {
+        BatchProgress? progress;
+        lock (_gate) progress = _machine.Progress;
+        telemetry.OnBatchProgress(progress);
     }
 
     private void OnHelperConnected(int sessionId) => telemetry.OnHelperConnection(true);

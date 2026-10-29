@@ -16,6 +16,29 @@ public sealed class ManagementFrameParserTests
     }
 
     [Fact]
+    public void Parse_SnapshotWithBatch_ReadsBatch()
+    {
+        const string line = """
+            {"t":"snapshot","v":1,"seq":1,"gen":1,"tsMs":1,"uptimeSec":1,
+             "state":{"name":"Unlocked","sinceMs":1},"batch":{"kind":"leave","n":3,"of":5}}
+            """;
+
+        var snapshot = Assert.IsType<SnapshotFrame>(ManagementFrameParser.Parse(line));
+
+        Assert.Equal(new SnapshotBatch("leave", 3, 5), snapshot.Batch);
+    }
+
+    [Fact]
+    public void Parse_SnapshotWithoutBatch_BatchIsNull()
+    {
+        const string line = """{"t":"snapshot","v":1,"seq":1,"gen":1,"tsMs":1,"uptimeSec":1}""";
+
+        var snapshot = Assert.IsType<SnapshotFrame>(ManagementFrameParser.Parse(line));
+
+        Assert.Null(snapshot.Batch);
+    }
+
+    [Fact]
     public void ParseSnapshot_DesignSample()
     {
         const string line = """

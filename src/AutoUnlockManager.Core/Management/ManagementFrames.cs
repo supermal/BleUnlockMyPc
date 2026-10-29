@@ -23,7 +23,8 @@ public sealed record SnapshotFrame(
     SnapshotThresholds? Thr,
     SnapshotAverages? Avg,
     long? LastMatchMs,
-    long[][]? Samples) : ManagementFrame(T);
+    long[][]? Samples,
+    SnapshotBatch? Batch = null) : ManagementFrame(T);
 
 /// <summary>状态机：sinceMs = 进入当前状态的服务端 UTC 毫秒（未播种时为空）。</summary>
 public sealed record SnapshotState(string? Name, long? SinceMs);
@@ -44,3 +45,6 @@ public sealed record SnapshotThresholds(
 
 /// <summary>5s/10s 窗口均值（null = 无样本）与样本数。</summary>
 public sealed record SnapshotAverages(double? W5, double? W10, int N5, int N10);
+
+/// <summary>批次进度（v1 新增字段）：kind = leave | lockConfirm | unlock；旧服务不发送时为 null。</summary>
+public sealed record SnapshotBatch(string Kind, int N, int Of);

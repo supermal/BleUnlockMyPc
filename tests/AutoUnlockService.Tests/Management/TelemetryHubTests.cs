@@ -128,6 +128,28 @@ public class TelemetryHubTests
     }
 
     [Fact]
+    public void La_toma_incluye_el_progreso_del_lote()
+    {
+        var hub = Create(out _);
+        hub.OnBatchProgress(new BatchProgress(BatchKind.LockConfirm, 2, 10));
+        hub.BeginClientSession();
+
+        var json = hub.BuildSnapshot();
+
+        Assert.Contains("\"batch\":{\"kind\":\"lockConfirm\",\"n\":2,\"of\":10}", json);
+    }
+
+    [Fact]
+    public void Sin_lote_la_toma_lleva_batch_nulo()
+    {
+        var hub = Create(out _);
+        hub.OnBatchProgress(new BatchProgress(BatchKind.Leave, 1, 5));
+        hub.OnBatchProgress(null);
+
+        Assert.Null(FirstSnapshot(hub).Batch);
+    }
+
+    [Fact]
     public void El_seq_es_estrictamente_creciente()
     {
         var hub = Create(out _);

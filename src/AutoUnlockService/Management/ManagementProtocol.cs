@@ -41,7 +41,8 @@ public sealed record SnapshotFrame(
     SnapshotThresholds Thr,
     SnapshotAverages Avg,
     long? LastMatchMs,
-    IReadOnlyList<long[]> Samples);
+    IReadOnlyList<long[]> Samples,
+    SnapshotBatch? Batch = null);
 
 // sinceMs = 进入当前状态的服务端 UTC 毫秒时间戳；服务刚启动尚未播种时为 null
 public sealed record SnapshotState(string? Name, long? SinceMs);
@@ -64,3 +65,6 @@ public sealed record SnapshotThresholds(
 
 // w5/w10 为 5s/10s 窗口均值（null = 无样本）；n5/n10 为窗口内样本数
 public sealed record SnapshotAverages(double? W5, double? W10, int N5, int N10);
+
+// Progreso del lote en curso (v1, campo añadido): kind = leave | lockConfirm | unlock; null = sin lote
+public sealed record SnapshotBatch(string Kind, int N, int Of);

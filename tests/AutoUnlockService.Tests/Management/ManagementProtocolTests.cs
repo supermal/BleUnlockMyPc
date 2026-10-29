@@ -66,7 +66,7 @@ public class ManagementProtocolTests
 
         Assert.Equal(
             ["t", "v", "seq", "gen", "tsMs", "uptimeSec", "state", "scan", "helper", "cred", "thr", "avg",
-             "lastMatchMs", "samples"],
+             "lastMatchMs", "samples", "batch"],
             root.EnumerateObject().Select(p => p.Name));
 
         Assert.Equal(["name", "sinceMs"],

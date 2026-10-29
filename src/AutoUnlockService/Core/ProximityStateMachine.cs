@@ -35,6 +35,12 @@ public sealed record StateChange(
 
 public sealed record AuthResult(bool Success, uint NtStatus);
 
+// Lote en curso: Leave = confirmar salida (antes del aviso o con la pantalla ya bloqueada),
+// LockConfirm = confirmar el bloqueo tras el aviso, Unlock = confirmar la llegada
+public enum BatchKind { Leave, LockConfirm, Unlock }
+
+public sealed record BatchProgress(BatchKind Kind, int Count, int Target);
+
 // Toda la politica de bloqueo y desbloqueo vive aqui. No toca Windows ni la red:
 // devuelve la accion que el orquestador debe ejecutar.
 //
@@ -100,16 +106,25 @@ public sealed class ProximityStateMachine
 
     public ProximityState State { get; private set; }
 
-    // 摘要日志用：当前批次的收集进度（近似读取，只用于观察）
-    public string BatchProgressText => State switch
+    // Progreso del lote actual (lectura aproximada, solo para observar: resumen y telemetría)
+    public BatchProgress? Progress => State switch
     {
         ProximityState.PendingLock when _lockBatchActive =>
-            $"锁屏确认 {_lockBatchCount}/{Math.Max(1, Proximity.LockConfirmSampleCount)}",
+            new BatchProgress(BatchKind.LockConfirm, _lockBatchCount, Math.Max(1, Proximity.LockConfirmSampleCount)),
         ProximityState.LockedArmed when _unlockBatchActive =>
-            $"解锁确认 {_unlockBatchCount}/{Math.Max(1, Proximity.UnlockSampleCount)}",
+            new BatchProgress(BatchKind.Unlock, _unlockBatchCount, Math.Max(1, Proximity.UnlockSampleCount)),
         ProximityState.Unlocked or ProximityState.LockedWaitingDeparture when _lockBatchActive =>
-            $"离开确认 {_lockBatchCount}/{Math.Max(1, Proximity.LockPromptSampleCount)}",
-        _ => ""
+            new BatchProgress(BatchKind.Leave, _lockBatchCount, Math.Max(1, Proximity.LockPromptSampleCount)),
+        _ => null
+    };
+
+    // 摘要日志用：当前批次的收集进度
+    public string BatchProgressText => Progress switch
+    {
+        { Kind: BatchKind.LockConfirm } p => $"锁屏确认 {p.Count}/{p.Target}",
+        { Kind: BatchKind.Unlock } p => $"解锁确认 {p.Count}/{p.Target}",
+        { } p => $"离开确认 {p.Count}/{p.Target}",
+        null => ""
     };
 
     public StateChange? Evaluate(RssiHistory history)

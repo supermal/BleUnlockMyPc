@@ -39,6 +39,7 @@ public sealed class TelemetryHub
     private bool _helperConnected;
     private bool _credConnected;
     private DateTimeOffset? _lastMatchAt;
+    private BatchProgress? _batch;
 
     public TelemetryHub(
         OptionsGate options,
@@ -77,6 +78,34 @@ public sealed class TelemetryHub
             _log.LogWarning("记录 RSSI 样本时出错（已忽略）：{Message}", ex.Message);
         }
     }
+
+    // Progreso del lote tras cada evaluación; solo avisa si cambia
+    public void OnBatchProgress(BatchProgress? progress)
+    {
+        try
+        {
+            bool raised;
+            lock (_lock)
+            {
+                raised = _batch != progress;
+                _batch = progress;
+            }
+
+            if (raised) RaiseChanged();
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning("记录批次进度时出错（已忽略）：{Message}", ex.Message);
+        }
+    }
+
+    private static SnapshotBatch? ToWire(BatchProgress? progress) => progress switch
+    {
+        null => null,
+        { Kind: BatchKind.LockConfirm } p => new SnapshotBatch("lockConfirm", p.Count, p.Target),
+        { Kind: BatchKind.Unlock } p => new SnapshotBatch("unlock", p.Count, p.Target),
+        { } p => new SnapshotBatch("leave", p.Count, p.Target),
+    };
 
     // 状态机进入新状态；同名重复调用是幂等的（保留首次进入的时间）
     public void OnStateChange(ProximityState state)
@@ -233,7 +262,8 @@ public sealed class TelemetryHub
                 _lastMatchAt is { } matchAt
                     ? Math.Max(0, (long)(now - matchAt).TotalMilliseconds)
                     : null,
-                samples);
+                samples,
+                ToWire(_batch));
         }
 
         return ManagementProtocol.SerializeLine(frame);

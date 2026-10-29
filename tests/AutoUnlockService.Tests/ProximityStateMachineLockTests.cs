@@ -91,6 +91,34 @@ public class ProximityStateMachineLockTests
     }
 
     [Fact]
+    public void El_progreso_del_lote_de_salida_informa_cuenta_y_objetivo()
+    {
+        var (sm, time, history) = Build();
+        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(20));
+        Fill(history, time, -85, 4);               // 触发 + 3 → 离开确认 3/5
+
+        Assert.Null(sm.Evaluate(history));
+
+        Assert.Equal(new BatchProgress(BatchKind.Leave, 3, 5), sm.Progress);
+        Assert.Equal("离开确认 3/5", sm.BatchProgressText);
+    }
+
+    [Fact]
+    public void Sin_lote_activo_no_hay_progreso()
+    {
+        var (sm, time, history) = Build();
+        history.Add(-50, T0);
+        time.Advance(TimeSpan.FromSeconds(20));
+        history.Add(-50, time.GetUtcNow());
+
+        sm.Evaluate(history);
+
+        Assert.Null(sm.Progress);
+        Assert.Equal("", sm.BatchProgressText);
+    }
+
+    [Fact]
     public void El_disparador_no_cuenta_para_el_lote()
     {
         var (sm, time, history) = Build();
