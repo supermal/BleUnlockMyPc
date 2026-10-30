@@ -44,6 +44,7 @@ public sealed partial class ConfigViewModel : ObservableObject
     private readonly ServiceControlService _serviceControl = new();
     private readonly BleBondClient _bondClient = new();
     private readonly TargetDeviceService _device;
+    private readonly PasswordInput _password = new();
 
     /// <summary>程序化设置下拉选中项时抑制写回（避免加载即被判定为“已修改”）。</summary>
     private bool _suppressBondSelection;
@@ -208,7 +209,7 @@ public sealed partial class ConfigViewModel : ObservableObject
     public partial string IrkHint { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasPasswordHint))]
+    [NotifyPropertyChangedFor(nameof(HasPasswordHint), nameof(PasswordDescription))]
     public partial string PasswordHint { get; set; }
 
     public bool HasIrkHint => IrkHint.Length > 0;
@@ -271,6 +272,16 @@ public sealed partial class ConfigViewModel : ObservableObject
     [ObservableProperty] public partial IReadOnlySet<string> ModifiedFields { get; set; }
 
     public bool HasPendingChanges => PendingCount > 0;
+
+    /// <summary>El «ojo» solo aparece con una contraseña recién escrita, nunca con la guardada.</summary>
+    public bool CanRevealPassword => _password.CanReveal;
+
+    /// <summary>Texto indicativo del campo vacío: la guardada nunca se muestra, solo se indica que existe.</summary>
+    public string PasswordPlaceholder => _password.HasStored ? "已保存（输入新密码以替换）" : "请输入密码";
+
+    public string PasswordDescription => PasswordHint.Length > 0
+        ? PasswordHint
+        : "保存时用本机 DPAPI 加密写入配置文件，不会出现在日志中。";
 
     /// <summary>Umbral de bloqueo para la banda del formulario (sigue la entrada; si no se interpreta, el del disco).</summary>
     public double LockThresholdPreview =>
@@ -883,7 +894,8 @@ public sealed partial class ConfigViewModel : ObservableObject
             ? null
             : IdentityAddressText.Trim();
         config.Credentials.UserName = UserNameText;
-        config.Credentials.Password = PasswordText;
+        // Campo vacío = se conserva la guardada
+        config.Credentials.Password = _password.Effective;
 
         var p = config.Proximity;
         if (TryGetNumber(LockThresholdText, ConfigFields.ProximityLockThresholdDbm, errors, out var lockThreshold))
@@ -919,7 +931,11 @@ public sealed partial class ConfigViewModel : ObservableObject
         IrkByteOrderIndex = Math.Clamp((int)config.Device.IrkByteOrder, 0, 2);
         IdentityAddressText = config.Device.IdentityAddress ?? "";
         UserNameText = config.Credentials.UserName;
-        PasswordText = ConfigSecrets.DisplayText(config.Credentials.Password);
+        // La guardada se queda en el modelo; el campo vuelve a vacío
+        _password.Load(ConfigSecrets.DisplayText(config.Credentials.Password));
+        PasswordText = "";
+        OnPropertyChanged(nameof(CanRevealPassword));
+        OnPropertyChanged(nameof(PasswordPlaceholder));
         LockThresholdText = ConfigInput.FormatNumber(config.Proximity.LockThresholdDbm);
         UnlockThresholdText = ConfigInput.FormatNumber(config.Proximity.UnlockThresholdDbm);
         UnlockCountText = ConfigInput.FormatCount(config.Proximity.UnlockSampleCount);
@@ -1056,6 +1072,8 @@ public sealed partial class ConfigViewModel : ObservableObject
                 if (UserNameError is { Length: > 0 }) UserNameError = "";
                 break;
             case nameof(PasswordText):
+                _password.Edit(PasswordText);
+                OnPropertyChanged(nameof(CanRevealPassword));
                 if (PasswordError is { Length: > 0 }) PasswordError = "";
                 break;
             case nameof(LockThresholdText):

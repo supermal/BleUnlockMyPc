@@ -58,6 +58,7 @@ public sealed class ConfigSecretsTests
         Assert.Equal("", ConfigSecrets.HintText(""));
         Assert.Contains("以明文存储", ConfigSecrets.HintText("plain"));
         Assert.Contains("已加密存储", ConfigSecrets.HintText(SecretProtector.Protect("x")));
+        Assert.DoesNotContain("眼睛", ConfigSecrets.HintText(SecretProtector.Protect("x")));
         Assert.Contains("无法在本机解密",
             ConfigSecrets.HintText(SecretTestData.Tampered(SecretProtector.Protect("x"))));
     }

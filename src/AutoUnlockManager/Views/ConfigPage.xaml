@@ -278,17 +278,21 @@
                             AutomationProperties.Name="用户名"
                             Text="{Binding UserNameText, UpdateSourceTrigger=PropertyChanged}" />
                     </controls:SettingRow>
+                    <!--  La contraseña guardada no entra en el campo: solo se escribe una nueva,
+                         y el ojo aparece únicamente con lo recién escrito  -->
                     <controls:SettingRow
-                        Description="保存时用本机 DPAPI 加密写入配置文件，不会出现在日志中。"
+                        Description="{Binding PasswordDescription}"
                         Error="{Binding PasswordError}"
                         Header="密码"
                         Icon="Key20"
                         IsModified="{Binding ModifiedFields, Converter={StaticResource FieldModified}, ConverterParameter=Credentials.Password}">
                         <ui:PasswordBox
+                            x:Name="PasswordInput"
                             Width="300"
                             AutomationProperties.Name="密码"
                             Password="{Binding PasswordText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            RevealButtonEnabled="True" />
+                            PlaceholderText="{Binding PasswordPlaceholder}"
+                            RevealButtonEnabled="{Binding CanRevealPassword}" />
                     </controls:SettingRow>
 
                     <!--  ===== Proximidad =====  -->

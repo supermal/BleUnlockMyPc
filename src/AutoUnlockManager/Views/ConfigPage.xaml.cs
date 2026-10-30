@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.ComponentModel;
 using System.Windows.Controls;
 using AutoUnlockManager.Core;
 using AutoUnlockManager.Core.Config;
@@ -21,6 +22,7 @@ public partial class ConfigPage : UserControl
         _dialogs = dialogs;
         DataContext = viewModel;
         InitializeComponent();
+        viewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
     public ConfigViewModel ViewModel { get; }
@@ -37,6 +39,46 @@ public partial class ConfigPage : UserControl
         {
             ViewModel.ReloadFromDisk();
         }
+    }
+
+    // —— Contraseña: la guardada nunca entra en el campo ——
+
+    // El enlace del PasswordBox de WPF UI no propaga del modelo al control: al vaciar el campo
+    // (cargar, guardar, descartar) el control conservaría lo escrito y lo siguiente se le añadiría.
+    // Se sincroniza a mano: primero se vuelve a la máscara, después se escribe el valor del modelo
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(ConfigViewModel.PasswordText) || PasswordInput.Password == ViewModel.PasswordText)
+        {
+            return;
+        }
+
+        if (!ViewModel.CanRevealPassword)
+        {
+            ConcealPassword();
+        }
+
+        PasswordInput.Password = ViewModel.PasswordText;
+        if (ViewModel.PasswordText.Length == 0)
+        {
+            // Sin esto el control mantiene la máscara anterior («**») con la contraseña ya vacía
+            PasswordInput.Text = string.Empty;
+        }
+    }
+
+    // WPF UI solo expone IsPasswordRevealed como lectura (setter privado, lo cambia el botón del ojo).
+    // Si el nombre cambiara en otra versión, no hace nada: el ojo ya está oculto en ese caso
+    private void ConcealPassword()
+    {
+        if (!PasswordInput.IsPasswordRevealed)
+        {
+            return;
+        }
+
+        typeof(Wpf.Ui.Controls.PasswordBox)
+            .GetProperty(nameof(Wpf.Ui.Controls.PasswordBox.IsPasswordRevealed))?
+            .GetSetMethod(nonPublic: true)?
+            .Invoke(PasswordInput, [false]);
     }
 
     private async void OnSaveClicked(object sender, RoutedEventArgs e)

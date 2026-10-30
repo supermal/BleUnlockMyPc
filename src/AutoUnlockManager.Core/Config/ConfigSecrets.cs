@@ -50,7 +50,7 @@ public static class ConfigSecrets
         if (SecretProtector.IsProtected(loadedValue))
         {
             return SecretProtector.TryUnprotect(loadedValue, out _)
-                ? "已加密存储；点击右侧眼睛可查看明文，修改后保存将自动重新加密。"
+                ? "已加密存储，不会显示；输入新密码即可替换，保存时自动重新加密。"
                 : "该加密值无法在本机解密（可能来自其他机器）；必须重新输入。";
         }
 
