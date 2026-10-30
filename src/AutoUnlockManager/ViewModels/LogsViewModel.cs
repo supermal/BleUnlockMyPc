@@ -127,7 +127,7 @@ public sealed partial class LogsViewModel : ObservableObject
     public partial string BannerMessage { get; set; }
 
     /// <summary>行数上限（超出按 1/10 从头部裁剪）；internal 供 diag 注入小值。</summary>
-    internal int MaxLineCount { get; set; } = 200_000;
+    internal int MaxLineCount { get; set; } = 10_000;
 
     /// <summary>暂停/继续按钮文案。</summary>
     public string PauseButtonText => IsPaused ? "继续跟随" : "暂停跟随";
@@ -342,6 +342,12 @@ public sealed partial class LogsViewModel : ObservableObject
                 var (parsed, carry) = LogLineParser.ParseBatch(source.Lines, LogSeverity.Unknown);
                 return (source, parsed, carry);
             });
+
+            // 初始加载同样受上限约束：只保留最新的 MaxLineCount 行
+            if (entries.Count > MaxLineCount)
+            {
+                entries.RemoveRange(0, entries.Count - MaxLineCount);
+            }
 
             _all = entries;
             _carry = carry;

@@ -222,7 +222,7 @@
                     </StackPanel>
                 </StackPanel>
                 <TextBlock Style="{StaticResource Ui.TextStyle.Caption}">
-                    <Run Text="{Binding LineCountText, Mode=OneWay}" /><Run Text="　最多保留 20 万行" />
+                    <Run Text="{Binding LineCountText, Mode=OneWay}" /><Run Text="　最多保留 1 万行" />
                 </TextBlock>
             </DockPanel>
         </Border>
