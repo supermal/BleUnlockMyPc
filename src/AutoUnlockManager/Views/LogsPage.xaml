@@ -45,6 +45,8 @@
 
         <Style x:Key="LogRow" TargetType="ListBoxItem">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <!--  El estilo de tema del sistema (Aero2) fija el texto en negro: se usa el pincel del tema  -->
+            <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
@@ -247,6 +249,8 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 Click="OnJumpToLatestClicked"
+                Cursor="Hand"
+                Foreground="{DynamicResource Ui.Text.Primary}"
                 Visibility="{Binding HasPendingNewLines, Converter={StaticResource BoolToVisibility}}">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">

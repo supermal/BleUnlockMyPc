@@ -12,6 +12,8 @@
         <!--  Tarjeta de modo: radio + título + descripción; seleccionada = borde de acento de 2 px  -->
         <Style x:Key="ModeCard" TargetType="RadioButton">
             <Setter Property="Cursor" Value="Hand" />
+            <!--  El estilo de tema del sistema (Aero2) fija el texto en negro: se usa el pincel del tema  -->
+            <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
             <Setter Property="FocusVisualStyle" Value="{StaticResource Ui.FocusVisual}" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -80,6 +82,8 @@
 
         <Style x:Key="DeviceItem" TargetType="ListBoxItem">
             <Setter Property="FocusVisualStyle" Value="{StaticResource Ui.FocusVisual}" />
+            <!--  El estilo de tema del sistema (Aero2) fija el texto en negro: se usa el pincel del tema  -->
+            <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
