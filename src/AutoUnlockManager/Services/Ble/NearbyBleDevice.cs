@@ -1,3 +1,4 @@
+using AutoUnlockManager.Core.Resources;
 using Windows.Devices.Bluetooth;
 
 namespace AutoUnlockManager.Services.Ble;
@@ -12,12 +13,8 @@ public sealed class NearbyBleDevice
     public short Rssi { get; init; }
     public DateTimeOffset LastSeen { get; init; }
 
-    public string DisplayName
-    {
-        get
-        {
-            var name = string.IsNullOrWhiteSpace(Name) ? "（未命名）" : Name.Trim();
-            return $"{name}    {Address}    {Rssi} dBm";
-        }
-    }
+    /// <summary>Nombre para la lista; sin nombre, el texto «sin nombre» del idioma actual.</summary>
+    public string ShownName => string.IsNullOrWhiteSpace(Name) ? UiStrings.Pair_UnnamedDevice : Name.Trim();
+
+    public string DisplayName => $"{ShownName}    {Address}    {Rssi} dBm";
 }

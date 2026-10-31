@@ -1,0 +1,596 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="App_Title" xml:space="preserve"><value>Gestor de AutoUnlock</value></data>
+  <data name="Badge_Connecting" xml:space="preserve"><value>Conectando con el servicio</value></data>
+  <data name="Badge_ServiceNotInstalled" xml:space="preserve"><value>Servicio no instalado</value></data>
+  <data name="Badge_ServiceRunning" xml:space="preserve"><value>Servicio en ejecución</value></data>
+  <data name="Badge_ServiceStopped" xml:space="preserve"><value>Servicio detenido</value></data>
+  <data name="Bar_Lock" xml:space="preserve"><value>Bloqueo {0}</value></data>
+  <data name="Bar_Unlock" xml:space="preserve"><value>Desbloqueo {0}</value></data>
+  <data name="Batch_Leave" xml:space="preserve"><value>Confirmación de salida</value></data>
+  <data name="Batch_LockConfirm" xml:space="preserve"><value>Confirmación de bloqueo</value></data>
+  <data name="Batch_Unlock" xml:space="preserve"><value>Confirmación de desbloqueo</value></data>
+  <data name="Ble_AdvertiseStartTimeout" xml:space="preserve"><value>El anuncio Bluetooth no se inició en 10 s (último estado: {0}, error: {1}); revisa el interruptor de Bluetooth, los controladores y la directiva de grupo.</value></data>
+  <data name="Ble_CharacteristicCreateFailed" xml:space="preserve"><value>No se pudo crear la característica de medición de frecuencia cardíaca ({0}).</value></data>
+  <data name="Ble_NoAdapter" xml:space="preserve"><value>No se encontró ningún adaptador Bluetooth; comprueba que el PC tiene hardware Bluetooth operativo.</value></data>
+  <data name="Ble_NoLowEnergy" xml:space="preserve"><value>Este adaptador Bluetooth no es compatible con Bluetooth de baja energía (BLE).</value></data>
+  <data name="Ble_NoPeripheralRole" xml:space="preserve"><value>Este adaptador Bluetooth no admite el rol de periférico, así que teléfonos y relojes no pueden iniciar el emparejamiento. Usa «Auriculares / ratón / teclado» (iniciado desde el PC).</value></data>
+  <data name="Ble_RadioOff" xml:space="preserve"><value>Bluetooth está desactivado; actívalo primero en la Configuración de Windows.</value></data>
+  <data name="Ble_ServiceCreateFailed" xml:space="preserve"><value>No se pudo crear el servicio de anuncio de frecuencia cardíaca ({0}). Si otro programa anuncia el mismo servicio, ciérralo primero.</value></data>
+  <data name="Bonds_CurrentNotListed" xml:space="preserve"><value>Configuración actual (no está en la lista de emparejados de Windows)</value></data>
+  <data name="Bonds_ListFailedTitle" xml:space="preserve"><value>No se pudo leer la lista de dispositivos</value></data>
+  <data name="Bonds_NewNotFoundMessage" xml:space="preserve"><value>Windows terminó el emparejamiento, pero el servicio no devolvió el IRK de este dispositivo. Comprueba que el servicio está en ejecución y pulsa «Actualizar lista»; si el dispositivo no aporta IRK, no sirve para el desbloqueo automático.</value></data>
+  <data name="Bonds_NewNotFoundTitle" xml:space="preserve"><value>No se encontró el dispositivo recién emparejado</value></data>
+  <data name="Bonds_None" xml:space="preserve"><value>No se encontraron dispositivos BLE emparejados; empareja uno con Windows primero.</value></data>
+  <data name="Bonds_Read" xml:space="preserve"><value>Se leyeron {0} dispositivos emparejados (del almacén de emparejamientos Bluetooth de Windows).</value></data>
+  <data name="Bonds_ReadError" xml:space="preserve"><value>No se pudieron leer los dispositivos emparejados: {0}</value></data>
+  <data name="Bonds_ReadFailed" xml:space="preserve"><value>Error al leer los dispositivos emparejados: {0}</value></data>
+  <data name="Bonds_ReadNoneSelected" xml:space="preserve"><value>Se leyeron {0} dispositivos emparejados; no hay ninguno seleccionado, así que el desbloqueo automático está en pausa.</value></data>
+  <data name="Bonds_Reading" xml:space="preserve"><value>Leyendo los dispositivos emparejados con Windows…</value></data>
+  <data name="Bonds_ReadingStore" xml:space="preserve"><value>Leyendo el almacén de emparejamientos de Windows…</value></data>
+  <data name="Bonds_StoreReadFailed" xml:space="preserve"><value>No se pudo leer el almacén de emparejamientos de Windows: {0} Inicia primero el servicio.</value></data>
+  <data name="Chart_AwayZone" xml:space="preserve"><value>Zona lejana · por debajo del umbral de bloqueo</value></data>
+  <data name="Chart_MinutesAgo" xml:space="preserve"><value>hace {0:0} min</value></data>
+  <data name="Chart_NearZone" xml:space="preserve"><value>Zona cercana · por encima del umbral de desbloqueo</value></data>
+  <data name="Chart_Now" xml:space="preserve"><value>Ahora</value></data>
+  <data name="Chart_SecondsAgo" xml:space="preserve"><value>hace {0:0} s</value></data>
+  <data name="Chart_WaitingSamples" xml:space="preserve"><value>Esperando muestras…</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Cerrar</value></data>
+  <data name="Common_Modified" xml:space="preserve"><value>Modificado</value></data>
+  <data name="Common_No" xml:space="preserve"><value>no</value></data>
+  <data name="Common_OpenManager" xml:space="preserve"><value>Abrir el Gestor</value></data>
+  <data name="Common_OperationFailed" xml:space="preserve"><value>La operación falló</value></data>
+  <data name="Common_RestartService" xml:space="preserve"><value>Reiniciar servicio</value></data>
+  <data name="Common_StartService" xml:space="preserve"><value>Iniciar servicio</value></data>
+  <data name="Common_StopService" xml:space="preserve"><value>Detener servicio</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>sí</value></data>
+  <data name="Config_AddressHint" xml:space="preserve"><value>Se rellena al elegir un dispositivo; también puede quedar vacío.</value></data>
+  <data name="Config_AddressOptional" xml:space="preserve"><value>Dirección del dispositivo (opcional)</value></data>
+  <data name="Config_Advanced" xml:space="preserve"><value>Opciones avanzadas</value></data>
+  <data name="Config_BluetoothDevice" xml:space="preserve"><value>Dispositivo Bluetooth</value></data>
+  <data name="Config_BluetoothDeviceHint" xml:space="preserve"><value>Elige entre los dispositivos BLE emparejados con Windows; el IRK se lee automáticamente y nunca se muestra.</value></data>
+  <data name="Config_ByteOrderAuto" xml:space="preserve"><value>Detectar automáticamente</value></data>
+  <data name="Config_ByteOrderNormal" xml:space="preserve"><value>Tal cual</value></data>
+  <data name="Config_ByteOrderReversed" xml:space="preserve"><value>Invertido</value></data>
+  <data name="Config_Credentials" xml:space="preserve"><value>Credenciales de inicio de sesión</value></data>
+  <data name="Config_Discard" xml:space="preserve"><value>Descartar cambios</value></data>
+  <data name="Config_FieldFormatErrors" xml:space="preserve"><value>Algunos campos tienen un formato incorrecto; corrígelos antes de guardar</value></data>
+  <data name="Config_FileUnavailable" xml:space="preserve"><value>Archivo de configuración no disponible</value></data>
+  <data name="Config_InSync" xml:space="preserve"><value>Coincide con el archivo en disco</value></data>
+  <data name="Config_InvalidMessage" xml:space="preserve"><value>{0} problemas; el servicio no se iniciará hasta corregirlos (marcados abajo).</value></data>
+  <data name="Config_InvalidTitle" xml:space="preserve"><value>La configuración actual no es válida</value></data>
+  <data name="Config_IrkByteOrder" xml:space="preserve"><value>Orden de bytes del IRK</value></data>
+  <data name="Config_IrkByteOrderHint" xml:space="preserve"><value>Normalmente deja «Detectar automáticamente»; elígelo a mano solo si no se reconoce el dispositivo.</value></data>
+  <data name="Config_LockConfirmCount" xml:space="preserve"><value>Lecturas para confirmar el bloqueo</value></data>
+  <data name="Config_LockConfirmCountHint" xml:space="preserve"><value>Tras aparecer el aviso, deben llegar tantas lecturas nuevas, todas por debajo del umbral de bloqueo, para bloquear. Rango 1–50.</value></data>
+  <data name="Config_LockPrompt" xml:space="preserve"><value>Aviso de bloqueo</value></data>
+  <data name="Config_LockPromptCount" xml:space="preserve"><value>Lecturas para mostrar el aviso</value></data>
+  <data name="Config_LockPromptCountHint" xml:space="preserve"><value>Tras el disparo, deben llegar tantas lecturas más, todas por debajo del umbral de bloqueo, para mostrar el aviso. Rango 1–50.</value></data>
+  <data name="Config_LockThreshold" xml:space="preserve"><value>Umbral de bloqueo</value></data>
+  <data name="Config_NoConfigFile" xml:space="preserve"><value>No se encontró el archivo de configuración appsettings.json (puede que el servicio no esté instalado o inicializado).</value></data>
+  <data name="Config_NoDataDir" xml:space="preserve"><value>No se encontró la carpeta de datos del servicio (puede que no esté instalado).</value></data>
+  <data name="Config_OpenFolder" xml:space="preserve"><value>Abrir la carpeta de configuración</value></data>
+  <data name="Config_PairNew" xml:space="preserve"><value>Emparejar un dispositivo nuevo…</value></data>
+  <data name="Config_PairNewTip" xml:space="preserve"><value>Los teléfonos y relojes inician el emparejamiento desde el dispositivo; los auriculares y ratones los busca el PC</value></data>
+  <data name="Config_Password" xml:space="preserve"><value>Contraseña</value></data>
+  <data name="Config_PasswordDpapiNote" xml:space="preserve"><value>Se guarda en el archivo de configuración cifrada con DPAPI de este equipo; nunca aparece en los registros.</value></data>
+  <data name="Config_PasswordEnter" xml:space="preserve"><value>Introduce la contraseña</value></data>
+  <data name="Config_PasswordStored" xml:space="preserve"><value>Guardada (escribe una nueva para sustituirla)</value></data>
+  <data name="Config_PathWarning" xml:space="preserve"><value>{0} Ruta de la configuración: {1}. Tras corregirlo, pulsa «Volver a cargar del disco».</value></data>
+  <data name="Config_PendingSuffix" xml:space="preserve"><value> sin guardar</value></data>
+  <data name="Config_PendingTimeout" xml:space="preserve"><value>Tiempo de espera del desbloqueo</value></data>
+  <data name="Config_PendingTimeoutHint" xml:space="preserve"><value>Espera máxima del resultado del inicio de sesión tras enviar las credenciales; si se agota, se reintenta.</value></data>
+  <data name="Config_PromptDialog" xml:space="preserve"><value>Cuadro de diálogo</value></data>
+  <data name="Config_PromptStyle" xml:space="preserve"><value>Tipo de aviso</value></data>
+  <data name="Config_PromptStyleHint" xml:space="preserve"><value>Con el asistente de concentración (No molestar) activado, las notificaciones del sistema pueden silenciarse; usa el cuadro de diálogo. Requiere reiniciar el servicio.</value></data>
+  <data name="Config_PromptToast" xml:space="preserve"><value>Notificación del sistema (Toast)</value></data>
+  <data name="Config_Proximity" xml:space="preserve"><value>Detección de proximidad</value></data>
+  <data name="Config_ReadFailed" xml:space="preserve"><value>No se pudo leer el archivo de configuración: {0}</value></data>
+  <data name="Config_RefreshBondsTip" xml:space="preserve"><value>Volver a leer el almacén de emparejamientos Bluetooth de Windows a través del servicio</value></data>
+  <data name="Config_RefreshList" xml:space="preserve"><value>Actualizar lista</value></data>
+  <data name="Config_RejectSnooze" xml:space="preserve"><value>Pausar avisos tras «Rechazar»</value></data>
+  <data name="Config_RejectSnoozeHint" xml:space="preserve"><value>Durante este tiempo no se muestran avisos de bloqueo.</value></data>
+  <data name="Config_ReloadFromDisk" xml:space="preserve"><value>Volver a cargar del disco</value></data>
+  <data name="Config_SampleInterval" xml:space="preserve"><value>Intervalo de muestreo</value></data>
+  <data name="Config_SampleIntervalHint" xml:space="preserve"><value>Tiempo mínimo entre dos lecturas contadas del mismo dispositivo; 0 cuenta cada anuncio. Un valor alto es más estable pero más lento. Rango 0–2000.</value></data>
+  <data name="Config_Save" xml:space="preserve"><value>Guardar cambios</value></data>
+  <data name="Config_Snooze" xml:space="preserve"><value>Pausar avisos tras «Más tarde»</value></data>
+  <data name="Config_SnoozeHint" xml:space="preserve"><value>Hasta 240 minutos.</value></data>
+  <data name="Config_StartupGrace" xml:space="preserve"><value>Gracia al iniciar</value></data>
+  <data name="Config_StartupGraceHint" xml:space="preserve"><value>Tras iniciarse el servicio o reanudarse el equipo, no se detectan salidas durante este tiempo.</value></data>
+  <data name="Config_Subtitle" xml:space="preserve"><value>El servicio se recarga solo al guardar; solo «Tipo de aviso» requiere reiniciar el servicio.</value></data>
+  <data name="Config_ThresholdOrderError" xml:space="preserve"><value>El umbral de desbloqueo debe ser mayor que el de bloqueo.</value></data>
+  <data name="Config_Thresholds" xml:space="preserve"><value>Umbrales de señal</value></data>
+  <data name="Config_ThresholdsDiagram" xml:space="preserve"><value>Diagrama de los umbrales de señal</value></data>
+  <data name="Config_ThresholdsHint" xml:space="preserve"><value>Por encima del umbral de desbloqueo se considera cerca y por debajo del de bloqueo, lejos. Con el aviso de bloqueo en pantalla, volver por encima del umbral de bloqueo lo retira.</value></data>
+  <data name="Config_Title" xml:space="preserve"><value>Configuración</value></data>
+  <data name="Config_UndecryptableMessage" xml:space="preserve"><value>El IRK del dispositivo o la contraseña no se pueden descifrar en este equipo (pueden venir de otro); vuelve a elegir el dispositivo BLE (o introduce de nuevo la contraseña) y guarda, o el servicio no se iniciará.</value></data>
+  <data name="Config_UndecryptableTitle" xml:space="preserve"><value>Valores cifrados que no se pueden descifrar</value></data>
+  <data name="Config_UnlockCount" xml:space="preserve"><value>Lecturas para confirmar el desbloqueo</value></data>
+  <data name="Config_UnlockCountHint" xml:space="preserve"><value>Tras el disparo, deben llegar tantas lecturas más, todas por encima del umbral de desbloqueo, para desbloquear (o del de bloqueo, para retirar un aviso). Rango 1–20.</value></data>
+  <data name="Config_UnlockDevice" xml:space="preserve"><value>Dispositivo de desbloqueo</value></data>
+  <data name="Config_UnlockThreshold" xml:space="preserve"><value>Umbral de desbloqueo</value></data>
+  <data name="Config_Unpair" xml:space="preserve"><value>Desemparejar</value></data>
+  <data name="Config_UnpairTip" xml:space="preserve"><value>Quitar el emparejamiento Bluetooth entre el dispositivo seleccionado y Windows</value></data>
+  <data name="Config_UserName" xml:space="preserve"><value>Usuario</value></data>
+  <data name="Config_UserNameHint" xml:space="preserve"><value>Cuenta local o «dominio\usuario»</value></data>
+  <data name="Confirm_RestartInterrupts" xml:space="preserve"><value>Reiniciar interrumpe brevemente el bloqueo y desbloqueo automáticos. ¿Reiniciar el servicio AutoUnlockService?</value></data>
+  <data name="Confirm_RestartService" xml:space="preserve"><value>¿Reiniciar el servicio AutoUnlockService?</value></data>
+  <data name="Confirm_StartService" xml:space="preserve"><value>¿Iniciar el servicio AutoUnlockService?</value></data>
+  <data name="Confirm_StopService" xml:space="preserve"><value>El bloqueo y desbloqueo automáticos se pausarán hasta que se vuelva a iniciar el servicio.</value></data>
+  <data name="Cycle_LockedArmed" xml:space="preserve"><value>Bloqueado · vigilando</value></data>
+  <data name="Cycle_LockedWaitingDeparture" xml:space="preserve"><value>Bloqueado · esperando la salida</value></data>
+  <data name="Cycle_NameCurrent" xml:space="preserve"><value>Ciclo de bloqueo: ahora «{0}»</value></data>
+  <data name="Cycle_PendingLock" xml:space="preserve"><value>Pendiente de bloqueo</value></data>
+  <data name="Cycle_UnlockPending" xml:space="preserve"><value>Confirmando el desbloqueo</value></data>
+  <data name="Cycle_Unlocked" xml:space="preserve"><value>Desbloqueado</value></data>
+  <data name="Device_ChooseFromList" xml:space="preserve"><value>Elige de la lista un dispositivo BLE emparejado con Windows.</value></data>
+  <data name="Device_IrkAuto" xml:space="preserve"><value>El IRK lo aporta el dispositivo seleccionado; se guarda cifrado al guardar.</value></data>
+  <data name="Device_IrkUndecryptable" xml:space="preserve"><value>El IRK actual no se puede descifrar en este equipo; elige un dispositivo de la lista y guarda.</value></data>
+  <data name="Device_NoneSelectedPaused" xml:space="preserve"><value>Ningún dispositivo seleccionado (desbloqueo automático en pausa); empareja o elige uno y guarda.</value></data>
+  <data name="Diff_Change" xml:space="preserve"><value>{0}: {1} → {2}</value></data>
+  <data name="Diff_Modified" xml:space="preserve"><value>{0}: modificado</value></data>
+  <data name="Error_AccessDenied" xml:space="preserve"><value>Acceso denegado ({0})</value></data>
+  <data name="Error_Encryption" xml:space="preserve"><value>No se pudo cifrar el valor con DPAPI de Windows.</value></data>
+  <data name="Error_Json" xml:space="preserve"><value>JSON no válido ({0})</value></data>
+  <data name="Flyout_60sAgo" xml:space="preserve"><value>hace 60 s</value></data>
+  <data name="Flyout_Avg5Prefix" xml:space="preserve"><value>Media de 5 s</value></data>
+  <data name="Flyout_ChartName" xml:space="preserve"><value>Señal de los últimos 60 segundos</value></data>
+  <data name="Flyout_LastMatchPrefix" xml:space="preserve"><value>Última coincidencia</value></data>
+  <data name="Flyout_Name" xml:space="preserve"><value>AutoUnlock de un vistazo</value></data>
+  <data name="Health_Abnormal" xml:space="preserve"><value>Con problemas</value></data>
+  <data name="Health_BleScan" xml:space="preserve"><value>Escaneo BLE</value></data>
+  <data name="Health_Connected" xml:space="preserve"><value>Conectado</value></data>
+  <data name="Health_CredOnlyWhenLocked" xml:space="preserve"><value>Solo se conecta con la pantalla bloqueada</value></data>
+  <data name="Health_CredProvider" xml:space="preserve"><value>Proveedor de credenciales</value></data>
+  <data name="Health_Disconnected" xml:space="preserve"><value>No conectado</value></data>
+  <data name="Health_Helper" xml:space="preserve"><value>Asistente de avisos</value></data>
+  <data name="Health_HelperMissing" xml:space="preserve"><value>No se pueden mostrar avisos de bloqueo</value></data>
+  <data name="Health_LastMatch" xml:space="preserve"><value>Última coincidencia</value></data>
+  <data name="Health_Normal" xml:space="preserve"><value>Correcto</value></data>
+  <data name="Health_NotInstalled" xml:space="preserve"><value>No instalado</value></data>
+  <data name="Health_Querying" xml:space="preserve"><value>Consultando…</value></data>
+  <data name="Health_RunInstaller" xml:space="preserve"><value>Ejecuta el script de instalación</value></data>
+  <data name="Health_Running" xml:space="preserve"><value>En ejecución</value></data>
+  <data name="Health_Service" xml:space="preserve"><value>Servicio</value></data>
+  <data name="Health_Stale" xml:space="preserve"><value>Sin señal del dispositivo de destino desde hace más de 5 minutos</value></data>
+  <data name="Health_Starting" xml:space="preserve"><value>Iniciando…</value></data>
+  <data name="Health_Stopped" xml:space="preserve"><value>Detenido</value></data>
+  <data name="Health_StoppedDetail" xml:space="preserve"><value>El bloqueo y desbloqueo automáticos están en pausa</value></data>
+  <data name="Health_Stopping" xml:space="preserve"><value>Deteniendo…</value></data>
+  <data name="Health_Uptime" xml:space="preserve"><value>en marcha desde hace {0}</value></data>
+  <data name="Input_MustBeInteger" xml:space="preserve"><value>«{0}» debe ser un número entero</value></data>
+  <data name="Input_MustBeNumber" xml:space="preserve"><value>«{0}» debe ser un número</value></data>
+  <data name="LanguageProbe" xml:space="preserve"><value>Español</value></data>
+  <data name="Language_Chinese" xml:space="preserve"><value>中文</value></data>
+  <data name="Language_English" xml:space="preserve"><value>English</value></data>
+  <data name="Language_Spanish" xml:space="preserve"><value>Español</value></data>
+  <data name="Language_System" xml:space="preserve"><value>Usar el idioma del sistema</value></data>
+  <data name="Logs_AutoFollow" xml:space="preserve"><value>Seguir automáticamente</value></data>
+  <data name="Logs_AutoFollowTip" xml:space="preserve"><value>Al final, las líneas nuevas se siguen automáticamente; al subir se mantiene la posición</value></data>
+  <data name="Logs_Browsing" xml:space="preserve"><value>Revisando el historial; las líneas nuevas se añaden abajo</value></data>
+  <data name="Logs_DirMissingMessage" xml:space="preserve"><value>No se encontró {0} (puede que el servicio no esté instalado o no se haya ejecutado nunca).</value></data>
+  <data name="Logs_DirMissingTitle" xml:space="preserve"><value>La carpeta de registros no existe</value></data>
+  <data name="Logs_ExportFilter" xml:space="preserve"><value>Archivos de registro (*.log)|*.log|Archivos de texto (*.txt)|*.txt</value></data>
+  <data name="Logs_ExportView" xml:space="preserve"><value>Exportar la vista actual</value></data>
+  <data name="Logs_ExportedMessage" xml:space="preserve"><value>Se exportaron {0:N0} líneas a: {1}</value></data>
+  <data name="Logs_ExportedTitle" xml:space="preserve"><value>Registro exportado</value></data>
+  <data name="Logs_Files" xml:space="preserve"><value>Archivos de registro</value></data>
+  <data name="Logs_FilterName" xml:space="preserve"><value>Filtrar por palabra clave</value></data>
+  <data name="Logs_FilterPlaceholder" xml:space="preserve"><value>Filtrar por palabra clave (busca en toda la línea)</value></data>
+  <data name="Logs_FollowInterrupted" xml:space="preserve"><value>El seguimiento del registro se interrumpió</value></data>
+  <data name="Logs_FollowingLatest" xml:space="preserve"><value>Siguiendo las últimas líneas</value></data>
+  <data name="Logs_LevelDebug" xml:space="preserve"><value>Depuración</value></data>
+  <data name="Logs_LevelError" xml:space="preserve"><value>Error</value></data>
+  <data name="Logs_LevelInfo" xml:space="preserve"><value>Información</value></data>
+  <data name="Logs_LevelWarning" xml:space="preserve"><value>Advertencia</value></data>
+  <data name="Logs_LineCount" xml:space="preserve"><value>Mostrando {0} de {1} líneas</value></data>
+  <data name="Logs_LoadFailed" xml:space="preserve"><value>No se pudo cargar el registro</value></data>
+  <data name="Logs_MarkerBrowsing" xml:space="preserve"><value>revisando</value></data>
+  <data name="Logs_MarkerFollowing" xml:space="preserve"><value>siguiendo</value></data>
+  <data name="Logs_MarkerPaused" xml:space="preserve"><value>en pausa</value></data>
+  <data name="Logs_MaxLines" xml:space="preserve"><value>   se conservan hasta 10 000 líneas</value></data>
+  <data name="Logs_NewLinesPrefix" xml:space="preserve"><value>Hay</value></data>
+  <data name="Logs_NewLinesSuffix" xml:space="preserve"><value> líneas nuevas, volver a lo último</value></data>
+  <data name="Logs_NoFile" xml:space="preserve"><value>(sin archivo)</value></data>
+  <data name="Logs_NoFileSelected" xml:space="preserve"><value>(ningún archivo seleccionado)</value></data>
+  <data name="Logs_NoFilesMessage" xml:space="preserve"><value>Aún no hay archivos autounlock-*.log; aparecerán cuando se inicie el servicio.</value></data>
+  <data name="Logs_NoFilesTitle" xml:space="preserve"><value>Aún no hay archivos de registro</value></data>
+  <data name="Logs_OpenFolder" xml:space="preserve"><value>Abrir la carpeta de registros</value></data>
+  <data name="Logs_PauseFollow" xml:space="preserve"><value>Pausar el seguimiento</value></data>
+  <data name="Logs_RefreshFailed" xml:space="preserve"><value>Error al actualizar</value></data>
+  <data name="Logs_RefreshFiles" xml:space="preserve"><value>Actualizar la lista de archivos</value></data>
+  <data name="Logs_ResumeFollow" xml:space="preserve"><value>Reanudar el seguimiento</value></data>
+  <data name="Logs_RotatedMessage" xml:space="preserve"><value>El registro del servicio pasó a {0}.</value></data>
+  <data name="Logs_RotatedTitle" xml:space="preserve"><value>Se cambió de archivo de registro</value></data>
+  <data name="Logs_ServiceLog" xml:space="preserve"><value>Registro del servicio</value></data>
+  <data name="Logs_StatusLine" xml:space="preserve"><value>{0} | {1} | mostrando {2} / {3} líneas</value></data>
+  <data name="Logs_Title" xml:space="preserve"><value>Registros</value></data>
+  <data name="Logs_UnreadableMessage" xml:space="preserve"><value>{0} no se puede leer ahora (puede que se esté renovando); el seguimiento se reanudará solo.</value></data>
+  <data name="Logs_UnreadableTitle" xml:space="preserve"><value>Archivo de registro ilegible</value></data>
+  <data name="Nav_Config" xml:space="preserve"><value>Configuración</value></data>
+  <data name="Nav_Logs" xml:space="preserve"><value>Registros</value></data>
+  <data name="Nav_Overview" xml:space="preserve"><value>Resumen</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Ajustes</value></data>
+  <data name="Op_AccessDenied" xml:space="preserve"><value>Acceso denegado: se requieren permisos de administrador.</value></data>
+  <data name="Op_AccessDeniedTitle" xml:space="preserve"><value>Acceso denegado</value></data>
+  <data name="Op_AdminRequired" xml:space="preserve"><value>Se requieren permisos de administrador.</value></data>
+  <data name="Op_NotInstalled" xml:space="preserve"><value>El servicio no está instalado (Win32 1060).</value></data>
+  <data name="Op_NotInstalledFallback" xml:space="preserve"><value>El servicio no está instalado.</value></data>
+  <data name="Op_NotInstalledTitle" xml:space="preserve"><value>Servicio no instalado</value></data>
+  <data name="Op_RestartFailed" xml:space="preserve"><value>No se pudo reiniciar el servicio</value></data>
+  <data name="Op_RestartedMessage" xml:space="preserve"><value>AutoUnlockService se ha reiniciado.</value></data>
+  <data name="Op_RestartedTitle" xml:space="preserve"><value>Servicio reiniciado</value></data>
+  <data name="Op_RestartedWithLatest" xml:space="preserve"><value>El servicio se reinició con la última configuración del disco.</value></data>
+  <data name="Op_ServiceRestartedTitle" xml:space="preserve"><value>Servicio reiniciado</value></data>
+  <data name="Op_ServiceStartedTitle" xml:space="preserve"><value>Servicio iniciado</value></data>
+  <data name="Op_StartFailed" xml:space="preserve"><value>No se pudo iniciar el servicio</value></data>
+  <data name="Op_StartedMessage" xml:space="preserve"><value>AutoUnlockService se ha iniciado.</value></data>
+  <data name="Op_StartedTitle" xml:space="preserve"><value>Servicio iniciado</value></data>
+  <data name="Op_StartedWithLatest" xml:space="preserve"><value>El servicio se inició; ya rige la última configuración del disco.</value></data>
+  <data name="Op_StopFailed" xml:space="preserve"><value>No se pudo detener el servicio</value></data>
+  <data name="Op_StoppedMessage" xml:space="preserve"><value>AutoUnlockService se ha detenido.</value></data>
+  <data name="Op_StoppedTitle" xml:space="preserve"><value>Servicio detenido</value></data>
+  <data name="Op_Timeout" xml:space="preserve"><value>Se agotó la espera del cambio de estado del servicio.</value></data>
+  <data name="Op_TimeoutFallback" xml:space="preserve"><value>Se agotó la espera del estado del servicio.</value></data>
+  <data name="Op_TimeoutTitle" xml:space="preserve"><value>La operación superó el tiempo de espera</value></data>
+  <data name="Op_UnknownError" xml:space="preserve"><value>Error desconocido.</value></data>
+  <data name="OpenFolder_FailedTitle" xml:space="preserve"><value>No se pudo abrir la carpeta</value></data>
+  <data name="Overview_Avg10" xml:space="preserve"><value>   Media de 10 s</value></data>
+  <data name="Overview_Avg5" xml:space="preserve"><value>Media de 5 s</value></data>
+  <data name="Overview_ChangeDevice" xml:space="preserve"><value>Cambiar dispositivo</value></data>
+  <data name="Overview_ChartName" xml:space="preserve"><value>Señal de los últimos 5 minutos, con los umbrales de bloqueo y desbloqueo</value></data>
+  <data name="Overview_ConfirmingDeparture" xml:space="preserve"><value>Confirmando si te has ido</value></data>
+  <data name="Overview_CsvFilter" xml:space="preserve"><value>Archivos CSV (*.csv)|*.csv</value></data>
+  <data name="Overview_CurrentSignalSuffix" xml:space="preserve"><value>: señal actual</value></data>
+  <data name="Overview_ExportCsv" xml:space="preserve"><value>Exportar muestras (CSV)</value></data>
+  <data name="Overview_ExportFailed" xml:space="preserve"><value>Error al exportar</value></data>
+  <data name="Overview_Exported" xml:space="preserve"><value>Muestras exportadas</value></data>
+  <data name="Overview_ExportedMessage" xml:space="preserve"><value>Se exportaron {0} muestras a: {1}</value></data>
+  <data name="Overview_IrkNote" xml:space="preserve"><value>El servicio lee el IRK del almacén de emparejamientos Bluetooth de Windows; se guarda cifrado en el archivo de configuración.</value></data>
+  <data name="Overview_LiveSignal" xml:space="preserve"><value>Señal en directo</value></data>
+  <data name="Overview_LockCycle" xml:space="preserve"><value>Ciclo de bloqueo</value></data>
+  <data name="Overview_LockCycleHint" xml:space="preserve"><value>Tras un desbloqueo correcto vuelve a «Desbloqueado»; aplazado y suspendido quedan fuera del ciclo principal</value></data>
+  <data name="Overview_NoConnectionMessage" xml:space="preserve"><value>El servicio no está en ejecución o no está instalado; se reintenta automáticamente (cada 2 s).</value></data>
+  <data name="Overview_NoConnectionTitle" xml:space="preserve"><value>No se puede conectar con el servicio</value></data>
+  <data name="Overview_ServiceHealth" xml:space="preserve"><value>Servicio y estado</value></data>
+  <data name="Overview_StateSince" xml:space="preserve"><value>desde hace {0}</value></data>
+  <data name="Overview_TargetDevice" xml:space="preserve"><value>Dispositivo de destino</value></data>
+  <data name="Overview_Title" xml:space="preserve"><value>Resumen</value></data>
+  <data name="Pair_AccessDenied" xml:space="preserve"><value>Windows denegó el emparejamiento con este dispositivo. Comprueba que el Gestor se ejecuta como administrador.</value></data>
+  <data name="Pair_Accessory" xml:space="preserve"><value>Auriculares / ratón / teclado</value></data>
+  <data name="Pair_AccessoryHint" xml:space="preserve"><value>El PC busca e inicia el emparejamiento</value></data>
+  <data name="Pair_AdvertiseFailed" xml:space="preserve"><value>No se pudo iniciar el anuncio: {0}</value></data>
+  <data name="Pair_Advertising" xml:space="preserve"><value>Anunciando «{0}», esperando a que se conecte un dispositivo…</value></data>
+  <data name="Pair_AdvertisingStopped" xml:space="preserve"><value>Anuncio detenido.</value></data>
+  <data name="Pair_AlreadyPaired" xml:space="preserve"><value>Este dispositivo ya está emparejado.</value></data>
+  <data name="Pair_AlreadyPairedWithWindows" xml:space="preserve"><value>Este dispositivo ya está emparejado con Windows.</value></data>
+  <data name="Pair_Cancelled" xml:space="preserve"><value>Emparejamiento cancelado.</value></data>
+  <data name="Pair_CentralIntro" xml:space="preserve"><value>Primero pon el dispositivo en modo de emparejamiento (luz parpadeando) y elígelo abajo. Los auriculares Bluetooth clásicos no aparecen en esta lista.</value></data>
+  <data name="Pair_CentralReady" xml:space="preserve"><value>Pulsa «Iniciar búsqueda» para encontrar dispositivos cercanos.</value></data>
+  <data name="Pair_ConfirmTimeout" xml:space="preserve"><value>Se agotó el tiempo de confirmación. Vuelve a intentarlo y confirma a tiempo en el aviso de este asistente.</value></data>
+  <data name="Pair_ConnectionRejected" xml:space="preserve"><value>El dispositivo rechazó la conexión. Comprueba que sigue en modo de emparejamiento y vuelve a intentarlo.</value></data>
+  <data name="Pair_DeviceGone" xml:space="preserve"><value>El dispositivo ya no es visible; comprueba que sigue en modo de emparejamiento y vuelve a buscar.</value></data>
+  <data name="Pair_Elapsed" xml:space="preserve"><value>Esperando {0}:{1:00}</value></data>
+  <data name="Pair_Failed" xml:space="preserve"><value>El emparejamiento falló: {0}</value></data>
+  <data name="Pair_FailedStatus" xml:space="preserve"><value>El emparejamiento falló ({0}).</value></data>
+  <data name="Pair_FailedTitle" xml:space="preserve"><value>El emparejamiento falló</value></data>
+  <data name="Pair_InProgress" xml:space="preserve"><value>Hay otro emparejamiento en curso. Termina primero la ventana de emparejamiento que ya está en pantalla y vuelve a intentarlo.</value></data>
+  <data name="Pair_InWindowNote" xml:space="preserve"><value>La confirmación y el PIN del emparejamiento aparecen en esta ventana; no se abre la Configuración de Windows.</value></data>
+  <data name="Pair_MachineName" xml:space="preserve"><value>Nombre del PC: {0} (el nombre que aparece en el teléfono o reloj puede variar un poco)</value></data>
+  <data name="Pair_NearbyDevices" xml:space="preserve"><value>Dispositivos cercanos</value></data>
+  <data name="Pair_NoIrkAfterPairing" xml:space="preserve"><value>Windows emparejó el dispositivo, pero el servicio no pudo leer su IRK. Puede que no lo aporte (no sirve para el desbloqueo automático); cierra esta ventana y pulsa «Actualizar lista» para comprobarlo.</value></data>
+  <data name="Pair_NoPairingInterface" xml:space="preserve"><value>No se pudo leer la interfaz de emparejamiento del dispositivo.</value></data>
+  <data name="Pair_NotReady" xml:space="preserve"><value>El dispositivo no está listo para emparejarse. Comprueba que sigue en modo de emparejamiento y vuelve a intentarlo.</value></data>
+  <data name="Pair_Pair" xml:space="preserve"><value>Emparejar</value></data>
+  <data name="Pair_PairSelected" xml:space="preserve"><value>Emparejar el dispositivo seleccionado</value></data>
+  <data name="Pair_PairedWith" xml:space="preserve"><value>Emparejado: {0}</value></data>
+  <data name="Pair_PairedWithFound" xml:space="preserve"><value>Emparejado: {0}</value></data>
+  <data name="Pair_PairingWith" xml:space="preserve"><value>Emparejando con «{0}»; la confirmación o el PIN aparecerán en esta ventana…</value></data>
+  <data name="Pair_PeripheralReady" xml:space="preserve"><value>Cuando estés listo, pulsa «Iniciar anuncio».</value></data>
+  <data name="Pair_PhoneWatch" xml:space="preserve"><value>Teléfono / reloj</value></data>
+  <data name="Pair_PhoneWatchHint" xml:space="preserve"><value>iPhone, Apple Watch, etc.; el dispositivo inicia la conexión</value></data>
+  <data name="Pair_PinPlaceholder" xml:space="preserve"><value>Introduce el PIN que muestra el dispositivo</value></data>
+  <data name="Pair_ReadingIrk" xml:space="preserve"><value>Emparejado; leyendo el IRK desde el servicio…</value></data>
+  <data name="Pair_Rejected" xml:space="preserve"><value>El dispositivo rechazó el emparejamiento o el PIN/código no era correcto. Vuelve a intentarlo e introdúcelo de nuevo en el aviso de este asistente.</value></data>
+  <data name="Pair_ScanFailed" xml:space="preserve"><value>No se pudo iniciar la búsqueda: {0}</value></data>
+  <data name="Pair_ScanFound" xml:space="preserve"><value>Se encontraron {0} dispositivos conectables; elige uno y pulsa «Emparejar el dispositivo seleccionado».</value></data>
+  <data name="Pair_ScanStopped" xml:space="preserve"><value>Búsqueda detenida. Vuelve a buscar o elige un dispositivo de la lista.</value></data>
+  <data name="Pair_Scanning" xml:space="preserve"><value>Buscando dispositivos cercanos… pon los auriculares o el ratón en modo de emparejamiento.</value></data>
+  <data name="Pair_ScanningNoneYet" xml:space="preserve"><value>Buscando… todavía no hay dispositivos conectables con nombre; comprueba que el dispositivo está en modo de emparejamiento.</value></data>
+  <data name="Pair_SelectedSave" xml:space="preserve"><value>Se seleccionó «{0}»; guarda los cambios para aplicarlo.</value></data>
+  <data name="Pair_Signal" xml:space="preserve"><value>Señal</value></data>
+  <data name="Pair_StartAdvertising" xml:space="preserve"><value>Iniciar anuncio</value></data>
+  <data name="Pair_StartScan" xml:space="preserve"><value>Iniciar búsqueda</value></data>
+  <data name="Pair_StepAdvertise" xml:space="preserve"><value>Iniciar anuncio: el PC aparece temporalmente como un «dispositivo de frecuencia cardíaca».</value></data>
+  <data name="Pair_StepConnect" xml:space="preserve"><value>Conecta este PC desde el dispositivo</value></data>
+  <data name="Pair_StepConnectHint" xml:space="preserve"><value>Apple Watch: Ajustes › Bluetooth › Dispositivos de salud; en iPhone puedes usar nRF Connect.</value></data>
+  <data name="Pair_StepDone" xml:space="preserve"><value>Tras emparejar, el IRK se lee automáticamente y el dispositivo queda seleccionado en la página Configuración (aún debes pulsar «Guardar cambios»).</value></data>
+  <data name="Pair_StepForget" xml:space="preserve"><value>En los ajustes de Bluetooth del teléfono o reloj, «Olvida» el emparejamiento anterior con este PC.</value></data>
+  <data name="Pair_StillWaiting" xml:space="preserve"><value>Seguimos esperando a que cambie el almacén de emparejamientos. Si el teléfono o reloj ya muestra el emparejamiento pero aquí no pasa nada, puede que el dispositivo no aporte IRK (no sirve para el desbloqueo automático); cierra esta ventana y pulsa «Actualizar lista» para comprobarlo.</value></data>
+  <data name="Pair_StopAdvertising" xml:space="preserve"><value>Detener anuncio</value></data>
+  <data name="Pair_StopScan" xml:space="preserve"><value>Detener búsqueda</value></data>
+  <data name="Pair_Succeeded" xml:space="preserve"><value>Emparejado correctamente.</value></data>
+  <data name="Pair_SucceededTitle" xml:space="preserve"><value>Emparejado correctamente</value></data>
+  <data name="Pair_Title" xml:space="preserve"><value>Emparejar un dispositivo nuevo</value></data>
+  <data name="Pair_UnnamedDevice" xml:space="preserve"><value>(dispositivo sin nombre)</value></data>
+  <data name="Pair_Unsupported" xml:space="preserve"><value>El método de emparejamiento que pide el dispositivo no es compatible (puede requerir contraseña o certificado). Usa la aplicación del fabricante.</value></data>
+  <data name="Pair_WaitResultFailed" xml:space="preserve"><value>Error al esperar el resultado del emparejamiento: {0}</value></data>
+  <data name="Pair_WaitTimeout" xml:space="preserve"><value>Se agotó la espera de la confirmación. Vuelve a intentarlo y completa la confirmación o el PIN en el aviso de este asistente.</value></data>
+  <data name="Prompt_AllowMessage" xml:space="preserve"><value>«{0}» quiere emparejarse con este PC. Al confirmarlo, Windows guarda el emparejamiento; no se abre Configuración.</value></data>
+  <data name="Prompt_AllowPairing" xml:space="preserve"><value>¿Permitir el emparejamiento?</value></data>
+  <data name="Prompt_ComparePin" xml:space="preserve"><value>Comprobar el PIN</value></data>
+  <data name="Prompt_ComparePinMessage" xml:space="preserve"><value>«{0}» muestra el PIN de abajo. Mira la pantalla del dispositivo: ¿coinciden?</value></data>
+  <data name="Prompt_CompleteConfirm" xml:space="preserve"><value>Completa la confirmación del emparejamiento.</value></data>
+  <data name="Prompt_Confirm" xml:space="preserve"><value>Confirmación de emparejamiento</value></data>
+  <data name="Prompt_DisplayPinMessage" xml:space="preserve"><value>Introduce en «{0}» el PIN que se muestra abajo y pulsa «Introducido en el dispositivo».</value></data>
+  <data name="Prompt_EnterDevicePin" xml:space="preserve"><value>Introduce el PIN del dispositivo</value></data>
+  <data name="Prompt_EnterPinOnDevice" xml:space="preserve"><value>Introduce el PIN en el dispositivo</value></data>
+  <data name="Prompt_EnteredOnDevice" xml:space="preserve"><value>Introducido en el dispositivo</value></data>
+  <data name="Prompt_Match" xml:space="preserve"><value>Coinciden</value></data>
+  <data name="Prompt_NoMatch" xml:space="preserve"><value>No coinciden</value></data>
+  <data name="Prompt_PinRequired" xml:space="preserve"><value>Introduce el PIN que muestra el dispositivo.</value></data>
+  <data name="Prompt_ProvidePinMessage" xml:space="preserve"><value>Introduce el PIN que muestra «{0}».</value></data>
+  <data name="Reload_Applied" xml:space="preserve"><value>El servicio aplicó la nueva configuración.</value></data>
+  <data name="Reload_AppliedWithFlags" xml:space="preserve"><value>El servicio aplicó la nueva configuración (dispositivo cambiado: {0}, credenciales cambiadas: {1}).</value></data>
+  <data name="Reload_Button" xml:space="preserve"><value>Volver a cargar</value></data>
+  <data name="Reload_DiscardMessage" xml:space="preserve"><value>La configuración se volverá a cargar del disco y se perderán los cambios sin guardar del formulario.</value></data>
+  <data name="Reload_DiscardTitle" xml:space="preserve"><value>¿Descartar los cambios sin guardar?</value></data>
+  <data name="Reload_FailedTitle" xml:space="preserve"><value>Error al volver a cargar</value></data>
+  <data name="Rules_ColCond" xml:space="preserve"><value>Condición</value></data>
+  <data name="Rules_ColEffect" xml:space="preserve"><value>Qué hace</value></data>
+  <data name="Rules_ColParam" xml:space="preserve"><value>Ajuste</value></data>
+  <data name="Rules_ColResult" xml:space="preserve"><value>Resultado</value></data>
+  <data name="Rules_ColValue" xml:space="preserve"><value>Valor</value></data>
+  <data name="Rules_DefaultValue" xml:space="preserve"><value>predet. {value}</value></data>
+  <data name="Rules_DefaultsBody" xml:space="preserve"><value>No se pudo leer la configuración del servicio (puede que no esté instalado). Cuando se instale y se guarde, aquí aparecerán los valores vigentes.</value></data>
+  <data name="Rules_DefaultsTitle" xml:space="preserve"><value>Se muestran los valores predeterminados.</value></data>
+  <data name="Rules_Desc" xml:space="preserve"><value>Todas las reglas: de desbloqueado al aviso de bloqueo, al bloqueo y al desbloqueo automático. Los valores salen de la configuración que usa el servicio y se actualizan al guardar.</value></data>
+  <data name="Rules_Edge_Confirm" xml:space="preserve"><value>{confirm} &lt; {lock}, o ×</value></data>
+  <data name="Rules_Edge_Depart" xml:space="preserve"><value>{prompt} &lt; {lock}</value></data>
+  <data name="Rules_Edge_Fail" xml:space="preserve"><value>Fallo / {timeout} s sin respuesta</value></data>
+  <data name="Rules_Edge_Leave" xml:space="preserve"><value>{prompt} &lt; {lock}</value></data>
+  <data name="Rules_Edge_Near" xml:space="preserve"><value>{ucount} &gt; {unlock}</value></data>
+  <data name="Rules_Edge_SnoozeIn" xml:space="preserve"><value>Rechazar {reject} s / Más tarde {snooze} min</value></data>
+  <data name="Rules_Edge_SnoozeOut" xml:space="preserve"><value>Fin del aplazamiento → Desbloqueado</value></data>
+  <data name="Rules_Edge_Success" xml:space="preserve"><value>Sesión iniciada</value></data>
+  <data name="Rules_Edge_Withdraw" xml:space="preserve"><value>{ucount} &gt; {lock}: se retira</value></data>
+  <data name="Rules_FlowHint" xml:space="preserve"><value>Pulsa un estado para ir a su sección</value></data>
+  <data name="Rules_FlowName" xml:space="preserve"><value>Diagrama de estados</value></data>
+  <data name="Rules_FlowTitle" xml:space="preserve"><value>Flujo de estados</value></data>
+  <data name="Rules_LiveOff" xml:space="preserve"><value>Sin conexión con el servicio</value></data>
+  <data name="Rules_LiveOn" xml:space="preserve"><value>Servicio ahora: {state}</value></data>
+  <data name="Rules_Nav" xml:space="preserve"><value>Reglas</value></data>
+  <data name="Rules_Now" xml:space="preserve"><value>Ahora</value></data>
+  <data name="Rules_P_confirm_Effect" xml:space="preserve"><value>Con el aviso en pantalla, {confirm} lecturas seguidas por debajo de {lock} bloquean</value></data>
+  <data name="Rules_P_confirm_Name" xml:space="preserve"><value>Lecturas para confirmar el bloqueo</value></data>
+  <data name="Rules_P_confirm_Value" xml:space="preserve"><value>{confirm}</value></data>
+  <data name="Rules_P_grace_Effect" xml:space="preserve"><value>Tras iniciarse el servicio o reanudarse el equipo, no se detectan salidas durante este tiempo</value></data>
+  <data name="Rules_P_grace_Name" xml:space="preserve"><value>Gracia al iniciar</value></data>
+  <data name="Rules_P_grace_Value" xml:space="preserve"><value>{grace} s</value></data>
+  <data name="Rules_P_interval_Effect" xml:space="preserve"><value>0 cuenta cada anuncio</value></data>
+  <data name="Rules_P_interval_Name" xml:space="preserve"><value>Intervalo de muestreo</value></data>
+  <data name="Rules_P_interval_Value" xml:space="preserve"><value>{interval} ms</value></data>
+  <data name="Rules_P_lock_Effect" xml:space="preserve"><value>Una lectura por debajo cuenta como «lejos»; con el aviso en pantalla, una lectura por encima significa «has vuelto»</value></data>
+  <data name="Rules_P_lock_Name" xml:space="preserve"><value>Umbral de bloqueo</value></data>
+  <data name="Rules_P_lock_Value" xml:space="preserve"><value>{lock} dBm</value></data>
+  <data name="Rules_P_prompt_Effect" xml:space="preserve"><value>Tras el disparo, {prompt} lecturas seguidas por debajo de {lock} muestran el aviso</value></data>
+  <data name="Rules_P_prompt_Name" xml:space="preserve"><value>Lecturas para mostrar el aviso</value></data>
+  <data name="Rules_P_prompt_Value" xml:space="preserve"><value>{prompt}</value></data>
+  <data name="Rules_P_reject_Effect" xml:space="preserve"><value>Sin avisos durante este tiempo</value></data>
+  <data name="Rules_P_reject_Name" xml:space="preserve"><value>Pausa tras «Rechazar»</value></data>
+  <data name="Rules_P_reject_Value" xml:space="preserve"><value>{reject} s</value></data>
+  <data name="Rules_P_snooze_Effect" xml:space="preserve"><value>Igual que arriba</value></data>
+  <data name="Rules_P_snooze_Name" xml:space="preserve"><value>Pausa tras «Más tarde»</value></data>
+  <data name="Rules_P_snooze_Value" xml:space="preserve"><value>{snooze} min</value></data>
+  <data name="Rules_P_timeout_Effect" xml:space="preserve"><value>Espera máxima del resultado del inicio de sesión tras enviar las credenciales</value></data>
+  <data name="Rules_P_timeout_Name" xml:space="preserve"><value>Espera del desbloqueo</value></data>
+  <data name="Rules_P_timeout_Value" xml:space="preserve"><value>{timeout} s</value></data>
+  <data name="Rules_P_ucount_Effect" xml:space="preserve"><value>Sirve para desbloquear (umbral {unlock}) y para retirar el aviso (umbral {lock})</value></data>
+  <data name="Rules_P_ucount_Name" xml:space="preserve"><value>Lecturas para confirmar el desbloqueo</value></data>
+  <data name="Rules_P_ucount_Value" xml:space="preserve"><value>{ucount}</value></data>
+  <data name="Rules_P_unlock_Effect" xml:space="preserve"><value>Tras bloquear, la lectura debe superarlo para contar como «cerca, se puede desbloquear»</value></data>
+  <data name="Rules_P_unlock_Name" xml:space="preserve"><value>Umbral de desbloqueo</value></data>
+  <data name="Rules_P_unlock_Value" xml:space="preserve"><value>{unlock} dBm</value></data>
+  <data name="Rules_S0_Lead" xml:space="preserve"><value>Son los valores que usa el servicio. Si alguno difiere del predeterminado, se muestra el predeterminado al lado.</value></data>
+  <data name="Rules_S0_Title" xml:space="preserve"><value>Ajustes vigentes</value></data>
+  <data name="Rules_S1_I1_K" xml:space="preserve"><value>Dispositivo de destino:</value></data>
+  <data name="Rules_S1_I1_V" xml:space="preserve"><value>la dirección coincide con la dirección de identidad de la configuración, o el IRK resuelve su dirección aleatoria.</value></data>
+  <data name="Rules_S1_I2_K" xml:space="preserve"><value>Señal válida:</value></data>
+  <data name="Rules_S1_I2_V" xml:space="preserve"><value>-127 o menos y +127 o más (incluido -128) significan «no medible» y se descartan.</value></data>
+  <data name="Rules_S1_I3_K" xml:space="preserve"><value>Intervalo de muestreo:</value></data>
+  <data name="Rules_S1_I3_V" xml:space="preserve"><value>si es mayor que 0, las lecturas contadas quedan al menos a esa distancia; ahora {interval} ms.</value></data>
+  <data name="Rules_S1_I4_K" xml:space="preserve"><value>Ritmo:</value></data>
+  <data name="Rules_S1_I4_V" xml:space="preserve"><value>el servicio evalúa una vez por segundo, solo con las lecturas nuevas; las lecturas se guardan hasta 120 s.</value></data>
+  <data name="Rules_S1_Title" xml:space="preserve"><value>Qué lecturas cuentan</value></data>
+  <data name="Rules_S2_I1_K" xml:space="preserve"><value>Disparo:</value></data>
+  <data name="Rules_S2_I1_V" xml:space="preserve"><value>una primera lectura que cruza el umbral inicia el lote y no cuenta.</value></data>
+  <data name="Rules_S2_I2_K" xml:space="preserve"><value>Completar:</value></data>
+  <data name="Rules_S2_I2_V" xml:space="preserve"><value>llegan N lecturas más y todas deben cruzar el umbral.</value></data>
+  <data name="Rules_S2_I3_K" xml:space="preserve"><value>Descartar:</value></data>
+  <data name="Rules_S2_I3_V" xml:space="preserve"><value>una sola lectura que no cumple anula el lote entero; se vuelve a empezar con el siguiente disparo.</value></data>
+  <data name="Rules_S2_I4_K" xml:space="preserve"><value>Lejos:</value></data>
+  <data name="Rules_S2_I4_V" xml:space="preserve"><value>estrictamente por debajo de {lock} ({lock} no cuenta).</value></data>
+  <data name="Rules_S2_I5_K" xml:space="preserve"><value>Cerca:</value></data>
+  <data name="Rules_S2_I5_V" xml:space="preserve"><value>estrictamente por encima del umbral, con 3 s como máximo entre lecturas. Retirar el aviso usa {lock}; el desbloqueo automático usa {unlock}.</value></data>
+  <data name="Rules_S2_I6_K" xml:space="preserve"><value>Silencio:</value></data>
+  <data name="Rules_S2_I6_V" xml:space="preserve"><value>huecos de hasta 3 s no cuentan. Después, se añade un valor de silencio de -127 por segundo al lote de salida solo si la última lectura ya estaba por debajo de {lock}, o si no llegó nada durante 60 s.</value></data>
+  <data name="Rules_S2_I7_V" xml:space="preserve"><value>Cada cambio de estado vacía el lote en curso.</value></data>
+  <data name="Rules_S2_Title" xml:space="preserve"><value>Regla básica: todo el lote debe cumplir</value></data>
+  <data name="Rules_S3_I1_V" xml:space="preserve"><value>han pasado más de {grace} s desde que se inició el servicio o se reanudó el equipo;</value></data>
+  <data name="Rules_S3_I2_V" xml:space="preserve"><value>el dispositivo de destino se ha visto al menos una vez desde el inicio del servicio;</value></data>
+  <data name="Rules_S3_I3_V" xml:space="preserve"><value>una lectura de disparo por debajo de {lock} (o un disparo por silencio);</value></data>
+  <data name="Rules_S3_I4_V" xml:space="preserve"><value>después, {prompt} lecturas seguidas por debajo de {lock} (los valores de silencio cuentan).</value></data>
+  <data name="Rules_S3_Lead" xml:space="preserve"><value>Pasa a «Pendiente de bloqueo» cuando se cumple todo esto:</value></data>
+  <data name="Rules_S3_Title" xml:space="preserve"><value>Desbloqueado → aviso de bloqueo</value></data>
+  <data name="Rules_S4_I1_K" xml:space="preserve"><value>No termina el aviso:</value></data>
+  <data name="Rules_S4_I1_V" xml:space="preserve"><value>que el cuadro de diálogo llegue a su propio límite (el estado sigue siendo pendiente); cambiar el dispositivo de destino.</value></data>
+  <data name="Rules_S4_I2_K" xml:space="preserve"><value>Aplazado:</value></data>
+  <data name="Rules_S4_I2_V" xml:space="preserve"><value>se ignoran las lecturas; al acabar vuelve a Desbloqueado y empieza de nuevo la sección 3.</value></data>
+  <data name="Rules_S4_I3_K" xml:space="preserve"><value>Cómo bloquea:</value></data>
+  <data name="Rules_S4_I3_V" xml:space="preserve"><value>retira el aviso y pide al asistente que bloquee; si no lo confirma a tiempo, usa el comando del sistema.</value></data>
+  <data name="Rules_S4_Lead" xml:space="preserve"><value>El aviso no caduca solo. En orden de evaluación, cualquiera de estos casos lo termina:</value></data>
+  <data name="Rules_S4_R1_K" xml:space="preserve"><value>Has vuelto:</value></data>
+  <data name="Rules_S4_R1_Res" xml:space="preserve"><value>Aviso retirado → Desbloqueado</value></data>
+  <data name="Rules_S4_R1_V" xml:space="preserve"><value>un disparo por encima de {lock} y después {ucount} lecturas seguidas por encima de {lock}, con 3 s como máximo entre ellas.</value></data>
+  <data name="Rules_S4_R2_K" xml:space="preserve"><value>Salida confirmada:</value></data>
+  <data name="Rules_S4_R2_Res" xml:space="preserve"><value>Aviso retirado y bloqueo → Bloqueado · esperando</value></data>
+  <data name="Rules_S4_R2_V" xml:space="preserve"><value>tras aparecer el aviso, {confirm} lecturas nuevas seguidas por debajo de {lock} (los valores de silencio cuentan); no hace falta disparo.</value></data>
+  <data name="Rules_S4_R3_K" xml:space="preserve"><value>Respuesta del usuario:</value></data>
+  <data name="Rules_S4_R3_Res" xml:space="preserve"><value>Aplazado, o bloqueo</value></data>
+  <data name="Rules_S4_R3_V" xml:space="preserve"><value>«Rechazar» pausa {reject} s; «No bloquear durante {snooze} min» pausa {snooze} min; cerrar con × bloquea al momento.</value></data>
+  <data name="Rules_S4_R4_K" xml:space="preserve"><value>Bloqueo manual:</value></data>
+  <data name="Rules_S4_R4_Res" xml:space="preserve"><value>Aviso retirado → Bloqueado · esperando</value></data>
+  <data name="Rules_S4_R4_V" xml:space="preserve"><value>Win+L y similares.</value></data>
+  <data name="Rules_S4_R5_K" xml:space="preserve"><value>Reanudación:</value></data>
+  <data name="Rules_S4_R5_Res" xml:space="preserve"><value>Aviso retirado → Desbloqueado</value></data>
+  <data name="Rules_S4_R5_V" xml:space="preserve"><value>el usuario no llegó a ver el aviso.</value></data>
+  <data name="Rules_S4_R6_K" xml:space="preserve"><value>Fallo de la verificación de credenciales:</value></data>
+  <data name="Rules_S4_R6_Res" xml:space="preserve"><value>Aviso retirado y notificación → Suspendido</value></data>
+  <data name="Rules_S4_R6_V" xml:space="preserve"><value>el usuario o la contraseña de la configuración se cambiaron por unos incorrectos y no pasaron la verificación al recargar.</value></data>
+  <data name="Rules_S4_R7_K" xml:space="preserve"><value>Sesión desbloqueada:</value></data>
+  <data name="Rules_S4_R7_Res" xml:space="preserve"><value>Aviso retirado → Desbloqueado</value></data>
+  <data name="Rules_S4_R7_V" xml:space="preserve"><value>muy raro; solo tras un bloqueo que el servicio no detectó.</value></data>
+  <data name="Rules_S4_Title" xml:space="preserve"><value>Pendiente de bloqueo → aviso retirado, o bloqueo</value></data>
+  <data name="Rules_S5_I1_V" xml:space="preserve"><value>en este estado no se envían credenciales, por fuerte que sea la señal;</value></data>
+  <data name="Rules_S5_I2_V" xml:space="preserve"><value>pasada la gracia de {grace} s, un disparo por debajo de {lock} y después {prompt} lecturas seguidas por debajo de {lock} (los valores de silencio cuentan).</value></data>
+  <data name="Rules_S5_Lead" xml:space="preserve"><value>Después de Win+L hay que irse de verdad una vez para que el desbloqueo automático sea posible.</value></data>
+  <data name="Rules_S5_Title" xml:space="preserve"><value>Bloqueado · esperando → Bloqueado · vigilando</value></data>
+  <data name="Rules_S6_I1_K" xml:space="preserve"><value>Cerca:</value></data>
+  <data name="Rules_S6_I1_V" xml:space="preserve"><value>un disparo por encima de {unlock} y después {ucount} lecturas seguidas por encima de {unlock}, con 3 s como máximo entre ellas; entonces se envían las credenciales. Las señales entre {lock} y {unlock} nunca desbloquean.</value></data>
+  <data name="Rules_S6_I2_K" xml:space="preserve"><value>Antes de enviar:</value></data>
+  <data name="Rules_S6_I2_V" xml:space="preserve"><value>el proveedor de credenciales de la pantalla de bloqueo está conectado; no ha habido 3 envíos seguidos sin resultado (se reinicia al desbloquear a mano o cambiar las credenciales).</value></data>
+  <data name="Rules_S6_I3_K" xml:space="preserve"><value>Resultado:</value></data>
+  <data name="Rules_S6_I3_V" xml:space="preserve"><value>correcto → Desbloqueado; contraseña incorrecta, caducada o que hay que cambiar, o cuenta bloqueada → Suspendido con notificación; cualquier otro fallo, o sin resultado en {timeout} s → vuelve a vigilar y reintenta.</value></data>
+  <data name="Rules_S6_Title" xml:space="preserve"><value>Bloqueado · vigilando → desbloqueo automático</value></data>
+  <data name="Rules_S7_I1_K" xml:space="preserve"><value>Desbloqueo manual:</value></data>
+  <data name="Rules_S7_I1_V" xml:space="preserve"><value>todo salvo Suspendido vuelve a Desbloqueado y reinicia el contador de envíos.</value></data>
+  <data name="Rules_S7_I2_K" xml:space="preserve"><value>Bloqueo manual:</value></data>
+  <data name="Rules_S7_I2_V" xml:space="preserve"><value>todo salvo Suspendido pasa a Bloqueado · esperando; si hay un aviso, se retira antes.</value></data>
+  <data name="Rules_S7_I3_K" xml:space="preserve"><value>Reanudación:</value></data>
+  <data name="Rules_S7_I3_V" xml:space="preserve"><value>se borra el historial de lecturas, vuelve la gracia de {grace} s y se anulan los lotes en curso.</value></data>
+  <data name="Rules_S7_I4_K" xml:space="preserve"><value>Fallo de la verificación de credenciales:</value></data>
+  <data name="Rules_S7_I4_V" xml:space="preserve"><value>pasa a Suspendido con notificación; si hay un aviso, se retira antes.</value></data>
+  <data name="Rules_S7_I5_K" xml:space="preserve"><value>Suspendido:</value></data>
+  <data name="Rules_S7_I5_V" xml:space="preserve"><value>ignora las lecturas y los bloqueos y desbloqueos; solo se reanuda cuando unas credenciales correctas pasan la verificación.</value></data>
+  <data name="Rules_S7_Title" xml:space="preserve"><value>Se aplica siempre</value></data>
+  <data name="Rules_S8_B1_1" xml:space="preserve"><value>Te levantas y te vas; la lectura baja a {trig}: es el disparo y no cuenta.</value></data>
+  <data name="Rules_S8_B1_2" xml:space="preserve"><value>Las siguientes {prompt} lecturas están por debajo de {lock} → aparece el aviso.</value></data>
+  <data name="Rules_S8_B1_3" xml:space="preserve"><value>{confirm} lecturas más por debajo de {lock} tras el aviso (un valor de silencio por segundo cuando ya no hay señal) → se bloquea.</value></data>
+  <data name="Rules_S8_B1_4" xml:space="preserve"><value>Sigue sin señal; {prompt} valores de silencio más → listo para desbloquear.</value></data>
+  <data name="Rules_S8_B1_5" xml:space="preserve"><value>Vuelves; la lectura sube a {back}: disparo. Las {ucount} siguientes superan {unlock} → se envían las credenciales.</value></data>
+  <data name="Rules_S8_B1_6" xml:space="preserve"><value>Inicio de sesión correcto → Desbloqueado.</value></data>
+  <data name="Rules_S8_B1_Title" xml:space="preserve"><value>Irse, bloquear, volver y desbloquear</value></data>
+  <data name="Rules_S8_B2_1" xml:space="preserve"><value>El aviso está en pantalla; vuelves un poco y la lectura sube a {w1}: es el disparo.</value></data>
+  <data name="Rules_S8_B2_2" xml:space="preserve"><value>Las {ucount} lecturas siguientes superan {lock} (por ejemplo {w2}, {w3}, {w4}) → se retira el aviso y vuelve a Desbloqueado sin bloquear.</value></data>
+  <data name="Rules_S8_B2_Title" xml:space="preserve"><value>Aparece el aviso y vuelves</value></data>
+  <data name="Rules_S8_Title" xml:space="preserve"><value>Ejemplo con los ajustes actuales</value></data>
+  <data name="Rules_SrcDefault" xml:space="preserve"><value>Valores predeterminados</value></data>
+  <data name="Rules_SrcLive" xml:space="preserve"><value>Configuración vigente · leída {time}</value></data>
+  <data name="Rules_Sub_LockedArmed" xml:space="preserve"><value>Se desbloquea al volver</value></data>
+  <data name="Rules_Sub_LockedWaitingDeparture" xml:space="preserve"><value>Hay que irse una vez</value></data>
+  <data name="Rules_Sub_PendingLock" xml:space="preserve"><value>Aviso en pantalla</value></data>
+  <data name="Rules_Sub_Snoozed" xml:space="preserve"><value>Sin avisos por ahora</value></data>
+  <data name="Rules_Sub_Suspended" xml:space="preserve"><value>Desde cualquier estado</value></data>
+  <data name="Rules_Sub_UnlockPending" xml:space="preserve"><value>Esperando el inicio de sesión</value></data>
+  <data name="Rules_Sub_Unlocked" xml:space="preserve"><value>Uso normal</value></data>
+  <data name="Rules_Title" xml:space="preserve"><value>Reglas</value></data>
+  <data name="Save_ConfirmTitle" xml:space="preserve"><value>Confirmar el guardado de los cambios</value></data>
+  <data name="Save_FailedTitle" xml:space="preserve"><value>Error al guardar</value></data>
+  <data name="Save_InvalidMessage" xml:space="preserve"><value>{0} problemas; corrige los campos marcados en rojo y vuelve a intentarlo.</value></data>
+  <data name="Save_InvalidTitle" xml:space="preserve"><value>No se guardó: la validación falló</value></data>
+  <data name="Save_NothingMessage" xml:space="preserve"><value>El formulario coincide con el archivo de configuración.</value></data>
+  <data name="Save_NothingTitle" xml:space="preserve"><value>No hay cambios que guardar</value></data>
+  <data name="Save_RejectedFallback" xml:space="preserve"><value>La validación falló; se conservó la configuración anterior.</value></data>
+  <data name="Save_RejectedTitle" xml:space="preserve"><value>El servicio rechazó la nueva configuración (se conservó la anterior)</value></data>
+  <data name="Save_ReloadedTitle" xml:space="preserve"><value>Configuración recargada</value></data>
+  <data name="Save_SavedTitle" xml:space="preserve"><value>Configuración guardada</value></data>
+  <data name="Save_ServiceStopped" xml:space="preserve"><value>El servicio está detenido; la nueva configuración se aplicará cuando se inicie.</value></data>
+  <data name="Save_ServiceUnknown" xml:space="preserve"><value>No se pudo confirmar que el servicio esté en ejecución; la nueva configuración se aplicará cuando lo esté.</value></data>
+  <data name="Save_UnconfirmedMessage" xml:space="preserve"><value>El servicio no confirmó la recarga en 5 s (puede que no esté en ejecución). El archivo se escribió; si el servicio está en ejecución, reinícialo para aplicar el cambio.</value></data>
+  <data name="Save_UnconfirmedTitle" xml:space="preserve"><value>Recarga no confirmada</value></data>
+  <data name="Save_WaitingReload" xml:space="preserve"><value>Esperando a que el servicio confirme la recarga (hasta 5 s)…</value></data>
+  <data name="Save_WrittenTitle" xml:space="preserve"><value>Configuración escrita</value></data>
+  <data name="Scan_Stopped" xml:space="preserve"><value>La búsqueda se detuvo ({0}).</value></data>
+  <data name="Scan_noAdapter" xml:space="preserve"><value>No hay adaptador Bluetooth compatible con BLE</value></data>
+  <data name="Scan_radioOff" xml:space="preserve"><value>Bluetooth está desactivado</value></data>
+  <data name="Scan_startFailed" xml:space="preserve"><value>No se pudo iniciar el escaneo</value></data>
+  <data name="Scan_unknown" xml:space="preserve"><value>El escaneo no está disponible</value></data>
+  <data name="Settings_AppTheme" xml:space="preserve"><value>Tema de la aplicación</value></data>
+  <data name="Settings_AppThemeHint" xml:space="preserve"><value>Se aplica al momento a toda la ventana y se mantiene la próxima vez.</value></data>
+  <data name="Settings_Appearance" xml:space="preserve"><value>Apariencia</value></data>
+  <data name="Settings_AutoStart" xml:space="preserve"><value>Iniciar automáticamente al iniciar sesión</value></data>
+  <data name="Settings_AutoStartEnabled" xml:space="preserve"><value>Activado</value></data>
+  <data name="Settings_AutoStartHint" xml:space="preserve"><value>Una tarea programada que registra el instalador lo inicia con permisos completos y sin aviso de UAC. Al cerrar la ventana se minimiza a la bandeja.</value></data>
+  <data name="Settings_AutoStartMissing" xml:space="preserve"><value>No registrado (ejecuta el script de instalación)</value></data>
+  <data name="Settings_AutoStartUnknown" xml:space="preserve"><value>No se pudo comprobar</value></data>
+  <data name="Settings_Checking" xml:space="preserve"><value>Comprobando…</value></data>
+  <data name="Settings_ConfigFile" xml:space="preserve"><value>Archivo de configuración</value></data>
+  <data name="Settings_FileLocations" xml:space="preserve"><value>Ubicación de los archivos</value></data>
+  <data name="Settings_InstallDir" xml:space="preserve"><value>Carpeta de instalación</value></data>
+  <data name="Settings_LanguageDescription" xml:space="preserve"><value>Se aplica al momento al Gestor, a los avisos de bloqueo, a las notificaciones y a las nuevas entradas del registro.</value></data>
+  <data name="Settings_LanguageGroup" xml:space="preserve"><value>Idioma</value></data>
+  <data name="Settings_LanguageHeader" xml:space="preserve"><value>Idioma de la interfaz</value></data>
+  <data name="Settings_LanguageNeedsService" xml:space="preserve"><value>Primero instala el servicio: el idioma se guarda en su configuración.</value></data>
+  <data name="Settings_LanguageSaveFailed" xml:space="preserve"><value>No se pudo guardar el idioma: {0}</value></data>
+  <data name="Settings_OpenFolder" xml:space="preserve"><value>Abrir carpeta</value></data>
+  <data name="Settings_Startup" xml:space="preserve"><value>Inicio</value></data>
+  <data name="Settings_Subtitle" xml:space="preserve"><value>Apariencia e inicio del propio Gestor. Los parámetros del servicio se cambian en la página Configuración.</value></data>
+  <data name="Settings_Title" xml:space="preserve"><value>Ajustes</value></data>
+  <data name="Shell_DeviceGlance" xml:space="preserve"><value>Resumen del dispositivo de destino</value></data>
+  <data name="Shell_FooterNav" xml:space="preserve"><value>Navegación inferior</value></data>
+  <data name="Shell_MainNav" xml:space="preserve"><value>Navegación principal</value></data>
+  <data name="Svc_AccessDenied5" xml:space="preserve"><value>Acceso denegado (Win32 5)</value></data>
+  <data name="Svc_AccessDeniedAdmin" xml:space="preserve"><value>Acceso denegado (Win32 5): se requieren permisos de administrador</value></data>
+  <data name="Svc_NotInstalled1060" xml:space="preserve"><value>El servicio no está instalado (Win32 1060)</value></data>
+  <data name="Svc_RestartTimeout" xml:space="preserve"><value>Se agotó la espera del reinicio del servicio (15 s)</value></data>
+  <data name="Svc_StartTimeout" xml:space="preserve"><value>Se agotó la espera del inicio del servicio (15 s)</value></data>
+  <data name="Svc_StopTimeout" xml:space="preserve"><value>Se agotó la espera de la detención del servicio (15 s)</value></data>
+  <data name="Theme_Dark" xml:space="preserve"><value>Oscuro</value></data>
+  <data name="Theme_Light" xml:space="preserve"><value>Claro</value></data>
+  <data name="Theme_System" xml:space="preserve"><value>Sistema</value></data>
+  <data name="Tray_Exit" xml:space="preserve"><value>Salir del Gestor</value></data>
+  <data name="Tray_ExitHint" xml:space="preserve"><value>El servicio sigue funcionando en segundo plano</value></data>
+  <data name="Tray_OperationFailed" xml:space="preserve"><value>Error en la operación del servicio</value></data>
+  <data name="Tray_ViewLogs" xml:space="preserve"><value>Ver registros</value></data>
+  <data name="Unit_Milliseconds" xml:space="preserve"><value>ms</value></data>
+  <data name="Unit_Minutes" xml:space="preserve"><value>min</value></data>
+  <data name="Unit_Readings" xml:space="preserve"><value>lecturas</value></data>
+  <data name="Unit_Seconds" xml:space="preserve"><value>s</value></data>
+  <data name="Unpair_AlreadyUnpaired" xml:space="preserve"><value>Este dispositivo ya estaba desemparejado.</value></data>
+  <data name="Unpair_Cancelled" xml:space="preserve"><value>Desemparejamiento cancelado.</value></data>
+  <data name="Unpair_ClearFailedMessage" xml:space="preserve"><value>{0}
+Para que el IRK anterior no siga vigente, se intentó detener el servicio; revisa el archivo de configuración y vuelve a intentarlo.</value></data>
+  <data name="Unpair_ClearFailedTitle" xml:space="preserve"><value>Desemparejado, pero no se pudo vaciar la configuración</value></data>
+  <data name="Unpair_ClearedMessage" xml:space="preserve"><value>Se quitó el emparejamiento de Windows; se vaciaron el IRK y la dirección de la configuración y el desbloqueo automático está en pausa (el servicio sigue en marcha para leer el almacén de emparejamientos). Empareja un dispositivo nuevo y guarda.</value></data>
+  <data name="Unpair_ClearedTitle" xml:space="preserve"><value>Desemparejado y dispositivo actual vaciado</value></data>
+  <data name="Unpair_ConfirmActive" xml:space="preserve"><value>¿Quitar el emparejamiento Bluetooth de Windows con «{0}»?
+
+Es el dispositivo que usa la configuración actual: también se vaciarán su IRK y su dirección y el desbloqueo automático se pausará (el servicio sigue en marcha para leer el almacén de emparejamientos).</value></data>
+  <data name="Unpair_ConfirmDirtySuffix" xml:space="preserve"><value>
+
+También se perderán tus otros cambios sin guardar.</value></data>
+  <data name="Unpair_ConfirmInactive" xml:space="preserve"><value>¿Quitar el emparejamiento Bluetooth de Windows con «{0}»?
+
+La configuración actual del servicio no cambia.</value></data>
+  <data name="Unpair_DoneConfigUnaffected" xml:space="preserve"><value>Se quitó el dispositivo de Windows; la configuración actual no cambia.</value></data>
+  <data name="Unpair_DoneKeptIrk" xml:space="preserve"><value>Se quitó el dispositivo de Windows; el formulario aún conserva su IRK (sin guardar) y el servicio sigue con la configuración del disco. Si ya no lo usas, elige otro dispositivo y guarda.</value></data>
+  <data name="Unpair_DoneTitle" xml:space="preserve"><value>Desemparejado</value></data>
+  <data name="Unpair_Failed" xml:space="preserve"><value>Error al desemparejar: {0}</value></data>
+  <data name="Unpair_FailedStatus" xml:space="preserve"><value>Error al desemparejar ({0}).</value></data>
+  <data name="Unpair_FailedTitle" xml:space="preserve"><value>Error al desemparejar</value></data>
+  <data name="Unpair_NoInterface" xml:space="preserve"><value>No se pudo leer la interfaz de emparejamiento de este dispositivo.</value></data>
+  <data name="Unpair_NotFound" xml:space="preserve"><value>Esta dirección no está entre los dispositivos emparejados con Windows; puede que ya se haya desemparejado. Pulsa «Actualizar lista» para comprobarlo.</value></data>
+  <data name="Unpair_NotPaired" xml:space="preserve"><value>Windows indica que este dispositivo no está emparejado (puede que se quitara en Configuración). Pulsa «Actualizar lista» para comprobarlo.</value></data>
+  <data name="Unpair_ServiceStoppedMessage" xml:space="preserve"><value>Se vaciaron el IRK y la dirección de la configuración (desbloqueo automático en pausa). Para leer el almacén con el asistente de emparejamiento, inicia primero el servicio; también puedes elegir otro dispositivo emparejado de la lista.</value></data>
+  <data name="Unpair_ServiceStoppedTitle" xml:space="preserve"><value>Desemparejado, pero el servicio no está en ejecución</value></data>
+  <data name="Unpair_Succeeded" xml:space="preserve"><value>Se quitó el emparejamiento Bluetooth de Windows.</value></data>
+  <data name="Zone_Away" xml:space="preserve"><value>Zona lejana</value></data>
+  <data name="Zone_Hold" xml:space="preserve"><value>Zona de espera</value></data>
+  <data name="Zone_Near" xml:space="preserve"><value>Zona cercana</value></data>
+</root>

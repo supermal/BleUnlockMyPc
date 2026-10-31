@@ -1,6 +1,7 @@
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Core.Bonds;
 
@@ -10,7 +11,7 @@ public sealed record BleBondDevice(string Address, string? Name, string Irk)
     /// <summary>下拉框显示文本：名字（地址）；没有名字时只显示地址。</summary>
     public string DisplayName => string.IsNullOrWhiteSpace(Name)
         ? Address
-        : $"{Name}（{Address}）";
+        : string.Format(CoreStrings.Bond_NameWithAddress, Name, Address);
 }
 
 /// <summary>读取结果；<c>Error</c> 非空表示本次读取失败（可直接呈现给用户）。</summary>
@@ -80,7 +81,7 @@ public sealed class BleBondClient
             var line = await reader.ReadLineAsync(timeoutCts.Token).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(line))
             {
-                return new BleBondListResult([], "服务没有返回数据。");
+                return new BleBondListResult([], CoreStrings.Bond_NoData);
             }
 
             BondResponse? response;
@@ -90,17 +91,17 @@ public sealed class BleBondClient
             }
             catch (JsonException)
             {
-                return new BleBondListResult([], "服务返回了无法解析的数据。");
+                return new BleBondListResult([], CoreStrings.Bond_Unparseable);
             }
 
             if (response is null || !string.Equals(response.T, "res", StringComparison.Ordinal))
             {
-                return new BleBondListResult([], "服务返回了无效响应。");
+                return new BleBondListResult([], CoreStrings.Bond_InvalidResponse);
             }
 
             if (!response.Ok)
             {
-                return new BleBondListResult([], response.Error ?? "服务返回了错误。");
+                return new BleBondListResult([], response.Error ?? CoreStrings.Bond_ServiceError);
             }
 
             var devices = (response.Devices ?? [])
@@ -112,19 +113,19 @@ public sealed class BleBondClient
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return new BleBondListResult([], "读取超时（服务可能未运行）。");
+            return new BleBondListResult([], CoreStrings.Bond_Timeout);
         }
         catch (UnauthorizedAccessException ex)
         {
-            return new BleBondListResult([], $"没有权限连接服务管道（需要管理员）：{ex.Message}");
+            return new BleBondListResult([], string.Format(CoreStrings.Bond_AccessDenied, ex.Message));
         }
         catch (IOException ex)
         {
-            return new BleBondListResult([], $"无法连接服务：{ex.Message}");
+            return new BleBondListResult([], string.Format(CoreStrings.Bond_ConnectFailed, ex.Message));
         }
         catch (Exception ex)
         {
-            return new BleBondListResult([], $"读取已配对设备失败：{ex.Message}");
+            return new BleBondListResult([], string.Format(CoreStrings.Bond_ReadFailed, ex.Message));
         }
     }
 

@@ -1,5 +1,6 @@
 using System.Globalization;
 using AutoUnlockManager.Core.Management;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Core.Telemetry;
 
@@ -28,7 +29,7 @@ public sealed record TrayTooltip(string Line1, string Line2)
 
 public static class TrayStates
 {
-    private const string Prefix = "AutoUnlock：";
+    private static string Prefix => CoreStrings.Tray_Prefix;
 
     public static TrayState Resolve(bool? serviceRunning, bool connected, string? stateName, SnapshotBatch? batch)
     {
@@ -61,30 +62,30 @@ public static class TrayStates
         string? lastMatchText,
         SnapshotBatch? batch) => state switch
         {
-            TrayState.Stopped => new(Prefix + "服务已停止", "右键选择「启动服务」即可恢复"),
-            TrayState.Connecting => new(Prefix + "正在连接服务…", "服务启动后会自动连接"),
-            TrayState.Suspended => new(Prefix + "自动解锁已暂停，请检查密码", "在「配置」页更新密码后自动恢复"),
+            TrayState.Stopped => new(Prefix + CoreStrings.Tray_StoppedTitle, CoreStrings.Tray_StoppedHint),
+            TrayState.Connecting => new(Prefix + CoreStrings.Tray_ConnectingTitle, CoreStrings.Tray_ConnectingHint),
+            TrayState.Suspended => new(Prefix + CoreStrings.Tray_SuspendedTitle, CoreStrings.Tray_SuspendedHint),
             TrayState.Leaving => new(
                 Prefix + LeavingTitle(batch),
                 lockDbm is { } l
-                    ? $"{Signal(deviceName, dbm)}，低于锁定阈值 {Whole(l)}"
+                    ? string.Format(CoreStrings.Tray_BelowLockThreshold, Signal(deviceName, dbm), Whole(l))
                     : Signal(deviceName, dbm)),
             _ => new(
                 Prefix + TelemetryFormat.StateName(stateName),
                 lastMatchText is { Length: > 0 }
-                    ? $"{Signal(deviceName, dbm)}，最近匹配 {lastMatchText}"
+                    ? string.Format(CoreStrings.Tray_LastMatch, Signal(deviceName, dbm), lastMatchText)
                     : Signal(deviceName, dbm)),
         };
 
     private static string LeavingTitle(SnapshotBatch? batch) => batch switch
     {
-        { Kind: "lockConfirm" } b => $"锁屏确认 {b.N}/{b.Of}",
-        { Kind: "leave" } b => $"离开确认 {b.N}/{b.Of}",
+        { Kind: "lockConfirm" } b => string.Format(CoreStrings.Tray_LockConfirm, b.N, b.Of),
+        { Kind: "leave" } b => string.Format(CoreStrings.Tray_LeaveConfirm, b.N, b.Of),
         _ => TelemetryFormat.StateName("PendingLock"),
     };
 
     private static string Signal(string deviceName, double? dbm) =>
-        dbm is { } v ? $"{deviceName} {Whole(v)} dBm" : $"{deviceName}，暂无信号";
+        dbm is { } v ? string.Format(CoreStrings.Tray_SignalDbm, deviceName, Whole(v)) : string.Format(CoreStrings.Tray_NoSignal, deviceName);
 
     private static string Whole(double value) =>
         Math.Round(value, MidpointRounding.AwayFromZero).ToString("0", CultureInfo.InvariantCulture);

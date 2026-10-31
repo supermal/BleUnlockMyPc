@@ -5,6 +5,7 @@ using System.Windows.Media;
 using AutoUnlockManager.ViewModels;
 using Microsoft.Win32;
 using Wpf.Ui.Controls;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Views;
 
@@ -88,7 +89,7 @@ public partial class LogsPage : UserControl
         }
         catch (Exception ex)
         {
-            ViewModel.ShowBanner(InfoBarSeverity.Error, "刷新失败", ex.Message);
+            ViewModel.ShowBanner(InfoBarSeverity.Error, UiStrings.Logs_RefreshFailed, ex.Message);
         }
     }
 
@@ -100,7 +101,7 @@ public partial class LogsPage : UserControl
         }
         catch (Exception ex)
         {
-            ViewModel.ShowBanner(InfoBarSeverity.Error, "打开文件夹失败", ex.Message);
+            ViewModel.ShowBanner(InfoBarSeverity.Error, UiStrings.OpenFolder_FailedTitle, ex.Message);
         }
     }
 
@@ -109,7 +110,7 @@ public partial class LogsPage : UserControl
         var dialog = new SaveFileDialog
         {
             FileName = $"autounlock-logs-{DateTime.Now:yyyyMMdd-HHmmss}.log",
-            Filter = "日志文件 (*.log)|*.log|文本文件 (*.txt)|*.txt",
+            Filter = UiStrings.Logs_ExportFilter,
             DefaultExt = ".log",
         };
 
@@ -122,11 +123,11 @@ public partial class LogsPage : UserControl
         {
             var count = ViewModel.VisibleCount;
             await File.WriteAllTextAsync(dialog.FileName, ViewModel.BuildExportText(), new UTF8Encoding(false));
-            ViewModel.ShowBanner(InfoBarSeverity.Success, "已导出日志", $"已导出 {count:N0} 行到：{dialog.FileName}");
+            ViewModel.ShowBanner(InfoBarSeverity.Success, UiStrings.Logs_ExportedTitle, string.Format(UiStrings.Logs_ExportedMessage, count, dialog.FileName));
         }
         catch (Exception ex)
         {
-            ViewModel.ShowBanner(InfoBarSeverity.Error, "导出失败", ex.Message);
+            ViewModel.ShowBanner(InfoBarSeverity.Error, UiStrings.Overview_ExportFailed, ex.Message);
         }
     }
 

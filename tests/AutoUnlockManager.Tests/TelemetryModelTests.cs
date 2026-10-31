@@ -14,7 +14,7 @@ public sealed class TelemetryModelTests
         SnapshotBatch? batch = null) =>
         new("snapshot", 1, 1, gen, tsMs, 60,
             new SnapshotState(state, 0),
-            new SnapshotScan("BLE 扫描已启动", null),
+            new SnapshotScan("BLE 扫描已启动", null, "running"),
             new SnapshotConnection(true),
             new SnapshotConnection(false),
             new SnapshotThresholds(-80, -45, 3, 5, 10),

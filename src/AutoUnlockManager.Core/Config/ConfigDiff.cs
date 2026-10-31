@@ -1,4 +1,5 @@
 using AutoUnlockService.Config;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Core.Config;
 
@@ -111,49 +112,49 @@ public static class ConfigDiff
         var first = changes[0];
         if (changes.Count > 1)
         {
-            return $"{first.DisplayName}等 {changes.Count} 项";
+            return string.Format(CoreStrings.Diff_FirstAndMore, first.DisplayName, changes.Count);
         }
 
         return first.IsSensitive || first.Field == ConfigFields.DeviceIrk
-            ? $"{first.DisplayName} 已修改"
+            ? string.Format(CoreStrings.Diff_FieldModified, first.DisplayName)
             : $"{first.DisplayName} {first.OldText} → {first.NewText}";
     }
 
     public static string GetDisplayName(string field) => field switch
     {
-        ConfigFields.DeviceIrk => "设备 IRK",
-        ConfigFields.DeviceIrkByteOrder => "IRK 字节序",
-        ConfigFields.DeviceIdentityAddress => "设备地址",
-        ConfigFields.CredentialsUserName => "凭据用户名",
-        ConfigFields.CredentialsPassword => "凭据密码",
-        ConfigFields.ProximityLockThresholdDbm => "锁定阈值（dBm）",
-        ConfigFields.ProximityUnlockThresholdDbm => "解锁阈值（dBm）",
-        ConfigFields.ProximityUnlockSampleCount => "解锁确认个数",
-        ConfigFields.ProximityLockPromptSampleCount => "弹窗触发个数",
-        ConfigFields.ProximityLockConfirmSampleCount => "锁屏确认个数",
-        ConfigFields.ProximitySampleIntervalMs => "RSSI 采样间隔（毫秒）",
-        ConfigFields.ProximityStartupGraceSeconds => "启动宽限（秒）",
-        ConfigFields.ProximityUnlockPendingTimeoutSeconds => "解锁等待超时（秒）",
-        ConfigFields.NotificationMode => "通知方式",
-        ConfigFields.NotificationRejectSnoozeSeconds => "拒绝后暂缓（秒）",
-        ConfigFields.NotificationSnoozeMinutes => "稍后提醒（分钟）",
+        ConfigFields.DeviceIrk => CoreStrings.Field_DeviceIrk,
+        ConfigFields.DeviceIrkByteOrder => CoreStrings.Field_IrkByteOrder,
+        ConfigFields.DeviceIdentityAddress => CoreStrings.Field_DeviceAddress,
+        ConfigFields.CredentialsUserName => CoreStrings.Field_UserName,
+        ConfigFields.CredentialsPassword => CoreStrings.Field_Password,
+        ConfigFields.ProximityLockThresholdDbm => CoreStrings.Field_LockThreshold,
+        ConfigFields.ProximityUnlockThresholdDbm => CoreStrings.Field_UnlockThreshold,
+        ConfigFields.ProximityUnlockSampleCount => CoreStrings.Field_UnlockSampleCount,
+        ConfigFields.ProximityLockPromptSampleCount => CoreStrings.Field_LockPromptSampleCount,
+        ConfigFields.ProximityLockConfirmSampleCount => CoreStrings.Field_LockConfirmSampleCount,
+        ConfigFields.ProximitySampleIntervalMs => CoreStrings.Field_SampleInterval,
+        ConfigFields.ProximityStartupGraceSeconds => CoreStrings.Field_StartupGrace,
+        ConfigFields.ProximityUnlockPendingTimeoutSeconds => CoreStrings.Field_UnlockPendingTimeout,
+        ConfigFields.NotificationMode => CoreStrings.Field_NotificationMode,
+        ConfigFields.NotificationRejectSnoozeSeconds => CoreStrings.Field_RejectSnooze,
+        ConfigFields.NotificationSnoozeMinutes => CoreStrings.Field_Snooze,
         _ => field,
     };
 
     /// <summary>IRK 字节序中文标签（表单下拉与差异共用）。</summary>
     public static string FormatIrkByteOrder(IrkByteOrder value) => value switch
     {
-        IrkByteOrder.Auto => "自动检测（Auto）",
-        IrkByteOrder.Normal => "正序（Normal）",
-        IrkByteOrder.Reversed => "反序（Reversed）",
+        IrkByteOrder.Auto => CoreStrings.ByteOrder_Auto,
+        IrkByteOrder.Normal => CoreStrings.ByteOrder_Normal,
+        IrkByteOrder.Reversed => CoreStrings.ByteOrder_Reversed,
         _ => value.ToString(),
     };
 
     /// <summary>通知方式中文标签。</summary>
     public static string FormatNotifierMode(NotifierMode value) => value switch
     {
-        NotifierMode.Toast => "系统通知（Toast）",
-        NotifierMode.Dialog => "对话框（Dialog）",
+        NotifierMode.Toast => CoreStrings.Mode_Toast,
+        NotifierMode.Dialog => CoreStrings.Mode_Dialog,
         _ => value.ToString(),
     };
 
@@ -177,7 +178,7 @@ public static class ConfigDiff
 
     /// <summary>差异比较已完成解密：仅无法解密的密文兜底显示「（已加密）」，其余按敏感键截断。</summary>
     private static string FormatKeyOrProtected(string value)
-        => SecretProtector.IsProtected(value) ? "（已加密）" : FormatKey(value);
+        => SecretProtector.IsProtected(value) ? CoreStrings.Value_Encrypted : FormatKey(value);
 
     /// <summary>敏感键截断显示：前 8…后 4（过短则原样）。</summary>
     private static string FormatKey(string? value)
@@ -185,14 +186,14 @@ public static class ConfigDiff
         value ??= ""; // 防御：加载/表单路径已收敛 null（评审 I1），此处兜底不抛
         if (value.Length == 0)
         {
-            return "（未设置）";
+            return CoreStrings.Value_NotSet;
         }
 
         return value.Length <= 12 ? value : $"{value[..8]}…{value[^4..]}";
     }
 
     private static string FormatAddress(ulong? normalized)
-        => ConfigValidator.FormatAddress(normalized) ?? "（未设置）";
+        => ConfigValidator.FormatAddress(normalized) ?? CoreStrings.Value_NotSet;
 
-    private static string FormatText(string? value) => string.IsNullOrEmpty(value) ? "（空）" : value;
+    private static string FormatText(string? value) => string.IsNullOrEmpty(value) ? CoreStrings.Value_Empty : value;
 }

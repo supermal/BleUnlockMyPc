@@ -19,12 +19,12 @@ internal sealed class FakeHelperClient : IAsyncDisposable
         _writer = new StreamWriter(pipe, new UTF8Encoding(false), leaveOpen: true) { AutoFlush = true };
     }
 
-    public static async Task<FakeHelperClient> ConnectAsync(string pipeName, int sessionId = 1)
+    public static async Task<FakeHelperClient> ConnectAsync(string pipeName, int sessionId = 1, string? culture = null)
     {
         var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
         await pipe.ConnectAsync(10_000);
         var client = new FakeHelperClient(pipe);
-        await client.SendAsync(HelperProtocol.BuildHello(sessionId));
+        await client.SendAsync(HelperProtocol.BuildHello(sessionId, culture));
         return client;
     }
 

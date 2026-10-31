@@ -1,6 +1,7 @@
 using System.Security;
 using System.Text;
 using Microsoft.Win32;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Bonds;
 
@@ -40,7 +41,7 @@ public sealed class WindowsBondedDeviceSource : IBondedDeviceSource
             if (keys is null)
             {
                 return new BondedDeviceReadResult(Array.Empty<BondedBleDevice>(),
-                    $@"未找到注册表键 HKLM\{KeysPath}");
+                    string.Format(ServiceStrings.Bonds_RegistryKeyNotFound, KeysPath));
             }
 
             // 同一设备可能出现在多个适配器下：按地址去重，优先保留有名字的条目
@@ -89,17 +90,17 @@ public sealed class WindowsBondedDeviceSource : IBondedDeviceSource
         catch (UnauthorizedAccessException ex)
         {
             return new BondedDeviceReadResult(Array.Empty<BondedBleDevice>(),
-                $"拒绝访问蓝牙配对库（{ex.Message}）");
+                string.Format(ServiceStrings.Bonds_AccessDenied, ex.Message));
         }
         catch (SecurityException ex)
         {
             return new BondedDeviceReadResult(Array.Empty<BondedBleDevice>(),
-                $"读取蓝牙配对库失败（{ex.Message}）");
+                string.Format(ServiceStrings.Bonds_ReadFailed, ex.Message));
         }
         catch (Exception ex)
         {
             return new BondedDeviceReadResult(Array.Empty<BondedBleDevice>(),
-                $"读取蓝牙配对库失败（{ex.GetType().Name}: {ex.Message}）");
+                string.Format(ServiceStrings.Bonds_ReadFailedTyped, ex.GetType().Name, ex.Message));
         }
     }
 

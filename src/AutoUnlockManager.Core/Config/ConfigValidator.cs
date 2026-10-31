@@ -1,5 +1,6 @@
 using System.Globalization;
 using AutoUnlockService.Config;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Core.Config;
 
@@ -97,20 +98,20 @@ public static class ConfigValidator
         // （服务端 Validate 永远运行在明文上，故此处是管理端特有的跳过分支，不参与镜像）
         if (NormalizeIrk(config.Device.Irk) is null && !SecretProtector.IsProtected(config.Device.Irk))
         {
-            errors.Add(new ConfigError(ConfigFields.DeviceIrk, $"{ConfigFields.DeviceIrk} 必须是 32 个十六进制字符"));
+            errors.Add(new ConfigError(ConfigFields.DeviceIrk, string.Format(CoreStrings.Validation_IrkFormat, ConfigFields.DeviceIrk)));
         }
 
         if (!string.IsNullOrWhiteSpace(config.Device.IdentityAddress) &&
             NormalizeAddress(config.Device.IdentityAddress) is null)
         {
             errors.Add(new ConfigError(ConfigFields.DeviceIdentityAddress,
-                $"{ConfigFields.DeviceIdentityAddress} 必须是合法的 6 字节 MAC 地址"));
+                string.Format(CoreStrings.Validation_AddressFormat, ConfigFields.DeviceIdentityAddress)));
         }
 
         if (string.IsNullOrWhiteSpace(config.Credentials.UserName))
         {
             errors.Add(new ConfigError(ConfigFields.CredentialsUserName,
-                $"{ConfigFields.CredentialsUserName} 不能为空"));
+                string.Format(CoreStrings.Validation_UserNameEmpty, ConfigFields.CredentialsUserName)));
         }
 
         // 控制字符（换行/回车/制表符等）会破坏到 CP 的按行分帧协议；
@@ -118,53 +119,53 @@ public static class ConfigValidator
         if ((config.Credentials.UserName ?? "").Any(char.IsControl))
         {
             errors.Add(new ConfigError(ConfigFields.CredentialsUserName,
-                $"{ConfigFields.CredentialsUserName} 不能包含控制字符（换行、回车、制表符等）"));
+                string.Format(CoreStrings.Validation_UserNameControlChars, ConfigFields.CredentialsUserName)));
         }
         if ((config.Credentials.Password ?? "").Any(char.IsControl))
         {
             errors.Add(new ConfigError(ConfigFields.CredentialsPassword,
-                $"{ConfigFields.CredentialsPassword} 不能包含控制字符（换行、回车、制表符等）"));
+                string.Format(CoreStrings.Validation_PasswordControlChars, ConfigFields.CredentialsPassword)));
         }
 
         var p = config.Proximity;
         if (p.UnlockThresholdDbm <= p.LockThresholdDbm)
         {
             errors.Add(new ConfigError(ConfigFields.ProximityUnlockThresholdDbm,
-                $"{ConfigFields.ProximityUnlockThresholdDbm} 必须大于 LockThresholdDbm，否则死区为负"));
+                string.Format(CoreStrings.Validation_ThresholdOrder, ConfigFields.ProximityUnlockThresholdDbm)));
         }
 
         // 批次个数（触发读数不计入，全数达标判定）：下限 1，上限防止收集阶段拖得过长
         if (p.UnlockSampleCount is < 1 or > 20)
         {
             errors.Add(new ConfigError(ConfigFields.ProximityUnlockSampleCount,
-                $"{ConfigFields.ProximityUnlockSampleCount} 必须在 1 到 20 之间"));
+                string.Format(CoreStrings.Validation_UnlockCountRange, ConfigFields.ProximityUnlockSampleCount)));
         }
         if (p.LockPromptSampleCount is < 1 or > 50)
         {
             errors.Add(new ConfigError(ConfigFields.ProximityLockPromptSampleCount,
-                $"{ConfigFields.ProximityLockPromptSampleCount} 必须在 1 到 50 之间"));
+                string.Format(CoreStrings.Validation_LockPromptCountRange, ConfigFields.ProximityLockPromptSampleCount)));
         }
         if (p.LockConfirmSampleCount is < 1 or > 50)
         {
             errors.Add(new ConfigError(ConfigFields.ProximityLockConfirmSampleCount,
-                $"{ConfigFields.ProximityLockConfirmSampleCount} 必须在 1 到 50 之间"));
+                string.Format(CoreStrings.Validation_LockConfirmCountRange, ConfigFields.ProximityLockConfirmSampleCount)));
         }
 
         if (p.SampleIntervalMs is < 0 or > 2000)
         {
             errors.Add(new ConfigError(ConfigFields.ProximitySampleIntervalMs,
-                "Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）"));
+                CoreStrings.Validation_SampleIntervalRange));
         }
 
         if (p.StartupGraceSeconds < 0)
         {
             errors.Add(new ConfigError(ConfigFields.ProximityStartupGraceSeconds,
-                $"{ConfigFields.ProximityStartupGraceSeconds} 不能为负数"));
+                string.Format(CoreStrings.Validation_GraceNegative, ConfigFields.ProximityStartupGraceSeconds)));
         }
         if (p.UnlockPendingTimeoutSeconds <= 0)
         {
             errors.Add(new ConfigError(ConfigFields.ProximityUnlockPendingTimeoutSeconds,
-                $"{ConfigFields.ProximityUnlockPendingTimeoutSeconds} 必须为正数"));
+                string.Format(CoreStrings.Validation_PendingTimeoutPositive, ConfigFields.ProximityUnlockPendingTimeoutSeconds)));
         }
 
         var n = config.Notification;
@@ -172,19 +173,19 @@ public static class ConfigValidator
         if (n.RejectSnoozeSeconds <= 0)
         {
             errors.Add(new ConfigError(ConfigFields.NotificationRejectSnoozeSeconds,
-                $"{ConfigFields.NotificationRejectSnoozeSeconds} 必须为正数"));
+                string.Format(CoreStrings.Validation_RejectSnoozePositive, ConfigFields.NotificationRejectSnoozeSeconds)));
         }
 
         if (!(n.SnoozeMinutes > 0))
         {
             errors.Add(new ConfigError(ConfigFields.NotificationSnoozeMinutes,
-                $"{ConfigFields.NotificationSnoozeMinutes} 必须为正数"));
+                string.Format(CoreStrings.Validation_SnoozePositive, ConfigFields.NotificationSnoozeMinutes)));
         }
         else if (n.SnoozeMinutes > MaxSnoozeMinutes)
         {
             errors.Add(new ConfigError(ConfigFields.NotificationSnoozeMinutes,
-                string.Create(CultureInfo.InvariantCulture,
-                    $"{ConfigFields.NotificationSnoozeMinutes} 不能超过 {MaxSnoozeMinutes:0} 分钟")));
+                string.Format(CultureInfo.InvariantCulture,
+                    CoreStrings.Validation_SnoozeMax, ConfigFields.NotificationSnoozeMinutes, MaxSnoozeMinutes)));
         }
 
         return errors.Count == 0 ? ConfigValidationResult.Ok() : ConfigValidationResult.Invalid(errors);

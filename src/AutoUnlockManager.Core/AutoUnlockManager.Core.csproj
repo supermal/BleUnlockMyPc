@@ -9,6 +9,27 @@
   <ItemGroup>
     <!-- 敏感值加密：与服务端共享单一实现（DPAPI 机器范围，dpapi:v1: 格式，见 SecretProtector） -->
     <Compile Include="..\AutoUnlockService\Config\SecretProtector.cs" Link="Config\SecretProtector.cs" />
+    <!-- Regla de idioma común al servicio, al asistente y al gestor -->
+    <Compile Include="..\Shared\AppLanguage.cs" Link="Shared\AppLanguage.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Textos visibles: inglés neutro, zh y es como satélites. Clase tipada generada al compilar;
+         su propiedad estática Culture cambia el idioma de todo el proceso al instante -->
+    <EmbeddedResource Update="Resources\CoreStrings.resx"
+                      StronglyTypedLanguage="CSharp"
+                      StronglyTypedNamespace="AutoUnlockManager.Core.Resources"
+                      StronglyTypedClassName="CoreStrings"
+                      StronglyTypedFileName="$(IntermediateOutputPath)CoreStrings.Designer.cs"
+                      PublicClass="true" />
+    <!-- Textos de la interfaz WPF: viven aquí porque el pase de marcado de WPF compila un proyecto
+         temporal que no genera las clases de recursos -->
+    <EmbeddedResource Update="Resources\UiStrings.resx"
+                      StronglyTypedLanguage="CSharp"
+                      StronglyTypedNamespace="AutoUnlockManager.Core.Resources"
+                      StronglyTypedClassName="UiStrings"
+                      StronglyTypedFileName="$(IntermediateOutputPath)UiStrings.Designer.cs"
+                      PublicClass="true" />
   </ItemGroup>
 
 </Project>

@@ -8,6 +8,13 @@ public sealed class AutoUnlockOptions
     public CredentialOptions Credentials { get; set; } = new();
     public ProximityOptions Proximity { get; set; } = new();
     public NotificationOptions Notification { get; set; } = new();
+    public UiOptions Ui { get; set; } = new();
+}
+
+public sealed class UiOptions
+{
+    // system | zh | en | es; un valor desconocido equivale a system (nunca invalida la configuración)
+    public string Language { get; set; } = "system";
 }
 
 public enum IrkByteOrder { Auto, Normal, Reversed }

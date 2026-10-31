@@ -29,4 +29,20 @@
     <InternalsVisibleTo Include="AutoUnlockService.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Regla de idioma común al servicio, al asistente y al gestor -->
+    <Compile Include="..\Shared\AppLanguage.cs" Link="Shared\AppLanguage.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Textos visibles: inglés neutro, zh y es como satélites. Clase tipada generada al compilar;
+         su propiedad estática Culture cambia el idioma de todo el proceso al instante -->
+    <EmbeddedResource Update="Resources\ServiceStrings.resx"
+                      StronglyTypedLanguage="CSharp"
+                      StronglyTypedNamespace="AutoUnlockService.Resources"
+                      StronglyTypedClassName="ServiceStrings"
+                      StronglyTypedFileName="$(IntermediateOutputPath)ServiceStrings.Designer.cs"
+                      PublicClass="true" />
+  </ItemGroup>
+
 </Project>

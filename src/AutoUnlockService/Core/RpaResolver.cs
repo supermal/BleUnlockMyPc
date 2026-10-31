@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using AutoUnlockService.Config;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Core;
 
@@ -11,7 +12,8 @@ public sealed class RpaResolver
     private readonly object _lock = new();
     // Cache direccion -> resultado; tambien guarda los fallos para no repetir AES
     private readonly Dictionary<ulong, bool> _cache = [];
-    private List<(IrkByteOrder Order, byte[] Key)> _candidates = [];
+    // Un Aes por orden de bytes, creado al fijar la clave y reutilizado: solo se usa bajo _lock
+    private List<(IrkByteOrder Order, Aes Cipher)> _candidates = [];
 
     // Orden que realmente coincidio; null mientras no haya habido ninguna coincidencia
     public IrkByteOrder? MatchedOrder { get; private set; }
@@ -19,20 +21,32 @@ public sealed class RpaResolver
     public void SetKey(byte[] irk, IrkByteOrder order)
     {
         if (irk.Length != 16)
-            throw new ArgumentException("IRK 必须是 16 字节", nameof(irk));
+            throw new ArgumentException(ServiceStrings.Error_IrkLength, nameof(irk));
 
-        var candidates = new List<(IrkByteOrder, byte[])>();
+        var candidates = new List<(IrkByteOrder, Aes)>();
         if (order is IrkByteOrder.Normal or IrkByteOrder.Auto)
-            candidates.Add((IrkByteOrder.Normal, irk.ToArray()));
+            candidates.Add((IrkByteOrder.Normal, CreateCipher(irk.ToArray())));
         if (order is IrkByteOrder.Reversed or IrkByteOrder.Auto)
-            candidates.Add((IrkByteOrder.Reversed, Enumerable.Reverse(irk).ToArray()));
+            candidates.Add((IrkByteOrder.Reversed, CreateCipher(Enumerable.Reverse(irk).ToArray())));
 
+        List<(IrkByteOrder Order, Aes Cipher)> previous;
         lock (_lock)
         {
+            previous = _candidates;
             _candidates = candidates;
             _cache.Clear();
             MatchedOrder = null;
         }
+
+        // Fuera del candado nadie puede seguir usando los anteriores
+        foreach (var c in previous) c.Cipher.Dispose();
+    }
+
+    private static Aes CreateCipher(byte[] key)
+    {
+        var aes = Aes.Create();
+        aes.Key = key;
+        return aes;
     }
 
     public bool Matches(ulong address, bool isRandom)
@@ -50,7 +64,7 @@ public sealed class RpaResolver
             bool matched = false;
             foreach (var c in _candidates)
             {
-                if (ComputeHash(c.Key, prand) == hash)
+                if (ComputeHash(c.Cipher, prand) == hash)
                 {
                     matched = true;
                     MatchedOrder = c.Order;
@@ -68,14 +82,20 @@ public sealed class RpaResolver
     // ah = e(k, 13 bytes de relleno 0x00 || r) mod 2^24
     public static uint ComputeHash(byte[] irk, uint prand)
     {
-        var block = new byte[16];
+        using var aes = CreateCipher(irk);
+        return ComputeHash(aes, prand);
+    }
+
+    private static uint ComputeHash(Aes aes, uint prand)
+    {
+        Span<byte> block = stackalloc byte[16];
+        block.Clear();
         block[13] = (byte)(prand >> 16);
         block[14] = (byte)(prand >> 8);
         block[15] = (byte)prand;
 
-        using var aes = Aes.Create();
-        aes.Key = irk;
-        byte[] output = aes.EncryptEcb(block, PaddingMode.None);
+        Span<byte> output = stackalloc byte[16];
+        aes.EncryptEcb(block, output, PaddingMode.None);
         return (uint)(output[13] << 16 | output[14] << 8 | output[15]);
     }
 }

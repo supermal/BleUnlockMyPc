@@ -48,23 +48,49 @@ public sealed class SampleHistory
                 continue; // 坏行：忽略
             }
 
-            _points.Add(new SamplePoint(row[0], row[1]));
+            Insert(new SamplePoint(row[0], row[1]));
             added = true;
         }
 
         if (added)
         {
-            // 服务端通常有序；迟到/乱序样本可能混入，统一按时间稳定排序（OrderBy 稳定：同刻样本保持到达顺序）
-            var ordered = _points.OrderBy(static p => p.TsMs).ToList();
-            _points.Clear();
-            _points.AddRange(ordered);
-
             // 容量上限：时钟异常（时间回拨致裁剪失效）时防无界增长，丢最旧
             if (_points.Count > MaxCapacity)
             {
                 _points.RemoveRange(0, _points.Count - MaxCapacity);
             }
         }
+    }
+
+    /// <summary>
+    /// Mantiene el orden por tiempo sin reordenar todo en cada trama: lo habitual es que la muestra
+    /// sea la más reciente y basta con añadirla. Una tardía se coloca tras las de su mismo instante,
+    /// así las simultáneas conservan el orden de llegada.
+    /// </summary>
+    private void Insert(SamplePoint point)
+    {
+        if (_points.Count == 0 || point.TsMs >= _points[^1].TsMs)
+        {
+            _points.Add(point);
+            return;
+        }
+
+        // Búsqueda binaria del primer elemento posterior a la muestra
+        int low = 0, high = _points.Count;
+        while (low < high)
+        {
+            var mid = (low + high) >>> 1;
+            if (_points[mid].TsMs <= point.TsMs)
+            {
+                low = mid + 1;
+            }
+            else
+            {
+                high = mid;
+            }
+        }
+
+        _points.Insert(low, point);
     }
 
     /// <summary>裁剪早于「nowMs - Retention」的旧样本（nowMs = 服务端当前时间）。</summary>

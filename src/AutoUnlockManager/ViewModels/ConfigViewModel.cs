@@ -3,10 +3,12 @@ using System.ComponentModel;
 using AutoUnlockManager.Core;
 using AutoUnlockManager.Core.Bonds;
 using AutoUnlockManager.Core.Config;
+using AutoUnlockManager.Core.Localization;
 using AutoUnlockManager.Services;
 using AutoUnlockManager.Services.Ble;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Wpf.Ui.Controls;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.ViewModels;
 
@@ -257,6 +259,29 @@ public sealed partial class ConfigViewModel : ObservableObject
         SnoozeError = "";
         IrkHint = "";
         PasswordHint = "";
+
+        ManagerLanguage.Changed += OnLanguageChanged;
+    }
+
+    /// <summary>
+    /// Cambio de idioma: se rehacen los textos que calcula este modelo. Los avisos ya mostrados y la
+    /// línea de estado de la lista de dispositivos se quedan como están hasta la próxima acción.
+    /// </summary>
+    private void OnLanguageChanged()
+    {
+        OnPropertyChanged(nameof(PasswordPlaceholder));
+        OnPropertyChanged(nameof(PasswordDescription));
+        if (IrkHint.Length > 0)
+        {
+            IrkHint = BuildIrkHint();
+        }
+
+        if (PasswordHint.Length > 0)
+        {
+            PasswordHint = ConfigSecrets.HintText(_loadedConfig.Credentials.Password);
+        }
+
+        RecomputePending();
     }
 
     // —— Barra de cambios sin guardar ——
@@ -277,11 +302,11 @@ public sealed partial class ConfigViewModel : ObservableObject
     public bool CanRevealPassword => _password.CanReveal;
 
     /// <summary>Texto indicativo del campo vacío: la guardada nunca se muestra, solo se indica que existe.</summary>
-    public string PasswordPlaceholder => _password.HasStored ? "已保存（输入新密码以替换）" : "请输入密码";
+    public string PasswordPlaceholder => _password.HasStored ? UiStrings.Config_PasswordStored : UiStrings.Config_PasswordEnter;
 
     public string PasswordDescription => PasswordHint.Length > 0
         ? PasswordHint
-        : "保存时用本机 DPAPI 加密写入配置文件，不会出现在日志中。";
+        : UiStrings.Config_PasswordDpapiNote;
 
     /// <summary>Umbral de bloqueo para la banda del formulario (sigue la entrada; si no se interpreta, el del disco).</summary>
     public double LockThresholdPreview =>
@@ -313,7 +338,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         if (errors.Count > 0)
         {
             PendingCount = errors.Count;
-            PendingSummary = "有字段格式不正确，保存前请修正";
+            PendingSummary = UiStrings.Config_FieldFormatErrors;
             ModifiedFields = errors.Select(e => e.Field).ToHashSet(StringComparer.Ordinal);
             return;
         }
@@ -354,13 +379,13 @@ public sealed partial class ConfigViewModel : ObservableObject
         {
             if (!Directory.Exists(AppPaths.DataDir))
             {
-                SetUnavailable("未检测到服务数据目录（服务可能未安装）。");
+                SetUnavailable(UiStrings.Config_NoDataDir);
                 return;
             }
 
             if (!File.Exists(AppPaths.ConfigFile))
             {
-                SetUnavailable("未找到配置文件 appsettings.json（服务可能未安装或尚未初始化）。");
+                SetUnavailable(UiStrings.Config_NoConfigFile);
                 return;
             }
 
@@ -375,21 +400,21 @@ public sealed partial class ConfigViewModel : ObservableObject
             if (!validation.IsValid)
             {
                 ApplyFieldErrors(validation.Errors);
-                ShowBanner(InfoBarSeverity.Warning, "当前配置未通过校验",
-                    $"共 {validation.Errors.Count} 处问题，服务在修正前会拒绝启动（下方字段已标出）。");
+                ShowBanner(InfoBarSeverity.Warning, UiStrings.Config_InvalidTitle,
+                    string.Format(UiStrings.Config_InvalidMessage, validation.Errors.Count));
             }
 
             // 跨机器拷贝等导致的不可解密密文：服务会拒绝启动，这里提前给出可操作提示（覆盖校验横幅）
             if (ConfigSecrets.IsUnreadableOnThisMachine(_loadedConfig.Device.Irk) ||
                 ConfigSecrets.IsUnreadableOnThisMachine(_loadedConfig.Credentials.Password))
             {
-                ShowBanner(InfoBarSeverity.Warning, "检测到无法解密的加密值",
-                    "设备 IRK 或凭据密码包含无法在本机解密的密文（可能来自其他机器）；请重新选择 BLE 设备（或重新输入密码）并保存，否则服务会拒绝启动。");
+                ShowBanner(InfoBarSeverity.Warning, UiStrings.Config_UndecryptableTitle,
+                    UiStrings.Config_UndecryptableMessage);
             }
         }
         catch (Exception ex)
         {
-            SetUnavailable($"无法读取配置文件：{DescribeException(ex)}");
+            SetUnavailable(string.Format(UiStrings.Config_ReadFailed, DescribeException(ex)));
         }
 
         // 设备下拉框独立于配置文件加载：即使服务未运行，也会在状态行给出可读原因
@@ -408,7 +433,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         }
 
         _loadingBonds = true;
-        BondStatusText = "正在读取 Windows 配对设备…";
+        BondStatusText = UiStrings.Bonds_Reading;
         try
         {
             var result = await _bondClient.ListAsync();
@@ -427,7 +452,7 @@ public sealed partial class ConfigViewModel : ObservableObject
                 currentIrk.Length > 0 &&
                 !items.Any(d => string.Equals(d.Irk, currentIrk, StringComparison.OrdinalIgnoreCase)))
             {
-                items.Add(new BleBondDevice("", "当前配置（不在 Windows 配对列表中）", currentIrk));
+                items.Add(new BleBondDevice("", UiStrings.Bonds_CurrentNotListed, currentIrk));
             }
 
             var selected = currentIrk.Length == 0 || noDevice
@@ -453,18 +478,18 @@ public sealed partial class ConfigViewModel : ObservableObject
 
             var pairedCount = items.Count(d => d.Address.Length > 0);
             BondStatusText = result.Error is not null
-                ? $"无法读取已配对设备：{result.Error}"
+                ? string.Format(UiStrings.Bonds_ReadError, result.Error)
                 : pairedCount == 0
-                    ? "未发现已配对的 BLE 设备；请先在 Windows 中完成配对。"
+                    ? UiStrings.Bonds_None
                     : noDevice
-                        ? $"已读取 {pairedCount} 台已配对设备；当前未选择设备，自动解锁已暂停。"
-                        : $"已读取 {pairedCount} 台已配对设备（来自 Windows 蓝牙配对库）。";
+                        ? string.Format(UiStrings.Bonds_ReadNoneSelected, pairedCount)
+                        : string.Format(UiStrings.Bonds_Read, pairedCount);
 
             IrkHint = BuildIrkHint();
         }
         catch (Exception ex)
         {
-            BondStatusText = $"读取已配对设备失败：{ex.Message}";
+            BondStatusText = string.Format(UiStrings.Bonds_ReadFailed, ex.Message);
         }
         finally
         {
@@ -500,9 +525,8 @@ public sealed partial class ConfigViewModel : ObservableObject
         var device = BondDiff.FindByAddress(BondedDevices, address);
         if (device is null)
         {
-            ShowError("未找到新配对设备",
-                "Windows 已完成配对，但服务没有返回该设备的 IRK。请确认服务正在运行后点「刷新列表」；" +
-                "如果该设备不提供 IRK，则无法用于自动解锁。");
+            ShowError(UiStrings.Bonds_NewNotFoundTitle,
+                UiStrings.Bonds_NewNotFoundMessage);
             return false;
         }
 
@@ -539,13 +563,13 @@ public sealed partial class ConfigViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            ShowError("解除配对失败", ex.Message);
+            ShowError(UiStrings.Unpair_FailedTitle, ex.Message);
             return false;
         }
 
         if (!unpair.Success)
         {
-            ShowError("解除配对失败", unpair.Message);
+            ShowError(UiStrings.Unpair_FailedTitle, unpair.Message);
             return false;
         }
 
@@ -557,10 +581,10 @@ public sealed partial class ConfigViewModel : ObservableObject
                 ConfigSecrets.DecryptForCompare(IrkText), device.Irk, StringComparison.OrdinalIgnoreCase);
             ShowBanner(
                 formStillUses ? InfoBarSeverity.Warning : InfoBarSeverity.Success,
-                "已解除配对",
+                UiStrings.Unpair_DoneTitle,
                 formStillUses
-                    ? "已从 Windows 移除该设备；当前表单仍保留它的 IRK（尚未保存），服务继续按磁盘配置运行。若不再使用，请重新选择设备并保存。"
-                    : "已从 Windows 移除该设备；当前配置未受影响。");
+                    ? UiStrings.Unpair_DoneKeptIrk
+                    : UiStrings.Unpair_DoneConfigUnaffected);
             return true;
         }
 
@@ -586,8 +610,8 @@ public sealed partial class ConfigViewModel : ObservableObject
                 // 已在错误横幅中提示用户手动确认
             }
 
-            ShowError("解除配对成功，但清空配置失败",
-                $"{ex.Message}\n为避免旧 IRK 继续生效，已尝试停止服务；请检查配置文件后重试。");
+            ShowError(UiStrings.Unpair_ClearFailedTitle,
+                string.Format(UiStrings.Unpair_ClearFailedMessage, ex.Message));
             await LoadBondedDevicesAsync();
             return false;
         }
@@ -625,15 +649,13 @@ public sealed partial class ConfigViewModel : ObservableObject
 
         if (serviceReady)
         {
-            ShowBanner(InfoBarSeverity.Warning, "已解除配对并清空当前设备",
-                "Windows 配对已移除；配置中的 IRK/设备地址已清空，自动解锁暂停（服务仍在运行以读取配对库）。" +
-                "请配对新设备并保存。");
+            ShowBanner(InfoBarSeverity.Warning, UiStrings.Unpair_ClearedTitle,
+                UiStrings.Unpair_ClearedMessage);
         }
         else
         {
-            ShowBanner(InfoBarSeverity.Error, "已解除配对，但服务未运行",
-                "配置中的 IRK/设备地址已清空（自动解锁暂停）。要使用配对向导读取配对库，请先启动服务；" +
-                "也可以通过下拉框选择其他已配对设备。");
+            ShowBanner(InfoBarSeverity.Error, UiStrings.Unpair_ServiceStoppedTitle,
+                UiStrings.Unpair_ServiceStoppedMessage);
         }
 
         return true;
@@ -662,20 +684,20 @@ public sealed partial class ConfigViewModel : ObservableObject
         var raw = storedIrk ?? IrkText;
         if (string.Equals(raw.Trim(), ConfigValidator.NoDeviceIrk, StringComparison.OrdinalIgnoreCase))
         {
-            return "未选择设备（自动解锁已暂停）；请配对/选择新设备并保存。";
+            return UiStrings.Device_NoneSelectedPaused;
         }
 
         if (string.IsNullOrWhiteSpace(raw))
         {
-            return "请从下拉框选择一台已与 Windows 配对的 BLE 设备。";
+            return UiStrings.Device_ChooseFromList;
         }
 
         if (ConfigSecrets.IsUnreadableOnThisMachine(raw))
         {
-            return "当前 IRK 无法在本机解密，请从下拉框选择设备后保存。";
+            return UiStrings.Device_IrkUndecryptable;
         }
 
-        return "IRK 由所选设备自动提供；保存时加密存储。";
+        return UiStrings.Device_IrkAuto;
     }
 
     /// <summary>
@@ -696,8 +718,8 @@ public sealed partial class ConfigViewModel : ObservableObject
         if (errors.Count > 0)
         {
             ApplyFieldErrors(errors);
-            ShowBanner(InfoBarSeverity.Error, "校验未通过，未保存",
-                $"共有 {errors.Count} 处问题，请修正下方标红的字段后重试。");
+            ShowBanner(InfoBarSeverity.Error, UiStrings.Save_InvalidTitle,
+                string.Format(UiStrings.Save_InvalidMessage, errors.Count));
             return new SavePreparation(false, []);
         }
 
@@ -711,7 +733,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         var changes = ConfigDiff.Compute(_loadedConfig, config);
         if (changes.Count == 0)
         {
-            ShowBanner(InfoBarSeverity.Informational, "没有需要保存的更改", "当前表单内容与配置文件一致。");
+            ShowBanner(InfoBarSeverity.Informational, UiStrings.Save_NothingTitle, UiStrings.Save_NothingMessage);
             return new SavePreparation(false, []);
         }
 
@@ -738,7 +760,7 @@ public sealed partial class ConfigViewModel : ObservableObject
 
         try
         {
-            var checkpoint = ConfigReloadWatcher.CaptureCheckpoint(AppPaths.LogsDir);
+            var checkpoint = ConfigReloadWatcher.CaptureCheckpoint(AppPaths.ReloadStatusFile);
             ConfigDocument.Save(AppPaths.ConfigFile, config);
 
             // 写盘成功后：文件真值更新（表单回填归一化结果）
@@ -761,39 +783,38 @@ public sealed partial class ConfigViewModel : ObservableObject
             if (status.Kind is not ServiceStatusKind.Running)
             {
                 var message = status.Kind == ServiceStatusKind.Stopped
-                    ? "服务当前已停止，新配置将在服务启动后生效。"
-                    : "无法确认服务正在运行，新配置将在服务运行后生效。";
-                ShowBanner(InfoBarSeverity.Success, "配置已保存", message,
-                    ConfigBannerAction.StartService, "启动服务");
+                    ? UiStrings.Save_ServiceStopped
+                    : UiStrings.Save_ServiceUnknown;
+                ShowBanner(InfoBarSeverity.Success, UiStrings.Save_SavedTitle, message,
+                    ConfigBannerAction.StartService, UiStrings.Common_StartService);
                 return;
             }
 
-            ShowBanner(InfoBarSeverity.Informational, "配置已写入",
-                "正在等待服务确认热重载（最多 5 秒）…");
+            ShowBanner(InfoBarSeverity.Informational, UiStrings.Save_WrittenTitle,
+                UiStrings.Save_WaitingReload);
 
-            var outcome = await ConfigReloadWatcher.WaitAsync(AppPaths.LogsDir, checkpoint, ReloadWaitTimeout);
+            var outcome = await ConfigReloadWatcher.WaitAsync(AppPaths.ReloadStatusFile, checkpoint, ReloadWaitTimeout);
             switch (outcome.Status)
             {
                 case ConfigReloadStatus.Reloaded:
-                    ShowBanner(InfoBarSeverity.Success, "配置已重载", BuildReloadedMessage(outcome));
+                    ShowBanner(InfoBarSeverity.Success, UiStrings.Save_ReloadedTitle, BuildReloadedMessage(outcome));
                     break;
 
                 case ConfigReloadStatus.Rejected:
-                    ShowBanner(InfoBarSeverity.Error, "服务拒绝了新配置（已保留原配置）",
-                        outcome.Message ?? "配置校验失败，已保留原配置。");
+                    ShowBanner(InfoBarSeverity.Error, UiStrings.Save_RejectedTitle,
+                        outcome.Message ?? UiStrings.Save_RejectedFallback);
                     break;
 
                 default:
-                    ShowBanner(InfoBarSeverity.Warning, "未确认重载",
-                        "5 秒内未在日志中看到重载结果（服务可能未运行或日志暂不可用）。文件已写入；" +
-                        "如服务正在运行，可重启服务使其生效。",
-                        ConfigBannerAction.RestartService, "重启服务");
+                    ShowBanner(InfoBarSeverity.Warning, UiStrings.Save_UnconfirmedTitle,
+                        UiStrings.Save_UnconfirmedMessage,
+                        ConfigBannerAction.RestartService, UiStrings.Common_RestartService);
                     break;
             }
         }
         catch (Exception ex)
         {
-            ShowBanner(InfoBarSeverity.Error, "保存失败", DescribeException(ex));
+            ShowBanner(InfoBarSeverity.Error, UiStrings.Save_FailedTitle, DescribeException(ex));
         }
         finally
         {
@@ -829,10 +850,10 @@ public sealed partial class ConfigViewModel : ObservableObject
             _serviceOperationInProgress = false;
         }
 
-        var succeededTitle = action == ConfigBannerAction.StartService ? "服务已启动" : "服务已重启";
+        var succeededTitle = action == ConfigBannerAction.StartService ? UiStrings.Op_ServiceStartedTitle : UiStrings.Op_ServiceRestartedTitle;
         var succeededMessage = action == ConfigBannerAction.StartService
-            ? "服务已启动，磁盘上的最新配置已生效。"
-            : "服务已按磁盘上的最新配置重启。";
+            ? UiStrings.Op_StartedWithLatest
+            : UiStrings.Op_RestartedWithLatest;
 
         switch (result.Status)
         {
@@ -840,19 +861,19 @@ public sealed partial class ConfigViewModel : ObservableObject
                 ShowBanner(InfoBarSeverity.Success, succeededTitle, succeededMessage);
                 break;
             case ServiceOperationStatus.NotInstalled:
-                ShowBanner(InfoBarSeverity.Error, "服务未安装", result.Message ?? "服务未安装。");
+                ShowBanner(InfoBarSeverity.Error, UiStrings.Op_NotInstalledTitle, result.Message ?? UiStrings.Op_NotInstalledFallback);
                 break;
             case ServiceOperationStatus.AccessDenied:
                 // 保留同一动作按钮：权限/瞬态问题修正后可直接重试（评审 M6）
-                ShowBanner(InfoBarSeverity.Error, "拒绝访问", result.Message ?? "需要管理员权限。",
+                ShowBanner(InfoBarSeverity.Error, UiStrings.Op_AccessDeniedTitle, result.Message ?? UiStrings.Op_AdminRequired,
                     action, ActionText(action));
                 break;
             case ServiceOperationStatus.Timeout:
-                ShowBanner(InfoBarSeverity.Warning, "操作超时", result.Message ?? "等待服务状态超时。",
+                ShowBanner(InfoBarSeverity.Warning, UiStrings.Op_TimeoutTitle, result.Message ?? UiStrings.Op_TimeoutFallback,
                     action, ActionText(action));
                 break;
             default:
-                ShowBanner(InfoBarSeverity.Error, "操作失败", result.Message ?? "未知错误。",
+                ShowBanner(InfoBarSeverity.Error, UiStrings.Common_OperationFailed, result.Message ?? UiStrings.Op_UnknownError,
                     action, ActionText(action));
                 break;
         }
@@ -860,7 +881,7 @@ public sealed partial class ConfigViewModel : ObservableObject
 
     /// <summary>动作按钮文案（横幅动作与失败重试路径共用）。</summary>
     private static string ActionText(ConfigBannerAction action)
-        => action == ConfigBannerAction.StartService ? "启动服务" : "重启服务";
+        => action == ConfigBannerAction.StartService ? UiStrings.Common_StartService : UiStrings.Common_RestartService;
 
     /// <summary>显示横幅（页面代码隐藏的辅助错误也复用）。</summary>
     public void ShowBanner(InfoBarSeverity severity, string title, string message,
@@ -958,7 +979,7 @@ public sealed partial class ConfigViewModel : ObservableObject
             return true;
         }
 
-        errors.Add(new ConfigError(field, $"「{ConfigDiff.GetDisplayName(field)}」必须是数字"));
+        errors.Add(new ConfigError(field, string.Format(UiStrings.Input_MustBeNumber, ConfigDiff.GetDisplayName(field))));
         return false;
     }
 
@@ -969,7 +990,7 @@ public sealed partial class ConfigViewModel : ObservableObject
             return true;
         }
 
-        errors.Add(new ConfigError(field, $"「{ConfigDiff.GetDisplayName(field)}」必须是整数"));
+        errors.Add(new ConfigError(field, string.Format(UiStrings.Input_MustBeInteger, ConfigDiff.GetDisplayName(field))));
         return false;
     }
 
@@ -1130,25 +1151,27 @@ public sealed partial class ConfigViewModel : ObservableObject
         CanEdit = false;
         CanOpenFolder = Directory.Exists(AppPaths.DataDir);
         PathWarningVisible = true;
-        PathWarningText = $"{warning} 配置路径：{AppPaths.ConfigFile}。修复后请点「重新从磁盘加载」。";
+        PathWarningText = string.Format(UiStrings.Config_PathWarning, warning, AppPaths.ConfigFile);
     }
 
     private static string BuildReloadedMessage(ConfigReloadOutcome outcome)
     {
         if (outcome.DeviceChanged is null && outcome.CredentialsChanged is null)
         {
-            return "服务已应用新配置。";
+            return UiStrings.Reload_Applied;
         }
 
-        var device = outcome.DeviceChanged == true ? "是" : "否";
-        var credentials = outcome.CredentialsChanged == true ? "是" : "否";
-        return $"服务已应用新配置（设备变更：{device}，凭据变更：{credentials}）。";
+        var device = outcome.DeviceChanged == true ? UiStrings.Common_Yes : UiStrings.Common_No;
+        var credentials = outcome.CredentialsChanged == true ? UiStrings.Common_Yes : UiStrings.Common_No;
+        return string.Format(UiStrings.Reload_AppliedWithFlags, device, credentials);
     }
 
     private static string DescribeException(Exception ex) => ex switch
     {
-        System.Text.Json.JsonException => $"JSON 格式错误（{ex.Message}）",
-        UnauthorizedAccessException => $"没有访问权限（{ex.Message}）",
+        System.Text.Json.JsonException => string.Format(UiStrings.Error_Json, ex.Message),
+        UnauthorizedAccessException => string.Format(UiStrings.Error_AccessDenied, ex.Message),
+        // SecretProtector se comparte con el servicio y lanza sin texto propio
+        System.Security.Cryptography.CryptographicException => UiStrings.Error_Encryption,
         IOException => ex.Message,
         _ => ex.Message,
     };

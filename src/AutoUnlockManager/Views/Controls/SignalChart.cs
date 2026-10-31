@@ -1,7 +1,9 @@
 using System.Globalization;
 using System.Windows.Documents;
 using System.Windows.Media;
+using AutoUnlockManager.Core.Localization;
 using AutoUnlockManager.Core.Management;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Views.Controls;
 
@@ -57,6 +59,20 @@ public sealed class SignalChart : FrameworkElement
     /// <summary>Fondo de la tarjeta: aro del punto final.</summary>
     public Brush SurfaceBrush { get => (Brush)GetValue(SurfaceBrushProperty); set => SetValue(SurfaceBrushProperty, value); }
 
+    public SignalChart()
+    {
+        // Los textos se dibujan en OnRender: al cambiar el idioma basta con volver a dibujar
+        // Al volver a mostrarse se redibuja, por si el idioma cambió mientras estaba en otra página
+        Loaded += (_, _) =>
+        {
+            ManagerLanguage.Changed += OnLanguageChanged;
+            InvalidateVisual();
+        };
+        Unloaded += (_, _) => ManagerLanguage.Changed -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged() => Dispatcher.BeginInvoke(InvalidateVisual);
+
     protected override void OnRender(DrawingContext dc)
     {
         var labels = ShowAxisLabels;
@@ -70,7 +86,19 @@ public sealed class SignalChart : FrameworkElement
             return;
         }
 
-        double Y(double dbm) => plot.Top + (TopDbm - Math.Clamp(dbm, BottomDbm, TopDbm)) / (TopDbm - BottomDbm) * plot.Height;
+        // Con el dispositivo pegado al equipo la señal supera -30 dBm: recortada al borde la curva
+        // sería una recta inmóvil, así que el techo sube a la decena que la contenga (máx. 0 dBm)
+        var top = TopDbm;
+        if (Points is { Count: > 0 } visible)
+        {
+            var max = visible.Max(static p => p.Rssi);
+            if (max > top)
+            {
+                top = Math.Min(0, Math.Ceiling(max / 10) * 10);
+            }
+        }
+
+        double Y(double dbm) => plot.Top + (top - Math.Clamp(dbm, BottomDbm, top)) / (top - BottomDbm) * plot.Height;
 
         // Fondo transparente para que toda el área responda a la herramienta de accesibilidad
         dc.DrawRectangle(Brushes.Transparent, null, plot);
@@ -90,19 +118,19 @@ public sealed class SignalChart : FrameworkElement
 
         if (labels)
         {
-            DrawYLabel(dc, plot, Y(TopDbm), "-30", LabelBrush);
+            DrawYLabel(dc, plot, Y(top), Whole(top), LabelBrush);
             DrawYLabel(dc, plot, Y(BottomDbm), "-100", LabelBrush);
             if (hasThresholds)
             {
                 DrawYLabel(dc, plot, Y(UnlockDbm), Whole(UnlockDbm), NearBrush);
                 DrawYLabel(dc, plot, Y(LockDbm), Whole(LockDbm), AwayBrush);
-                DrawText(dc, "靠近区　解锁阈值以上", NearBrush, new Point(plot.Right - 8, plot.Top + 4), alignRight: true);
-                DrawText(dc, "离开区　锁定阈值以下", AwayBrush, new Point(plot.Right - 8, plot.Bottom - 20), alignRight: true);
+                DrawText(dc, UiStrings.Chart_NearZone, NearBrush, new Point(plot.Right - 8, plot.Top + 4), alignRight: true);
+                DrawText(dc, UiStrings.Chart_AwayZone, AwayBrush, new Point(plot.Right - 8, plot.Bottom - 20), alignRight: true);
             }
 
-            var start = WindowSeconds >= 120 ? $"{WindowSeconds / 60:0} 分钟前" : $"{WindowSeconds:0} 秒前";
+            var start = WindowSeconds >= 120 ? string.Format(UiStrings.Chart_MinutesAgo, WindowSeconds / 60) : string.Format(UiStrings.Chart_SecondsAgo, WindowSeconds);
             DrawText(dc, start, LabelBrush, new Point(plot.Left, plot.Bottom + 4), alignRight: false);
-            DrawText(dc, "现在", LabelBrush, new Point(plot.Right, plot.Bottom + 4), alignRight: true);
+            DrawText(dc, UiStrings.Chart_Now, LabelBrush, new Point(plot.Right, plot.Bottom + 4), alignRight: true);
         }
 
         var points = Points;
@@ -110,7 +138,7 @@ public sealed class SignalChart : FrameworkElement
         {
             if (labels)
             {
-                var empty = Format("等待样本…", LabelBrush, 13);
+                var empty = Format(UiStrings.Chart_WaitingSamples, LabelBrush, 13);
                 dc.DrawText(empty, new Point(plot.Left + (plot.Width - empty.Width) / 2, plot.Top + (plot.Height - empty.Height) / 2));
             }
 

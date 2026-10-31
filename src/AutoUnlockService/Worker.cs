@@ -5,6 +5,7 @@ using AutoUnlockService.Credentials;
 using AutoUnlockService.Management;
 using AutoUnlockService.Notifications;
 using AutoUnlockService.Session;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService;
 
@@ -49,11 +50,11 @@ public sealed class Worker(
         if (WtsNative.TryIsActiveConsoleSessionLocked(out var sessionLocked))
         {
             lockedAtStart = sessionLocked;
-            log.LogInformation("启动时屏幕{State}", sessionLocked ? "已锁定" : "未锁定");
+            log.LogInformation(ServiceStrings.Log_ScreenAtStartup, sessionLocked ? ServiceStrings.State_Locked : ServiceStrings.State_Unlocked);
         }
         else
         {
-            log.LogWarning("无法确定启动时屏幕是否已锁，按未锁定处理");
+            log.LogWarning(ServiceStrings.Log_ScreenStateUnknownAtStartup);
         }
 
         _machine = new ProximityStateMachine(time, current.Proximity, current.Notification, lockedAtStart);
@@ -62,7 +63,7 @@ public sealed class Worker(
         Volatile.Write(ref _lastMatchTicks, time.GetUtcNow().UtcTicks);
 
         if (current.Notification.Mode == NotifierMode.Dialog)
-            notifier.Degrade("配置指定使用对话框模式");
+            notifier.Degrade(ServiceStrings.Reason_DialogModeConfigured);
 
         helperPipe.Start(ct);
         launcher.Start(ct);
@@ -136,9 +137,9 @@ public sealed class Worker(
     // BLE 规范把 -127/+127 一带预留为「RSSI 不可用」：不能当作读数
     internal static bool HasUsableRssi(short rssi) => rssi is > -127 and < 127;
 
-    private void OnStatus(string status)
+    private void OnStatus(ScanStatus status)
     {
-        log.LogInformation("BLE 状态：{Status}", status);
+        log.LogInformation(ServiceStrings.Log_BleStatus, status.Text);
         telemetry.OnScanStatus(status);
     }
 
@@ -161,7 +162,7 @@ public sealed class Worker(
     private void OnResumed()
     {
         // El reloj puede haber saltado horas: el historico ya no representa nada
-        log.LogInformation("系统已从睡眠中恢复，清空 RSSI 历史并重新进入宽限期");
+        log.LogInformation(ServiceStrings.Log_ResumedFromSleep);
         _sampleGate.Reset();
         _history.Clear();
         telemetry.OnHistoryReset();   // 遥测：历史作废，管理端据 gen 变化清空曲线
@@ -202,7 +203,7 @@ public sealed class Worker(
                 _history.Reset();
                 telemetry.OnHistoryReset();   // 遥测：设备变更，历史作废，管理端据 gen 变化清空曲线
                 _credentialBudget.Reset();
-                log.LogInformation("目标设备已变更，解析缓存与 RSSI 历史已清空");
+                log.LogInformation(ServiceStrings.Log_TargetDeviceChanged);
             }
 
             if (change.CredentialsChanged)
@@ -217,7 +218,7 @@ public sealed class Worker(
         {
             // Corre en el hilo del temporizador del OptionsGate: una excepcion sin
             // capturar aqui mataria el proceso
-            log.LogError(ex, "应用配置变更时出错");
+            log.LogError(ex, ServiceStrings.Log_ApplyConfigChangeFailed);
         }
     }
 
@@ -232,7 +233,7 @@ public sealed class Worker(
 
         if (change is null) return;
 
-        log.LogInformation("状态 {From} → {To}：{Reason}", change.From, change.To, change.Reason);
+        log.LogInformation(ServiceStrings.Log_StateTransition, change.From, change.To, change.Reason);
         telemetry.OnStateChange(change.To);   // 遥测：状态变更（旁路，不影响控制流）
         _ = DispatchAsync(change);
     }
@@ -265,12 +266,12 @@ public sealed class Worker(
                 case ProximityAction.CancelLockPromptAndNotifySuspended:
                     // Salir de PendingLock hacia Suspended: retirar el aviso Y notificar
                     await notifier.CancelAsync();
-                    await notifier.NotifyAsync(change.Reason + "，请修改 appsettings.json 后自动恢复",
+                    await notifier.NotifyAsync(change.Reason + ServiceStrings.Notify_FixConfigSuffix,
                         CancellationToken.None);
                     break;
 
                 case ProximityAction.NotifySuspended:
-                    await notifier.NotifyAsync(change.Reason + "，请修改 appsettings.json 后自动恢复",
+                    await notifier.NotifyAsync(change.Reason + ServiceStrings.Notify_FixConfigSuffix,
                         CancellationToken.None);
                     break;
             }
@@ -280,11 +281,11 @@ public sealed class Worker(
             // CancelAsync retira el aviso pendiente y su PromptAsync termina asi:
             // es un desenlace normal ("la senal volvio"), no una averia.
             // No hay respuesta de usuario que entregar a la maquina de estados
-            log.LogDebug("动作 {Action} 的提示已被撤回（正常情况）", change.Action);
+            log.LogDebug(ServiceStrings.Log_PromptWithdrawn, change.Action);
         }
         catch (Exception ex)
         {
-            log.LogError(ex, "执行动作 {Action} 时出错", change.Action);
+            log.LogError(ex, ServiceStrings.Log_ActionFailed, change.Action);
         }
     }
 
@@ -294,7 +295,7 @@ public sealed class Worker(
         {
             // El estado LockedArmed seguira pidiendo el envio cada segundo: solo interesa
             // en Debug; el aviso visible lo da el resumen periodico
-            log.LogDebug("凭据重试预算已耗尽，跳过本次推送");
+            log.LogDebug(ServiceStrings.Log_CredentialBudgetExhausted);
             return;
         }
 
@@ -303,7 +304,7 @@ public sealed class Worker(
             && _credentialBudget.NoteAttempt())
         {
             log.LogWarning(
-                "连续 {Count} 次推送凭据均未收到认证结果，为避免账户锁定，已暂停自动解锁重试；手动解锁或修改凭据后恢复",
+                ServiceStrings.Log_CredentialRetriesPaused,
                 MaxCredentialAttempts);
         }
     }
@@ -330,15 +331,15 @@ public sealed class Worker(
         var batch = _machine.BatchProgressText;
 
         log.LogInformation(
-            "摘要：状态 {State}{Batch}，最近 30 秒 {Count} 个读数，平均 {Average:0.0} dBm，距上次匹配 {Since:0} 秒",
-            _machine.State, batch.Length == 0 ? "" : $"（{batch}）", stats.Count,
+            ServiceStrings.Log_Summary,
+            _machine.State, batch.Length == 0 ? "" : string.Format(ServiceStrings.Log_SummaryBatch, batch), stats.Count,
             stats.Count == 0 ? double.NaN : stats.Average, sinceMatch);
 
         if (sinceMatch > TimeSpan.FromMinutes(5).TotalSeconds)
-            log.LogWarning("已有 5 分钟未匹配到目标设备，请检查 IRK 配置或设备是否在范围内");
+            log.LogWarning(ServiceStrings.Log_NoMatchFiveMinutes);
 
         if (_credentialBudget.IsExhausted)
-            log.LogWarning("自动解锁重试仍处于暂停状态（连续 {Count} 次推送凭据未收到认证结果）；手动解锁或修改凭据后恢复",
+            log.LogWarning(ServiceStrings.Log_CredentialRetriesStillPaused,
                 MaxCredentialAttempts);
     }
 }

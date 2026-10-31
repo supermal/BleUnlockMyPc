@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Credentials;
 
@@ -18,12 +19,12 @@ public sealed class CredentialValidator(ILogger<CredentialValidator> log)
         {
             int error = Marshal.GetLastWin32Error();
             // Jamas se registra la clave, solo el usuario y el codigo de error
-            log.LogError("凭据预验证失败，用户 {User}，错误码 {Error}", userName, error);
+            log.LogError(ServiceStrings.Log_CredPrecheckFailed, userName, error);
             return false;
         }
 
         token.Dispose();
-        log.LogInformation("凭据预验证通过，用户 {User}", userName);
+        log.LogInformation(ServiceStrings.Log_CredPrecheckPassed, userName);
         return true;
     }
 

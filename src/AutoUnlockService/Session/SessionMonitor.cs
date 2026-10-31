@@ -1,6 +1,7 @@
 using System.ServiceProcess;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Options;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Session;
 
@@ -58,6 +59,6 @@ public sealed class SessionMonitor : WindowsServiceLifetime
     private void Raise(Action? handler)
     {
         try { handler?.Invoke(); }
-        catch (Exception ex) { _log.LogError(ex, "处理会话或电源事件时出错"); }
+        catch (Exception ex) { _log.LogError(ex, ServiceStrings.Log_SessionEventError); }
     }
 }

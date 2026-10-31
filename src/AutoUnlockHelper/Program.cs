@@ -1,7 +1,10 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO.Pipes;
 using System.Text;
 using System.Threading.Channels;
+using AutoUnlock.Shared;
+using AutoUnlockHelper.Resources;
 using AutoUnlockService.Session;
 
 namespace AutoUnlockHelper;
@@ -37,7 +40,7 @@ internal static class Program
 
         var writer = new StreamWriter(pipe, new UTF8Encoding(false)) { AutoFlush = false };
         var writerTask = Task.Run(() => WriteLoopAsync(writer));
-        Send(HelperProtocol.BuildHello(Process.GetCurrentProcess().SessionId));
+        Send(HelperProtocol.BuildHello(Process.GetCurrentProcess().SessionId, CultureInfo.CurrentUICulture.Name));
 
         using var reader = new StreamReader(pipe, Encoding.UTF8);
         var exitCode = 0;
@@ -98,6 +101,11 @@ internal static class Program
 
             case HelperCommand.Notify n:
                 prompt.Notify(n.Message);
+                break;
+
+            case HelperCommand.Language l:
+                // Los avisos siguientes saldran en este idioma; el que ya esta en pantalla no cambia
+                HelperStrings.Culture = AppLanguages.ToCulture(l.Value);
                 break;
         }
     }

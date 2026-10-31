@@ -1,3 +1,6 @@
+using AutoUnlock.Shared;
+using AutoUnlockService.Resources;
+
 namespace AutoUnlockService.Config;
 
 public sealed record OptionsChange(
@@ -10,19 +13,23 @@ public sealed class OptionsGate : IDisposable
     private readonly ILogger<OptionsGate> _log;
     private readonly TimeProvider _time;
     private readonly TimeSpan _debounce;
+    private readonly string? _statusPath;
     private readonly object _lock = new();
 
     private ITimer? _timer;
     private AutoUnlockOptions? _pending;
     private bool _disposed;
 
+    // statusPath: dónde dejar el resultado de cada recarga para el gestor; null = no se escribe
     public OptionsGate(
-        AutoUnlockOptions initial, ILogger<OptionsGate> log, TimeProvider time, TimeSpan debounce)
+        AutoUnlockOptions initial, ILogger<OptionsGate> log, TimeProvider time, TimeSpan debounce,
+        string? statusPath = null)
     {
         Current = initial;
         _log = log;
         _time = time;
         _debounce = debounce;
+        _statusPath = statusPath;
     }
 
     public AutoUnlockOptions Current { get; private set; }
@@ -65,7 +72,8 @@ public sealed class OptionsGate : IDisposable
             if (secretErrors.Count > 0)
             {
                 foreach (var error in secretErrors)
-                    _log.LogError("配置校验失败，已保留原配置：{Error}", error);
+                    _log.LogError(ServiceStrings.Log_ConfigRejected, error);
+                WriteStatus(ReloadStatus.Create(ReloadStatusFile.Rejected, message: string.Join("\n", secretErrors)));
                 return;
             }
 
@@ -74,23 +82,43 @@ public sealed class OptionsGate : IDisposable
             {
                 // Nunca se degrada a la configuracion nueva: seguir con la que funcionaba
                 foreach (var error in result.Errors)
-                    _log.LogError("配置校验失败，已保留原配置：{Error}", error);
+                    _log.LogError(ServiceStrings.Log_ConfigRejected, error);
+                WriteStatus(ReloadStatus.Create(ReloadStatusFile.Rejected, message: string.Join("\n", result.Errors)));
                 return;
             }
 
             bool deviceChanged = DeviceDiffers(Current, candidate);
             bool credentialsChanged = CredentialsDiffer(Current, candidate);
-            if (!deviceChanged && !credentialsChanged && !OtherDiffers(Current, candidate)) return;
+            if (!deviceChanged && !credentialsChanged && !OtherDiffers(Current, candidate))
+            {
+                WriteStatus(ReloadStatus.Create(ReloadStatusFile.Unchanged));
+                return;
+            }
 
             Current = candidate;
             change = new OptionsChange(candidate, deviceChanged, credentialsChanged);
 
             // Nunca se registran valores de credenciales, solo que cambiaron
-            _log.LogInformation("配置已重载（设备变更={Device}，凭据变更={Credentials}）",
+            _log.LogInformation(ServiceStrings.Log_ConfigReloaded,
                 deviceChanged, credentialsChanged);
+            WriteStatus(ReloadStatus.Create(ReloadStatusFile.Applied, deviceChanged, credentialsChanged));
         }
 
         if (change is not null) Changed?.Invoke(change);
+    }
+
+    // Un fallo al escribir el estado no debe afectar a la recarga: el gestor acabará por agotar su espera
+    private void WriteStatus(ReloadStatus status)
+    {
+        if (_statusPath is null) return;
+        try
+        {
+            ReloadStatusFile.Write(_statusPath, status);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.LogWarning(ServiceStrings.Log_ReloadStatusWriteFailed, ex.Message);
+        }
     }
 
     private static bool DeviceDiffers(AutoUnlockOptions a, AutoUnlockOptions b) =>
@@ -115,7 +143,14 @@ public sealed class OptionsGate : IDisposable
         a.Proximity.UnlockPendingTimeoutSeconds != b.Proximity.UnlockPendingTimeoutSeconds ||
         a.Notification.Mode != b.Notification.Mode ||
         a.Notification.RejectSnoozeSeconds != b.Notification.RejectSnoozeSeconds ||
-        a.Notification.SnoozeMinutes != b.Notification.SnoozeMinutes;
+        a.Notification.SnoozeMinutes != b.Notification.SnoozeMinutes ||
+        LanguageKey(a) != LanguageKey(b);
+
+    // Se compara el idioma normalizado: " EN " y "en" son el mismo ajuste
+    private static string LanguageKey(AutoUnlockOptions o) =>
+        AppLanguages.TryParseCode(o.Ui?.Language, out var language)
+            ? AppLanguages.ToCode(language)
+            : AppLanguages.SystemSetting;
 
     public void Dispose()
     {

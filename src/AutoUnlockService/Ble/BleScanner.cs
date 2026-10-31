@@ -1,6 +1,7 @@
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Radios;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Ble;
 
@@ -23,7 +24,7 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
     private volatile TaskCompletionSource _stoppedSignal = NewSignal();
 
     public event Action<AdvertisementSample>? SampleReceived;
-    public event Action<string>? StatusChanged;
+    public event Action<ScanStatus>? StatusChanged;
 
     public bool IsAvailable { get; private set; }
 
@@ -52,9 +53,9 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
             catch (TimeoutException)
             {
                 finished = false;
-                log.LogWarning("BLE 扫描循环未在 {Seconds} 秒内退出", StopTimeout.TotalSeconds);
+                log.LogWarning(ServiceStrings.Log_ScanLoopStopTimeout, StopTimeout.TotalSeconds);
             }
-            catch (Exception ex) { log.LogError(ex, "BLE 扫描循环退出时出错"); }
+            catch (Exception ex) { log.LogError(ex, ServiceStrings.Log_ScanLoopExitError); }
         }
 
         // Tras cancelar, ningun arranque nuevo puede crear un watcher (ver TryStartWatcherAsync),
@@ -81,7 +82,7 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
                     var startedAt = time.GetTimestamp();
                     await signal.Task.WaitAsync(ct);
                     if (time.GetElapsedTime(startedAt) >= StableRunTime) _consecutiveFailures = 0;
-                    log.LogWarning("BLE Watcher 已停止，准备重新启动");
+                    log.LogWarning(ServiceStrings.Log_WatcherStoppedRestarting);
                 }
 
                 if (ct.IsCancellationRequested) break;
@@ -90,20 +91,20 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
             catch (Exception ex)
             {
                 // Un fallo inesperado no debe matar el bucle de reintento
-                try { log.LogError(ex, "BLE 扫描循环发生意外错误"); } catch { /* el log no debe romper el bucle */ }
+                try { log.LogError(ex, ServiceStrings.Log_ScanLoopUnexpectedError); } catch { /* el log no debe romper el bucle */ }
             }
 
             _consecutiveFailures++;
             var delay = _consecutiveFailures <= MaxFastRetries ? FastRetryDelay : SlowRetryDelay;
             try
             {
-                log.LogWarning("BLE 扫描不可用（第 {Count} 次），{Delay} 秒后重试", _consecutiveFailures, delay.TotalSeconds);
+                log.LogWarning(ServiceStrings.Log_ScanUnavailableRetry, _consecutiveFailures, delay.TotalSeconds);
                 await Task.Delay(delay, time, ct);
             }
             catch (OperationCanceledException) { break; }
             catch (Exception ex)
             {
-                try { log.LogError(ex, "BLE 重试等待出错"); } catch { /* ignorado */ }
+                try { log.LogError(ex, ServiceStrings.Log_RetryWaitError); } catch { /* ignorado */ }
             }
         }
     }
@@ -116,7 +117,7 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
             ct.ThrowIfCancellationRequested();
             if (adapter is null || !adapter.IsLowEnergySupported)
             {
-                SetUnavailable("未找到支持 BLE 的蓝牙适配器");
+                SetUnavailable(new ScanStatus(ScanStatus.NoAdapter, ServiceStrings.Scan_NoAdapter));
                 return false;
             }
 
@@ -124,7 +125,7 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
             ct.ThrowIfCancellationRequested();
             if (radio is null || radio.State != RadioState.On)
             {
-                SetUnavailable("蓝牙已关闭");
+                SetUnavailable(new ScanStatus(ScanStatus.RadioOff, ServiceStrings.Scan_RadioOff));
                 return false;
             }
 
@@ -145,8 +146,8 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
             }
 
             IsAvailable = true;
-            StatusChanged?.Invoke("BLE 扫描已启动");
-            log.LogInformation("BLE 扫描已启动");
+            StatusChanged?.Invoke(new ScanStatus(ScanStatus.Running, ServiceStrings.Scan_Running));
+            log.LogInformation(ServiceStrings.Scan_Running);
             return true;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -155,16 +156,16 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
         }
         catch (Exception ex)
         {
-            SetUnavailable($"启动 BLE 扫描失败：{ex.Message}");
+            SetUnavailable(new ScanStatus(ScanStatus.StartFailed, string.Format(ServiceStrings.Scan_StartFailed, ex.Message), ex.Message));
             return false;
         }
     }
 
-    private void SetUnavailable(string reason)
+    private void SetUnavailable(ScanStatus reason)
     {
         IsAvailable = false;
         StatusChanged?.Invoke(reason);
-        log.LogError("BLE 不可用：{Reason}", reason);
+        log.LogError(ServiceStrings.Log_BleUnavailable, reason.Text);
     }
 
     private void StopWatcher()
@@ -191,14 +192,13 @@ public sealed class BleScanner(ILogger<BleScanner> log, TimeProvider time) : IRs
             args.BluetoothAddress,
             isRandom,
             args.RawSignalStrengthInDBm,
-            string.IsNullOrEmpty(args.Advertisement.LocalName) ? null : args.Advertisement.LocalName,
             args.Timestamp));
     }
 
     private void OnStopped(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementWatcherStoppedEventArgs args)
     {
         IsAvailable = false;
-        log.LogWarning("BLE Watcher 异常停止：{Error}", args.Error);
+        log.LogWarning(ServiceStrings.Log_WatcherStoppedAbnormally, args.Error);
         // Despierta el bucle de RunAsync para que reintente el arranque
         _stoppedSignal.TrySetResult();
     }

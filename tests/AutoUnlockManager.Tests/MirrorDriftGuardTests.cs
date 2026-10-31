@@ -57,7 +57,9 @@ public sealed class MirrorDriftGuardTests
     [Fact]
     public void ValidatorMessages_MatchServiceSourceVerbatim()
     {
-        var source = File.ReadAllText(ServiceSourcePath("Config", "OptionsValidator.cs"));
+        // Los textos del servicio viven ahora en sus recursos; se compara con la versión china,
+        // que es el idioma fijado para los tests (las otras dos las vigila ResourceParityTests)
+        var source = File.ReadAllText(ServiceSourcePath("Resources", "ServiceStrings.zh.resx"));
         var errors = ConfigValidator.Validate(AllInvalidConfig()).Errors;
 
         Assert.Equal(12, errors.Count);

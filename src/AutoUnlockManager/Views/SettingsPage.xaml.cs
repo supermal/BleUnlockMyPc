@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Windows.Controls;
+using AutoUnlockManager.Core.Localization;
+using AutoUnlockManager.Core.Resources;
 using AutoUnlockManager.ViewModels;
 
 namespace AutoUnlockManager.Views;
@@ -10,9 +12,9 @@ public partial class SettingsPage : UserControl
     {
         ViewModel = viewModel;
         DataContext = viewModel;
-        ConfigLocation = new("配置文件", viewModel.ConfigFilePath);
-        LogsLocation = new("服务日志", viewModel.LogsDirPath);
-        InstallLocation = new("安装目录", viewModel.InstallDirPath);
+        ConfigLocation = new(() => UiStrings.Settings_ConfigFile, viewModel.ConfigFilePath);
+        LogsLocation = new(() => UiStrings.Logs_ServiceLog, viewModel.LogsDirPath);
+        InstallLocation = new(() => UiStrings.Settings_InstallDir, viewModel.InstallDirPath);
         InitializeComponent();
     }
 
@@ -47,5 +49,20 @@ public partial class SettingsPage : UserControl
         }
     }
 
-    public sealed record FileLocation(string Title, string Path);
+    /// <summary>Fila de «ubicación de los archivos»; el título sigue al idioma actual.</summary>
+    public sealed class FileLocation : ObservableObject
+    {
+        private readonly Func<string> _title;
+
+        public FileLocation(Func<string> title, string path)
+        {
+            _title = title;
+            Path = path;
+            ManagerLanguage.Changed += () => OnPropertyChanged(nameof(Title));
+        }
+
+        public string Title => _title();
+
+        public string Path { get; }
+    }
 }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Credentials;
 
@@ -19,10 +20,10 @@ public static class NtStatusPolicy
 
     public static string Describe(uint ntStatus) => ntStatus switch
     {
-        StatusLogonFailure       => "用户名或密码错误",
-        StatusPasswordExpired    => "密码已过期",
-        StatusPasswordMustChange => "密码必须修改后才能登录",
-        StatusAccountLockedOut   => "账户已被锁定",
-        _ => $"登录失败（NTSTATUS 0x{ntStatus.ToString("X8", CultureInfo.InvariantCulture)}）"
+        StatusLogonFailure       => ServiceStrings.Auth_LogonFailure,
+        StatusPasswordExpired    => ServiceStrings.Auth_PasswordExpired,
+        StatusPasswordMustChange => ServiceStrings.Auth_PasswordMustChange,
+        StatusAccountLockedOut   => ServiceStrings.Auth_AccountLockedOut,
+        _ => string.Format(ServiceStrings.Auth_LogonFailedStatus, ntStatus.ToString("X8", CultureInfo.InvariantCulture))
     };
 }

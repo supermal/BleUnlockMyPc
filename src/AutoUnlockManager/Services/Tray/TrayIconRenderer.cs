@@ -7,7 +7,7 @@ using AutoUnlockManager.Core.Telemetry;
 namespace AutoUnlockManager.Services.Tray;
 
 /// <summary>
-/// Icono de la bandeja: candado + ondas de señal (trazo) y un distintivo abajo a la derecha cuya
+/// Icono de la bandeja: candado relleno cuyo arco es una onda de señal, y un distintivo abajo a la derecha cuya
 /// forma y color indican el estado (UiDesign.md 2.5: el estado no depende solo del color).
 /// Se dibuja en un sistema de 16 unidades y se escala al tamaño pedido; color del trazo según el
 /// tema de la barra de tareas.
@@ -16,16 +16,19 @@ internal static class TrayIconRenderer
 {
     private static readonly Dictionary<(TrayState, bool, int), Icon> Cache = [];
 
+    /// <summary>
+    /// Devuelve una copia propia: quien la recibe la libera al sustituirla (TrayHost),
+    /// así que entregar la instancia de la caché la dejaría inservible al volver a ese estado.
+    /// </summary>
     public static Icon Render(TrayState state, bool lightTaskbar, int size)
     {
-        if (Cache.TryGetValue((state, lightTaskbar, size), out var cached))
+        if (!Cache.TryGetValue((state, lightTaskbar, size), out var master))
         {
-            return cached;
+            master = Draw(state, lightTaskbar, size);
+            Cache[(state, lightTaskbar, size)] = master;
         }
 
-        var icon = Draw(state, lightTaskbar, size);
-        Cache[(state, lightTaskbar, size)] = icon;
-        return icon;
+        return (Icon)master.Clone();
     }
 
     private static Icon Draw(TrayState state, bool light, int size)
@@ -38,19 +41,24 @@ internal static class TrayIconRenderer
             g.Clear(Color.Transparent);
             g.ScaleTransform(size / 16f, size / 16f);
 
+            // Icono A «candado de señal»: el arco del candado es la señal; una segunda onda, más tenue,
+            // por encima. Desplazado a la izquierda para dejar la esquina al distintivo
             var ink = light ? Color.FromArgb(0x1A, 0x1A, 0x1A) : Color.White;
-            using (var pen = new Pen(ink, 1.2f) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+            using (var wave = new Pen(Color.FromArgb(153, ink), 1.1f) { StartCap = LineCap.Round, EndCap = LineCap.Round })
             {
-                // Cuerpo del candado y arco
-                using var body = RoundedRect(new RectangleF(1.5f, 7f, 8f, 6.5f), 1.5f);
-                g.DrawPath(pen, body);
-                g.DrawLine(pen, 3.5f, 7f, 3.5f, 5f);
-                g.DrawArc(pen, 3.5f, 3f, 4f, 4f, 180, 180);
-                g.DrawLine(pen, 7.5f, 5f, 7.5f, 7f);
+                // Arco de radio 4.6 entre (2, 5.3) y (10, 5.3): centro (6, 7.57)
+                g.DrawArc(wave, 6f - 4.6f, 7.57f - 4.6f, 9.2f, 9.2f, 209.6f, 120.8f);
+            }
 
-                // Ondas de señal
-                g.DrawArc(pen, 9.6f - 4f, 5.7f - 4f, 8f, 8f, -77, 64);
-                g.DrawArc(pen, 9.8f - 1.7f, 5.7f - 1.7f, 3.4f, 3.4f, -70, 50);
+            using (var shackle = new Pen(ink, 1.4f))
+            {
+                g.DrawArc(shackle, 3.7f, 5.9f, 4.6f, 4.6f, 180, 180);
+            }
+
+            using (var body = RoundedRect(new RectangleF(1.5f, 8f, 9f, 6f), 1.6f))
+            using (var fill = new SolidBrush(ink))
+            {
+                g.FillPath(fill, body);
             }
 
             // Hueco transparente bajo el distintivo para que se lea sobre cualquier fondo

@@ -19,6 +19,30 @@ public sealed class SampleHistoryTests
     }
 
     [Fact]
+    public void AddRange_LateSampleAcrossBatches_InsertedInOrder()
+    {
+        var history = new SampleHistory();
+        history.AddRange([[1000, -50], [3000, -52]]);
+        history.AddRange([[2000, -51], [4000, -53]]);
+        history.AddRange([[500, -49]]);
+
+        Assert.Equal([500L, 1000, 2000, 3000, 4000], history.Snapshot().Select(p => p.TsMs));
+    }
+
+    [Fact]
+    public void AddRange_SameTimestamp_KeepsArrivalOrder()
+    {
+        var history = new SampleHistory();
+        history.AddRange([[1000, -50], [2000, -60]]);
+        // 迟到且与已有样本同刻：排在已有同刻样本之后
+        history.AddRange([[1000, -51], [1000, -52]]);
+
+        var points = history.Snapshot();
+        Assert.Equal([1000L, 1000, 1000, 2000], points.Select(p => p.TsMs));
+        Assert.Equal([-50.0, -51, -52, -60], points.Select(p => p.Rssi));
+    }
+
+    [Fact]
     public void AddRange_SkipsMalformedRows()
     {
         var history = new SampleHistory();

@@ -8,6 +8,7 @@ using AutoUnlockManager.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager;
 
@@ -24,11 +25,12 @@ public partial class MainWindow : FluentWindow
 
         MenuItems =
         [
-            new NavItem(AppPage.Overview, "概览", SymbolRegular.Pulse24),
-            new NavItem(AppPage.Config, "配置", SymbolRegular.Options24),
-            new NavItem(AppPage.Logs, "日志", SymbolRegular.DocumentText24),
+            new NavItem(AppPage.Overview, () => UiStrings.Nav_Overview, SymbolRegular.Pulse24),
+            new NavItem(AppPage.Config, () => UiStrings.Nav_Config, SymbolRegular.Options24),
+            new NavItem(AppPage.Logs, () => UiStrings.Nav_Logs, SymbolRegular.DocumentText24),
+            new NavItem(AppPage.Rules, () => UiStrings.Rules_Nav, SymbolRegular.Flowchart24),
         ];
-        FooterItems = [new NavItem(AppPage.Settings, "设置", SymbolRegular.Settings24)];
+        FooterItems = [new NavItem(AppPage.Settings, () => UiStrings.Nav_Settings, SymbolRegular.Settings24)];
 
         InitializeComponent();
         dialogs.SetDialogHost(RootContentDialog);
@@ -42,6 +44,11 @@ public partial class MainWindow : FluentWindow
                 logsItem.Count = logs.Counts.Warning > 0 ? logs.Counts.Warning.ToString("N0") : "";
             }
         };
+
+        // Oculta en la bandeja o minimizada no se sigue el registro; al volver se pone al día
+        void UpdateLogsActive() => logs.SetWindowActive(IsVisible && WindowState != WindowState.Minimized);
+        IsVisibleChanged += (_, _) => UpdateLogsActive();
+        StateChanged += (_, _) => UpdateLogsActive();
 
         Navigate(AppPage.Overview);
     }
@@ -69,6 +76,7 @@ public partial class MainWindow : FluentWindow
             AppPage.Overview => _services.GetRequiredService<OverviewPage>(),
             AppPage.Config => _services.GetRequiredService<ConfigPage>(),
             AppPage.Logs => _services.GetRequiredService<LogsPage>(),
+            AppPage.Rules => _services.GetRequiredService<RulesPage>(),
             _ => _services.GetRequiredService<SettingsPage>(),
         };
 

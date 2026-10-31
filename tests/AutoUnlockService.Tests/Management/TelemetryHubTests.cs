@@ -1,3 +1,4 @@
+using AutoUnlockService.Ble;
 using System.Text.Json;
 using AutoUnlockService.Config;
 using AutoUnlockService.Core;
@@ -278,14 +279,15 @@ public class TelemetryHubTests
     }
 
     [Fact]
-    public void El_estado_de_escaneo_se_pasa_tal_cual_con_detail_null()
+    public void El_estado_de_escaneo_viaja_con_codigo_texto_y_detalle()
     {
         var hub = Create(out _);
-        hub.OnScanStatus("未找到支持 BLE 的蓝牙适配器");
+        hub.OnScanStatus(new ScanStatus(ScanStatus.StartFailed, "启动 BLE 扫描失败", "AccessDenied"));
 
         var frame = FirstSnapshot(hub);
-        Assert.Equal("未找到支持 BLE 的蓝牙适配器", frame.Scan.Status);
-        Assert.Null(frame.Scan.Detail);
+        Assert.Equal("startFailed", frame.Scan.Code);
+        Assert.Equal("启动 BLE 扫描失败", frame.Scan.Status);
+        Assert.Equal("AccessDenied", frame.Scan.Detail);
     }
 
     [Fact]
@@ -298,9 +300,9 @@ public class TelemetryHubTests
         hub.OnSample(Ms(T0), -60);
         Assert.Equal(0, raised);
 
-        hub.OnScanStatus("BLE 扫描已启动");
+        hub.OnScanStatus(new ScanStatus(ScanStatus.Running, "BLE 扫描已启动"));
         Assert.Equal(1, raised);
-        hub.OnScanStatus("BLE 扫描已启动");   // 同值不重复触发
+        hub.OnScanStatus(new ScanStatus(ScanStatus.Running, "BLE 扫描已启动"));   // 同值不重复触发
         Assert.Equal(1, raised);
 
         hub.OnStateChange(ProximityState.Unlocked);
@@ -321,7 +323,7 @@ public class TelemetryHubTests
         var hub = Create(out _);
         hub.Changed += () => throw new InvalidOperationException("fallo del suscriptor");
 
-        hub.OnScanStatus("BLE 扫描已启动");   // 不得向外抛异常
+        hub.OnScanStatus(new ScanStatus(ScanStatus.Running, "BLE 扫描已启动"));   // 不得向外抛异常
 
         var frame = FirstSnapshot(hub);
         Assert.Equal("BLE 扫描已启动", frame.Scan.Status);

@@ -1,15 +1,29 @@
+using AutoUnlockManager.Core.Localization;
 using Wpf.Ui.Controls;
 
 namespace AutoUnlockManager.Models;
 
-/// <summary>Elemento de la navegación lateral; el contador es opcional (vacío = oculto).</summary>
-public sealed partial class NavItem(AppPage page, string title, SymbolRegular icon) : ObservableObject
+/// <summary>
+/// Elemento de la navegación lateral; el contador es opcional (vacío = oculto). El título se lee de
+/// los recursos cada vez, y cambia en cuanto cambia el idioma.
+/// </summary>
+public sealed partial class NavItem : ObservableObject
 {
-    public AppPage Page { get; } = page;
+    private readonly Func<string> _title;
 
-    public string Title { get; } = title;
+    public NavItem(AppPage page, Func<string> title, SymbolRegular icon)
+    {
+        Page = page;
+        _title = title;
+        Icon = icon;
+        ManagerLanguage.Changed += () => OnPropertyChanged(nameof(Title));
+    }
 
-    public SymbolRegular Icon { get; } = icon;
+    public AppPage Page { get; }
+
+    public string Title => _title();
+
+    public SymbolRegular Icon { get; }
 
     [ObservableProperty]
     public partial string Count { get; set; } = "";

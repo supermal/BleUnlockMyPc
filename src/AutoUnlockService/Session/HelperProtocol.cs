@@ -1,4 +1,5 @@
 using System.Globalization;
+using AutoUnlock.Shared;
 
 namespace AutoUnlockService.Session;
 
@@ -10,6 +11,7 @@ public abstract record HelperCommand
     public sealed record Cancel(int Id) : HelperCommand;
     public sealed record Lock : HelperCommand;
     public sealed record Notify(string Message) : HelperCommand;
+    public sealed record Language(AppLanguage Value) : HelperCommand;
 }
 
 // Protocolo de texto entre el servicio y el ayudante de sesion.
@@ -57,6 +59,11 @@ public static class HelperProtocol
                 command = new HelperCommand.Notify(rest);
                 return true;
 
+            case "LANG":
+                if (!AppLanguages.TryParseCode(rest, out var language)) return false;
+                command = new HelperCommand.Language(language);
+                return true;
+
             case "CANCEL":
                 if (!int.TryParse(rest, NumberStyles.Integer, Inv, out var cancelId)) return false;
                 command = new HelperCommand.Cancel(cancelId);
@@ -77,7 +84,28 @@ public static class HelperProtocol
         }
     }
 
-    public static string BuildHello(int sessionId) => string.Create(Inv, $"HELLO {sessionId}\n");
+    // Idioma de interfaz que debe usar el ayudante (el servicio decide; el ayudante no ve la configuracion)
+    public static string BuildLanguage(AppLanguage language) => $"LANG {AppLanguages.ToCode(language)}\n";
+
+    // HELLO lleva la cultura de interfaz del usuario: el servicio corre como SYSTEM y no la conoce.
+    // Sin cultura (ayudante antiguo) sigue siendo valido
+    public static string BuildHello(int sessionId, string? uiCulture = null) =>
+        string.IsNullOrWhiteSpace(uiCulture)
+            ? string.Create(Inv, $"HELLO {sessionId}\n")
+            : string.Create(Inv, $"HELLO {sessionId} {uiCulture.Trim()}\n");
+
+    public static bool TryParseHello(string line, out int sessionId, out string? uiCulture)
+    {
+        sessionId = 0;
+        uiCulture = null;
+
+        var parts = line.Trim().Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2 || parts[0] != "HELLO") return false;
+        if (!int.TryParse(parts[1], NumberStyles.Integer, Inv, out sessionId)) return false;
+
+        uiCulture = parts.Length == 3 ? parts[2] : null;
+        return true;
+    }
 
     public static string BuildResponse(int id, PromptOutcome outcome) =>
         string.Create(Inv, $"RESPONSE {id} {outcome.ToString().ToUpperInvariant()}\n");

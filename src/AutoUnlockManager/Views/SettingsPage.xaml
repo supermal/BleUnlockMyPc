@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:AutoUnlockManager.Views.Controls"
+    xmlns:loc="clr-namespace:AutoUnlockManager.Localization"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Loaded="OnLoaded">
 
@@ -67,7 +68,7 @@
                         VerticalAlignment="Center"
                         Click="OnOpenPathClicked"
                         CommandParameter="{Binding Path}"
-                        Content="打开文件夹"
+                        Content="{loc:Loc Settings_OpenFolder}"
                         DockPanel.Dock="Right"
                         Style="{StaticResource Ui.Button.Secondary}" />
                     <StackPanel Margin="36,0,16,0" VerticalAlignment="Center">
@@ -85,14 +86,14 @@
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel MaxWidth="{StaticResource Ui.Content.MaxWidth.Settings}" Margin="32,32,32,40">
-            <TextBlock Style="{StaticResource Ui.TextStyle.Title}" Text="设置" />
+            <TextBlock Style="{StaticResource Ui.TextStyle.Title}" Text="{loc:Loc Settings_Title}" />
             <TextBlock
                 Margin="0,4,0,8"
                 Style="{StaticResource Ui.TextStyle.Secondary}"
-                Text="管理器自身的外观与启动方式。服务参数请到「配置」页修改。" />
+                Text="{loc:Loc Settings_Subtitle}" />
 
             <!--  ===== Apariencia =====  -->
-            <TextBlock Style="{StaticResource GroupTitle}" Text="外观" />
+            <TextBlock Style="{StaticResource GroupTitle}" Text="{loc:Loc Settings_Appearance}" />
             <Border Padding="0" Style="{StaticResource Ui.Card}">
                 <StackPanel>
                     <Grid Margin="16,14">
@@ -106,21 +107,21 @@
                             Foreground="{DynamicResource Ui.Icon.Primary}"
                             Symbol="DarkTheme20" />
                         <StackPanel Grid.Column="1">
-                            <TextBlock Text="应用主题" />
-                            <TextBlock Style="{StaticResource Ui.TextStyle.Caption}" Text="立即应用到整个窗口，下次启动时保持。" />
+                            <TextBlock Text="{loc:Loc Settings_AppTheme}" />
+                            <TextBlock Style="{StaticResource Ui.TextStyle.Caption}" Text="{loc:Loc Settings_AppThemeHint}" />
                         </StackPanel>
                     </Grid>
                     <Border BorderBrush="{DynamicResource Ui.Stroke.Divider}" BorderThickness="0,1,0,0">
                         <UniformGrid
                             Margin="16"
-                            AutomationProperties.Name="应用主题"
+                            AutomationProperties.Name="{loc:Loc Settings_AppTheme}"
                             Columns="3">
                             <RadioButton
                                 Margin="0,0,8,0"
-                                AutomationProperties.Name="跟随系统"
+                                AutomationProperties.Name="{loc:Loc Theme_System}"
                                 IsChecked="{Binding IsSystemTheme}"
                                 Style="{StaticResource ThemeTile}"
-                                Tag="跟随系统">
+                                Tag="{loc:Loc Theme_System}">
                                 <Border BorderBrush="{DynamicResource Ui.Stroke.Card}" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
                                     <UniformGrid Columns="2">
                                         <Border Padding="8" Background="#F3F3F3"><Border Background="#FFFFFF" CornerRadius="4" /></Border>
@@ -130,20 +131,20 @@
                             </RadioButton>
                             <RadioButton
                                 Margin="4,0"
-                                AutomationProperties.Name="浅色"
+                                AutomationProperties.Name="{loc:Loc Theme_Light}"
                                 IsChecked="{Binding IsLightTheme}"
                                 Style="{StaticResource ThemeTile}"
-                                Tag="浅色">
+                                Tag="{loc:Loc Theme_Light}">
                                 <Border Padding="28,8,8,8" Background="#F3F3F3" BorderBrush="{DynamicResource Ui.Stroke.Card}" BorderThickness="1" CornerRadius="4">
                                     <Border Background="#FFFFFF" BorderBrush="#E5E5E5" BorderThickness="1" CornerRadius="4" />
                                 </Border>
                             </RadioButton>
                             <RadioButton
                                 Margin="8,0,0,0"
-                                AutomationProperties.Name="深色"
+                                AutomationProperties.Name="{loc:Loc Theme_Dark}"
                                 IsChecked="{Binding IsDarkTheme}"
                                 Style="{StaticResource ThemeTile}"
-                                Tag="深色">
+                                Tag="{loc:Loc Theme_Dark}">
                                 <Border Padding="28,8,8,8" Background="#1C1C1C" BorderBrush="{DynamicResource Ui.Stroke.Card}" BorderThickness="1" CornerRadius="4">
                                     <Border Background="#242424" CornerRadius="4" />
                                 </Border>
@@ -153,11 +154,36 @@
                 </StackPanel>
             </Border>
 
-            <!--  ===== Arranque =====  -->
-            <TextBlock Style="{StaticResource GroupTitle}" Text="启动" />
+            <!--  ===== Idioma: único ajuste del equipo, se guarda en la configuración del servicio =====  -->
+            <TextBlock Style="{StaticResource GroupTitle}" Text="{loc:Loc Settings_LanguageGroup}" />
             <controls:SettingRow
-                Description="由安装脚本注册的计划任务以最高权限启动，不弹 UAC。关闭窗口后最小化到托盘。"
-                Header="登录时自动启动"
+                Description="{loc:Loc Settings_LanguageDescription}"
+                Header="{loc:Loc Settings_LanguageHeader}"
+                Icon="LocalLanguage20">
+                <ComboBox
+                    MinWidth="220"
+                    AutomationProperties.Name="{loc:Loc Settings_LanguageHeader}"
+                    IsEnabled="{Binding CanChangeLanguage}"
+                    SelectedIndex="{Binding LanguageIndex}">
+                    <ComboBoxItem Content="{loc:Loc Language_System}" />
+                    <ComboBoxItem Content="{loc:Loc Language_Chinese}" />
+                    <ComboBoxItem Content="{loc:Loc Language_English}" />
+                    <ComboBoxItem Content="{loc:Loc Language_Spanish}" />
+                </ComboBox>
+            </controls:SettingRow>
+            <TextBlock
+                Margin="16,6,0,0"
+                Foreground="{DynamicResource Ui.Status.Warning.Fg}"
+                Style="{StaticResource Ui.TextStyle.Caption}"
+                Text="{Binding LanguageNote}"
+                TextWrapping="Wrap"
+                Visibility="{Binding HasLanguageNote, Converter={StaticResource BoolToVisibility}}" />
+
+            <!--  ===== Arranque =====  -->
+            <TextBlock Style="{StaticResource GroupTitle}" Text="{loc:Loc Settings_Startup}" />
+            <controls:SettingRow
+                Description="{loc:Loc Settings_AutoStartHint}"
+                Header="{loc:Loc Settings_AutoStart}"
                 Icon="Power20">
                 <Border Style="{StaticResource Ui.StatusBadge.Tone}" Tag="{Binding AutoStartTone}">
                     <StackPanel Orientation="Horizontal">
@@ -172,7 +198,7 @@
             </controls:SettingRow>
 
             <!--  ===== Ubicación de los ficheros =====  -->
-            <TextBlock Style="{StaticResource GroupTitle}" Text="文件位置" />
+            <TextBlock Style="{StaticResource GroupTitle}" Text="{loc:Loc Settings_FileLocations}" />
             <ContentPresenter Content="{Binding ConfigLocation, RelativeSource={RelativeSource AncestorType=UserControl}}" ContentTemplate="{StaticResource PathRow}" />
             <ContentPresenter Content="{Binding LogsLocation, RelativeSource={RelativeSource AncestorType=UserControl}}" ContentTemplate="{StaticResource PathRow}" />
             <ContentPresenter Content="{Binding InstallLocation, RelativeSource={RelativeSource AncestorType=UserControl}}" ContentTemplate="{StaticResource PathRow}" />

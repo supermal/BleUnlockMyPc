@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Services.Ble;
 
@@ -101,7 +102,7 @@ public sealed class BleCentralScanner : IDisposable
     {
         if (args.Error != BluetoothError.Success)
         {
-            LastError = $"扫描已停止（{args.Error}）。";
+            LastError = string.Format(UiStrings.Scan_Stopped, args.Error);
         }
     }
 

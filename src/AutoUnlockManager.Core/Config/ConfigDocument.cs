@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Core.Config;
 
@@ -120,11 +121,45 @@ public static class ConfigDocument
         WriteAtomically(path, json);
     }
 
+    /// <summary>
+    /// Idioma de la interfaz (<c>AutoUnlock:Ui:Language</c>): system | zh | en | es. Fichero ausente,
+    /// dañado o sin la clave = <c>system</c>; nunca lanza.
+    /// </summary>
+    public static string ReadLanguage(string path)
+    {
+        try
+        {
+            var root = ParseRoot(File.ReadAllText(path));
+            var section = FindKey(root, "AutoUnlock") is { } a ? root[a] as JsonObject : null;
+            var ui = section is not null && FindKey(section, "Ui") is { } u ? section[u] as JsonObject : null;
+            var value = ui is not null && FindKey(ui, "Language") is { } l ? ui[l] : null;
+            return value is JsonValue v && v.TryGetValue<string>(out var text) && !string.IsNullOrWhiteSpace(text)
+                ? text.Trim()
+                : "system";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return "system";
+        }
+    }
+
+    /// <summary>
+    /// Guarda solo <c>AutoUnlock:Ui:Language</c>; el resto del fichero queda intacto. El servicio lo
+    /// recarga en caliente como cualquier otro cambio. Misma escritura atómica que <see cref="Save"/>.
+    /// </summary>
+    public static void SaveLanguage(string path, string code)
+    {
+        var root = ParseRoot(File.ReadAllText(path));
+        var ui = GetOrAddObject(GetOrAddObject(root, "AutoUnlock"), "Ui");
+        Set(ui, "Language", JsonValue.Create(code));
+        WriteAtomically(path, root.ToJsonString(WriteOptions) + Environment.NewLine);
+    }
+
     private static JsonObject ParseRoot(string text)
     {
         var node = JsonNode.Parse(text, nodeOptions: null, documentOptions: DocumentOptions);
         return node as JsonObject
-            ?? throw new JsonException("配置文件的根必须是 JSON 对象。");
+            ?? throw new JsonException(CoreStrings.Config_RootNotObject);
     }
 
     /// <summary>大小写不敏感查找既有键（避免同义键重复写入）。</summary>
@@ -225,7 +260,7 @@ public static class ConfigDocument
                 return (T)Enum.ToObject(typeof(T), number);
             }
 
-            throw new JsonException($"无效的 {typeof(T).Name} 取值。");
+            throw new JsonException(string.Format(CoreStrings.Config_InvalidValue, typeof(T).Name));
         }
 
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)

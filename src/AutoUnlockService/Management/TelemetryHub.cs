@@ -1,5 +1,7 @@
+using AutoUnlockService.Ble;
 using AutoUnlockService.Config;
 using AutoUnlockService.Core;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Management;
 
@@ -35,7 +37,7 @@ public sealed class TelemetryHub
     private long _gen = 1;              // 历史代次：每次 OnHistoryReset 递增，管理端据此清空曲线
     private string? _stateName;
     private long? _stateSinceMs;
-    private string? _scanStatus;
+    private ScanStatus? _scanStatus;
     private bool _helperConnected;
     private bool _credConnected;
     private DateTimeOffset? _lastMatchAt;
@@ -75,7 +77,7 @@ public sealed class TelemetryHub
         }
         catch (Exception ex)
         {
-            _log.LogWarning("记录 RSSI 样本时出错（已忽略）：{Message}", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_TelemetrySampleError, ex.Message);
         }
     }
 
@@ -95,7 +97,7 @@ public sealed class TelemetryHub
         }
         catch (Exception ex)
         {
-            _log.LogWarning("记录批次进度时出错（已忽略）：{Message}", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_TelemetryBatchError, ex.Message);
         }
     }
 
@@ -128,12 +130,12 @@ public sealed class TelemetryHub
         }
         catch (Exception ex)
         {
-            _log.LogWarning("记录状态变更时出错（已忽略）：{Message}", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_TelemetryStateError, ex.Message);
         }
     }
 
-    // 扫描状态原文上报（v1 沿用现有文本语义）
-    public void OnScanStatus(string status)
+    // Estado del escaneo: el código lo interpreta el gestor; texto y detalle solo se muestran
+    public void OnScanStatus(ScanStatus status)
     {
         try
         {
@@ -148,7 +150,7 @@ public sealed class TelemetryHub
         }
         catch (Exception ex)
         {
-            _log.LogWarning("记录扫描状态时出错（已忽略）：{Message}", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_TelemetryScanError, ex.Message);
         }
     }
 
@@ -167,7 +169,7 @@ public sealed class TelemetryHub
         }
         catch (Exception ex)
         {
-            _log.LogWarning("记录助手连接状态时出错（已忽略）：{Message}", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_TelemetryHelperError, ex.Message);
         }
     }
 
@@ -186,7 +188,7 @@ public sealed class TelemetryHub
         }
         catch (Exception ex)
         {
-            _log.LogWarning("记录凭据提供程序连接状态时出错（已忽略）：{Message}", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_TelemetryCredError, ex.Message);
         }
     }
 
@@ -216,7 +218,7 @@ public sealed class TelemetryHub
         }
         catch (Exception ex)
         {
-            _log.LogWarning("重置遥测历史时出错（已忽略）：{Message}", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_TelemetryResetError, ex.Message);
         }
     }
 
@@ -245,7 +247,7 @@ public sealed class TelemetryHub
                 now.ToUnixTimeMilliseconds(),
                 (now - _startedAt).TotalSeconds,
                 new SnapshotState(_stateName, _stateSinceMs),
-                new SnapshotScan(_scanStatus, null),
+                new SnapshotScan(_scanStatus?.Text, _scanStatus?.Detail, _scanStatus?.Code),
                 new SnapshotConnection(_helperConnected),
                 new SnapshotConnection(_credConnected),
                 new SnapshotThresholds(
@@ -331,7 +333,7 @@ public sealed class TelemetryHub
         catch (Exception ex)
         {
             // 订阅者（管理管道）出错不能影响摄入方，更不能冒泡到服务主流程
-            _log.LogWarning("遥测变化订阅者抛出异常（已忽略）：{Message}", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_TelemetrySubscriberError, ex.Message);
         }
     }
 

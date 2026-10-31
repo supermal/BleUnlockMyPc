@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Ago_Hours" xml:space="preserve"><value>{0} h ago</value></data>
+  <data name="Ago_Minutes" xml:space="preserve"><value>{0} min ago</value></data>
+  <data name="Ago_Never" xml:space="preserve"><value>Never</value></data>
+  <data name="Ago_Seconds" xml:space="preserve"><value>{0} s ago</value></data>
+  <data name="Bond_AccessDenied" xml:space="preserve"><value>No permission to connect to the service pipe (administrator required): {0}</value></data>
+  <data name="Bond_ConnectFailed" xml:space="preserve"><value>Could not connect to the service: {0}</value></data>
+  <data name="Bond_InvalidResponse" xml:space="preserve"><value>The service returned an invalid response.</value></data>
+  <data name="Bond_NameWithAddress" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="Bond_NoData" xml:space="preserve"><value>The service returned no data.</value></data>
+  <data name="Bond_ReadFailed" xml:space="preserve"><value>Failed to read the paired devices: {0}</value></data>
+  <data name="Bond_ServiceError" xml:space="preserve"><value>The service returned an error.</value></data>
+  <data name="Bond_Timeout" xml:space="preserve"><value>Timed out reading (the service may not be running).</value></data>
+  <data name="Bond_Unparseable" xml:space="preserve"><value>The service returned data that could not be parsed.</value></data>
+  <data name="ByteOrder_Auto" xml:space="preserve"><value>Detect automatically (Auto)</value></data>
+  <data name="ByteOrder_Normal" xml:space="preserve"><value>As entered (Normal)</value></data>
+  <data name="ByteOrder_Reversed" xml:space="preserve"><value>Reversed (Reversed)</value></data>
+  <data name="Config_InvalidValue" xml:space="preserve"><value>Invalid {0} value.</value></data>
+  <data name="Config_RootNotObject" xml:space="preserve"><value>The root of the configuration file must be a JSON object.</value></data>
+  <data name="Device_NotSelected" xml:space="preserve"><value>No device selected</value></data>
+  <data name="Device_Unknown" xml:space="preserve"><value>Unknown device</value></data>
+  <data name="Diff_FieldModified" xml:space="preserve"><value>{0} modified</value></data>
+  <data name="Diff_FirstAndMore" xml:space="preserve"><value>{0} and {1} items in total</value></data>
+  <data name="Duration_HoursMinutes" xml:space="preserve"><value>{0} h {1} min</value></data>
+  <data name="Duration_MinutesSeconds" xml:space="preserve"><value>{0} min {1} s</value></data>
+  <data name="Duration_Seconds" xml:space="preserve"><value>{0} s</value></data>
+  <data name="Field_DeviceAddress" xml:space="preserve"><value>Device address</value></data>
+  <data name="Field_DeviceIrk" xml:space="preserve"><value>Device IRK</value></data>
+  <data name="Field_IrkByteOrder" xml:space="preserve"><value>IRK byte order</value></data>
+  <data name="Field_LockConfirmSampleCount" xml:space="preserve"><value>Readings to confirm lock</value></data>
+  <data name="Field_LockPromptSampleCount" xml:space="preserve"><value>Readings to show the prompt</value></data>
+  <data name="Field_LockThreshold" xml:space="preserve"><value>Lock threshold (dBm)</value></data>
+  <data name="Field_NotificationMode" xml:space="preserve"><value>Notification style</value></data>
+  <data name="Field_Password" xml:space="preserve"><value>Credential password</value></data>
+  <data name="Field_RejectSnooze" xml:space="preserve"><value>Pause after rejecting (s)</value></data>
+  <data name="Field_SampleInterval" xml:space="preserve"><value>RSSI sample interval (ms)</value></data>
+  <data name="Field_Snooze" xml:space="preserve"><value>Remind me later (min)</value></data>
+  <data name="Field_StartupGrace" xml:space="preserve"><value>Startup grace (s)</value></data>
+  <data name="Field_UnlockPendingTimeout" xml:space="preserve"><value>Unlock wait timeout (s)</value></data>
+  <data name="Field_UnlockSampleCount" xml:space="preserve"><value>Readings to confirm unlock</value></data>
+  <data name="Field_UnlockThreshold" xml:space="preserve"><value>Unlock threshold (dBm)</value></data>
+  <data name="Field_UserName" xml:space="preserve"><value>Credential user name</value></data>
+  <data name="LanguageProbe" xml:space="preserve"><value>English</value></data>
+  <data name="Mode_Dialog" xml:space="preserve"><value>Dialog box (Dialog)</value></data>
+  <data name="Mode_Toast" xml:space="preserve"><value>System notification (Toast)</value></data>
+  <data name="Secret_Plaintext" xml:space="preserve"><value>Currently stored in plain text; it will be encrypted when you save.</value></data>
+  <data name="Secret_StoredEncrypted" xml:space="preserve"><value>Stored encrypted and never shown; type a new password to replace it. It is re-encrypted when you save.</value></data>
+  <data name="Secret_Undecryptable" xml:space="preserve"><value>This encrypted value cannot be decrypted on this computer (it may come from another one); enter it again.</value></data>
+  <data name="State_LockedArmed" xml:space="preserve"><value>Locked · monitoring</value></data>
+  <data name="State_LockedWaitingDeparture" xml:space="preserve"><value>Locked · waiting for departure</value></data>
+  <data name="State_PendingLock" xml:space="preserve"><value>About to lock</value></data>
+  <data name="State_Snoozed" xml:space="preserve"><value>Snoozed</value></data>
+  <data name="State_Suspended" xml:space="preserve"><value>Suspended</value></data>
+  <data name="State_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="State_UnlockPending" xml:space="preserve"><value>Confirming unlock</value></data>
+  <data name="State_Unlocked" xml:space="preserve"><value>Unlocked</value></data>
+  <data name="Tray_BelowLockThreshold" xml:space="preserve"><value>{0}, below the lock threshold {1}</value></data>
+  <data name="Tray_ConnectingHint" xml:space="preserve"><value>It connects automatically once the service starts</value></data>
+  <data name="Tray_ConnectingTitle" xml:space="preserve"><value>Connecting to the service…</value></data>
+  <data name="Tray_LastMatch" xml:space="preserve"><value>{0}, last match {1}</value></data>
+  <data name="Tray_LeaveConfirm" xml:space="preserve"><value>Departure confirmation {0}/{1}</value></data>
+  <data name="Tray_LockConfirm" xml:space="preserve"><value>Lock confirmation {0}/{1}</value></data>
+  <data name="Tray_NoSignal" xml:space="preserve"><value>{0}, no signal yet</value></data>
+  <data name="Tray_Prefix" xml:space="preserve"><value>AutoUnlock: </value></data>
+  <data name="Tray_SignalDbm" xml:space="preserve"><value>{0} {1} dBm</value></data>
+  <data name="Tray_StoppedHint" xml:space="preserve"><value>Right-click and choose "Start service" to resume</value></data>
+  <data name="Tray_StoppedTitle" xml:space="preserve"><value>The service is stopped</value></data>
+  <data name="Tray_SuspendedHint" xml:space="preserve"><value>It resumes after you update the password on the Configuration page</value></data>
+  <data name="Tray_SuspendedTitle" xml:space="preserve"><value>Automatic unlock paused; check the password</value></data>
+  <data name="Validation_AddressFormat" xml:space="preserve"><value>{0} must be a valid 6-byte MAC address</value></data>
+  <data name="Validation_GraceNegative" xml:space="preserve"><value>{0} cannot be negative</value></data>
+  <data name="Validation_IrkFormat" xml:space="preserve"><value>{0} must be 32 hexadecimal characters</value></data>
+  <data name="Validation_LockConfirmCountRange" xml:space="preserve"><value>{0} must be between 1 and 50</value></data>
+  <data name="Validation_LockPromptCountRange" xml:space="preserve"><value>{0} must be between 1 and 50</value></data>
+  <data name="Validation_PasswordControlChars" xml:space="preserve"><value>{0} cannot contain control characters (line breaks, carriage returns, tabs, etc.)</value></data>
+  <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>{0} must be positive</value></data>
+  <data name="Validation_RejectSnoozePositive" xml:space="preserve"><value>{0} must be positive</value></data>
+  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs must be between 0 and 2000 (0 means no limit)</value></data>
+  <data name="Validation_SnoozeMax" xml:space="preserve"><value>{0} cannot exceed {1:0} minutes</value></data>
+  <data name="Validation_SnoozePositive" xml:space="preserve"><value>{0} must be positive</value></data>
+  <data name="Validation_ThresholdOrder" xml:space="preserve"><value>{0} must be greater than LockThresholdDbm, otherwise the dead zone is negative</value></data>
+  <data name="Validation_UnlockCountRange" xml:space="preserve"><value>{0} must be between 1 and 20</value></data>
+  <data name="Validation_UserNameControlChars" xml:space="preserve"><value>{0} cannot contain control characters (line breaks, carriage returns, tabs, etc.)</value></data>
+  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>{0} cannot be empty</value></data>
+  <data name="Value_Empty" xml:space="preserve"><value>(empty)</value></data>
+  <data name="Value_Encrypted" xml:space="preserve"><value>(encrypted)</value></data>
+  <data name="Value_NotSet" xml:space="preserve"><value>(not set)</value></data>
+  <data name="Zone_Away" xml:space="preserve"><value>Away zone</value></data>
+  <data name="Zone_Hold" xml:space="preserve"><value>Hold zone</value></data>
+  <data name="Zone_Near" xml:space="preserve"><value>Near zone</value></data>
+</root>

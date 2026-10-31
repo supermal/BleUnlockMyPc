@@ -1,3 +1,5 @@
+using AutoUnlockService.Resources;
+
 namespace AutoUnlockService.Config;
 
 /// <summary>
@@ -37,7 +39,7 @@ public static class OptionsSecrets
 
         if (!SecretProtector.IsProtected(value))
         {
-            warnings.Add($"{field} 以明文存储，建议在管理端保存一次以加密");
+            warnings.Add(string.Format(ServiceStrings.Validation_PlaintextSecret, field));
             return;
         }
 
@@ -47,7 +49,7 @@ public static class OptionsSecrets
         }
         else
         {
-            errors.Add($"{field} 无法解密（密文可能来自其他机器），请在管理端重新输入并保存");
+            errors.Add(string.Format(ServiceStrings.Validation_SecretUndecryptable, field));
         }
     }
 }

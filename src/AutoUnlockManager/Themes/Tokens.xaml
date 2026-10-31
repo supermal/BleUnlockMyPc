@@ -43,4 +43,44 @@
     <sys:Double x:Key="Ui.Size.SettingRow">68</sys:Double>
     <sys:Double x:Key="Ui.Content.MaxWidth.Settings">1000</sys:Double>
     <sys:Double x:Key="Ui.Content.MaxWidth.Workspace">1280</sys:Double>
+
+    <!--  Logotipo (icono A «candado de señal», versión 24 unidades): colores de marca fijos, no dependen del tema  -->
+    <DrawingImage x:Key="Ui.Logo">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="Transparent" Geometry="M0,0 H24 V24 H0 Z" />
+                <GeometryDrawing>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Offset="0" Color="#2B8FE6" />
+                            <GradientStop Offset="1" Color="#0051A8" />
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry RadiusX="5.5" RadiusY="5.5" Rect="1,1,22,22" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M6.4,9.9 A6,6 0 0 1 17.6,9.9">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#99FFFFFF" EndLineCap="Round" StartLineCap="Round" Thickness="1.4" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M8.5,12.3 A3.5,3.5 0 0 1 15.5,12.3">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#FFFFFF" EndLineCap="Round" StartLineCap="Round" Thickness="1.8" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#FFFFFF">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry RadiusX="2" RadiusY="2" Rect="6,12,12,8" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#0A5EB8">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry RadiusX="0.75" RadiusY="0.75" Rect="11.25,14.5,1.5,3" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
 </ResourceDictionary>

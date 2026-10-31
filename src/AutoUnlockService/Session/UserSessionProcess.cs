@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Session;
 
@@ -24,7 +25,7 @@ public static class UserSessionProcess
         var sessionId = WtsNative.GetActiveConsoleSessionId();
         if (sessionId == WtsNative.InvalidSession)
         {
-            log.LogWarning("没有活动的控制台会话，无法在用户会话中启动进程");
+            log.LogWarning(ServiceStrings.Log_NoConsoleSessionForProcess);
             return UserSessionStartResult.NoUserSession;
         }
 
@@ -33,7 +34,7 @@ public static class UserSessionProcess
         if (!gotToken)
         {
             // Sin usuario con sesion iniciada (pantalla de inicio de sesion) no hay token que pedir
-            log.LogWarning("获取用户令牌失败，错误码 {Error}", tokenError);
+            log.LogWarning(ServiceStrings.Log_UserTokenFailed, tokenError);
             return tokenError == ErrorNoToken ? UserSessionStartResult.NoUserSession : UserSessionStartResult.Failed;
         }
 
@@ -49,7 +50,7 @@ public static class UserSessionProcess
 
             if (!ok)
             {
-                log.LogWarning("CreateProcessAsUser 失败，错误码 {Error}", Marshal.GetLastWin32Error());
+                log.LogWarning(ServiceStrings.Log_CreateProcessAsUserFailed, Marshal.GetLastWin32Error());
                 return UserSessionStartResult.Failed;
             }
 

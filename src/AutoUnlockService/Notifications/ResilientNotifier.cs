@@ -1,4 +1,5 @@
 using AutoUnlockService.Session;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Notifications;
 
@@ -21,7 +22,7 @@ public sealed class ResilientNotifier(
     public void Degrade(string reason)
     {
         if (Interlocked.Exchange(ref _degraded, 1) != 0) return;
-        log.LogWarning("通知方式已降级为对话框：{Reason}", reason);
+        log.LogWarning(ServiceStrings.Log_NotifierDegraded, reason);
         _ = RetractPrimaryAsync();
     }
 
@@ -56,7 +57,7 @@ public sealed class ResilientNotifier(
         {
             // Degrade() retiro el aviso del primario mientras estaba pendiente y nadie mas lo cancelo:
             // el usuario ya no ve nada, asi que se pregunta por el respaldo
-            log.LogWarning("通知方式在提示进行中降级，改用对话框重新提示");
+            log.LogWarning(ServiceStrings.Log_NotifierDegradedMidPrompt);
             return await fallback.PromptAsync(snoozeMinutes, ct);
         }
     }

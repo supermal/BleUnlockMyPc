@@ -2,6 +2,7 @@ using System.Threading;
 using AutoUnlockManager.Core;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Enumeration;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Services.Ble;
 
@@ -23,26 +24,26 @@ public static class BlePairingService
     {
         try
         {
-            LogPair($"开始配对：address={BleAddressText.Format(address)} random={isRandomAddress}");
+            LogPair($"Pairing start: address={BleAddressText.Format(address)} random={isRandomAddress}");
             var addressType = isRandomAddress ? BluetoothAddressType.Random : BluetoothAddressType.Public;
             using var device = await BluetoothLEDevice.FromBluetoothAddressAsync(address, addressType);
             if (device is null)
             {
-                LogPair("设备不可见");
-                return BlePairingResult.Fail("设备已不可见，请确认它仍在配对模式，然后重新扫描。");
+                LogPair("Device not visible");
+                return BlePairingResult.Fail(UiStrings.Pair_DeviceGone);
             }
 
             var pairing = device.DeviceInformation?.Pairing;
             if (pairing is null)
             {
-                LogPair("配对接口为空");
-                return BlePairingResult.Fail("无法读取设备的配对接口。");
+                LogPair("Pairing interface is null");
+                return BlePairingResult.Fail(UiStrings.Pair_NoPairingInterface);
             }
 
-            LogPair($"设备={device.Name} IsPaired={pairing.IsPaired} CanPair={pairing.CanPair}");
+            LogPair($"Device={device.Name} IsPaired={pairing.IsPaired} CanPair={pairing.CanPair}");
             if (pairing.IsPaired)
             {
-                return BlePairingResult.Ok("该设备已与 Windows 配对。");
+                return BlePairingResult.Ok(UiStrings.Pair_AlreadyPairedWithWindows);
             }
 
             var custom = pairing.Custom;
@@ -64,7 +65,7 @@ public static class BlePairingService
 
                     if (promptKind is null)
                     {
-                        LogPair($"不支持的配对方式：{args.PairingKind}");
+                        LogPair($"Unsupported pairing kind: {args.PairingKind}");
                         return;
                     }
 
@@ -85,7 +86,7 @@ public static class BlePairingService
 
                     if (!response.Accepted)
                     {
-                        LogPair("用户拒绝配对");
+                        LogPair("User rejected pairing");
                         return;
                     }
 
@@ -93,7 +94,7 @@ public static class BlePairingService
                     {
                         if (string.IsNullOrWhiteSpace(response.Pin))
                         {
-                            LogPair("ProvidePin 未输入 PIN");
+                            LogPair("ProvidePin: no PIN entered");
                             return;
                         }
 
@@ -104,11 +105,11 @@ public static class BlePairingService
                         args.Accept();
                     }
 
-                    LogPair($"已接受配对：{args.PairingKind}");
+                    LogPair($"Pairing accepted: {args.PairingKind}");
                 }
                 catch (Exception ex)
                 {
-                    LogPair($"PairingRequested 异常：{ex.GetType().Name} 0x{ex.HResult:X8}: {ex.Message}");
+                    LogPair($"PairingRequested exception: {ex.GetType().Name} 0x{ex.HResult:X8}: {ex.Message}");
                 }
                 finally
                 {
@@ -135,31 +136,31 @@ public static class BlePairingService
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
-                    LogPair("配对超时");
+                    LogPair("Pairing timed out");
                     return BlePairingResult.Fail(
-                        "等待配对确认超时。请重试，并在本向导的配对提示中完成确认/PIN。");
+                        UiStrings.Pair_WaitTimeout);
                 }
 
-                LogPair($"配对结果：{result.Status}");
+                LogPair($"Pairing result: {result.Status}");
                 return result.Status switch
                 {
-                    DevicePairingResultStatus.Paired => BlePairingResult.Ok("配对成功。"),
-                    DevicePairingResultStatus.AlreadyPaired => BlePairingResult.Ok("该设备已配对。"),
+                    DevicePairingResultStatus.Paired => BlePairingResult.Ok(UiStrings.Pair_Succeeded),
+                    DevicePairingResultStatus.AlreadyPaired => BlePairingResult.Ok(UiStrings.Pair_AlreadyPaired),
                     DevicePairingResultStatus.AuthenticationFailure => BlePairingResult.Fail(
-                        "设备拒绝了配对，或 PIN/确认码不正确。请重试，并在本向导的配对提示中重新输入。"),
+                        UiStrings.Pair_Rejected),
                     DevicePairingResultStatus.AuthenticationTimeout => BlePairingResult.Fail(
-                        "配对确认超时。请重试，并在本向导的配对提示中及时确认。"),
+                        UiStrings.Pair_ConfirmTimeout),
                     DevicePairingResultStatus.ConnectionRejected => BlePairingResult.Fail(
-                        "设备拒绝了连接。请确认设备仍处于配对模式，然后重试。"),
+                        UiStrings.Pair_ConnectionRejected),
                     DevicePairingResultStatus.OperationAlreadyInProgress => BlePairingResult.Fail(
-                        "另一个配对操作正在进行。请先完成屏幕上已有的配对窗口，再重试。"),
+                        UiStrings.Pair_InProgress),
                     DevicePairingResultStatus.NotReadyToPair => BlePairingResult.Fail(
-                        "设备尚未准备好配对。请确认它仍处于配对模式，然后重试。"),
+                        UiStrings.Pair_NotReady),
                     DevicePairingResultStatus.AccessDenied => BlePairingResult.Fail(
-                        "Windows 拒绝对该设备的配对操作。请确认管理端以管理员身份运行。"),
+                        UiStrings.Pair_AccessDenied),
                     DevicePairingResultStatus.RequiredHandlerNotRegistered => BlePairingResult.Fail(
-                        "设备要求的配对方式不受支持（可能需要密码/证书）。请改用设备厂商的应用。"),
-                    _ => BlePairingResult.Fail($"配对失败（{result.Status}）。"),
+                        UiStrings.Pair_Unsupported),
+                    _ => BlePairingResult.Fail(string.Format(UiStrings.Pair_FailedStatus, result.Status)),
                 };
             }
             finally
@@ -169,13 +170,13 @@ public static class BlePairingService
         }
         catch (OperationCanceledException)
         {
-            LogPair("配对已取消");
-            return BlePairingResult.Fail("已取消配对。");
+            LogPair("Pairing cancelled");
+            return BlePairingResult.Fail(UiStrings.Pair_Cancelled);
         }
         catch (Exception ex)
         {
-            LogPair($"异常 {ex.GetType().Name} 0x{ex.HResult:X8}: {ex.Message}");
-            return BlePairingResult.Fail($"配对失败：{ex.Message}");
+            LogPair($"Exception {ex.GetType().Name} 0x{ex.HResult:X8}: {ex.Message}");
+            return BlePairingResult.Fail(string.Format(UiStrings.Pair_Failed, ex.Message));
         }
     }
 
@@ -200,22 +201,22 @@ public static class BlePairingService
         CancellationToken cancellationToken = default)
     {
         PairedTarget? target = null;
-        Log($"开始解除配对：address={address}");
+        Log($"Unpairing start: address={address}");
         try
         {
             target = await FindPairedDeviceAsync(address, cancellationToken);
             if (target is null)
             {
-                Log("未找到已配对设备");
+                Log("Paired device not found");
                 return BlePairingResult.Fail(
-                    "Windows 的已配对设备中找不到该地址；可能已经解除，请点「刷新列表」确认。");
+                    UiStrings.Unpair_NotFound);
             }
 
             var pairing = target.Information.Pairing;
             if (pairing is null)
             {
-                Log("配对接口为空");
-                return BlePairingResult.Fail("无法读取该设备的配对接口。");
+                Log("Pairing interface is null");
+                return BlePairingResult.Fail(UiStrings.Unpair_NoInterface);
             }
 
             // BluetoothLEDevice.DeviceInformation 的 IsPaired 才是可靠值；
@@ -223,29 +224,29 @@ public static class BlePairingService
             // 兜底对象（target.Device 为空）即使 IsPaired=false 也尝试一次，由结果状态判断。
             if (target.Device is not null && !pairing.IsPaired)
             {
-                Log("设备对象报告未配对");
+                Log("Device object reports not paired");
                 return BlePairingResult.Fail(
-                    "Windows 报告该设备当前未配对（可能已在系统设置中解除）。请点「刷新列表」确认。");
+                    UiStrings.Unpair_NotPaired);
             }
 
             var result = await pairing.UnpairAsync().AsTask(cancellationToken);
-            Log($"解除结果：{result.Status}");
+            Log($"Unpairing result: {result.Status}");
             return result.Status switch
             {
-                DeviceUnpairingResultStatus.Unpaired => BlePairingResult.Ok("已解除 Windows 蓝牙配对。"),
-                DeviceUnpairingResultStatus.AlreadyUnpaired => BlePairingResult.Ok("该设备已经解除过配对。"),
-                _ => BlePairingResult.Fail($"解除配对失败（{result.Status}）。"),
+                DeviceUnpairingResultStatus.Unpaired => BlePairingResult.Ok(UiStrings.Unpair_Succeeded),
+                DeviceUnpairingResultStatus.AlreadyUnpaired => BlePairingResult.Ok(UiStrings.Unpair_AlreadyUnpaired),
+                _ => BlePairingResult.Fail(string.Format(UiStrings.Unpair_FailedStatus, result.Status)),
             };
         }
         catch (OperationCanceledException)
         {
-            Log("解除已取消");
-            return BlePairingResult.Fail("已取消解除配对。");
+            Log("Unpairing cancelled");
+            return BlePairingResult.Fail(UiStrings.Unpair_Cancelled);
         }
         catch (Exception ex)
         {
-            Log($"异常 {ex.GetType().Name} 0x{ex.HResult:X8}: {ex.Message}");
-            return BlePairingResult.Fail($"解除配对失败：{ex.Message}");
+            Log($"Exception {ex.GetType().Name} 0x{ex.HResult:X8}: {ex.Message}");
+            return BlePairingResult.Fail(string.Format(UiStrings.Unpair_Failed, ex.Message));
         }
         finally
         {

@@ -281,7 +281,7 @@ public class ProximityStateMachineLockTests
     }
 
     [Fact]
-    public void Las_lecturas_en_zona_muerta_mantienen_el_aviso_y_no_bloquean()
+    public void Con_el_aviso_basta_superar_el_umbral_de_bloqueo_para_retirarlo()
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
@@ -290,14 +290,51 @@ public class ProximityStateMachineLockTests
         sm.Evaluate(history);
         Assert.Equal(ProximityState.PendingLock, sm.State);
 
-        // -80 ~ -65：ni cerca ni lejos. El aviso se queda; nada lo bloquea por tiempo
-        for (var i = 0; i < 6; i++)
-        {
-            time.Advance(TimeSpan.FromSeconds(5));
-            Fill(history, time, -70, 5);
-            Assert.Null(sm.Evaluate(history));
-            Assert.Equal(ProximityState.PendingLock, sm.State);
-        }
+        // -70 está entre los dos umbrales: ya no hace falta llegar a -45 para retirar el aviso.
+        // Disparador -70 + 3 lecturas -70, todas por encima de -80
+        time.Advance(TimeSpan.FromSeconds(5));
+        Fill(history, time, -70, 4);
+
+        var change = sm.Evaluate(history);
+
+        Assert.Equal(ProximityState.Unlocked, change?.To);
+        Assert.Equal(ProximityAction.CancelLockPrompt, change!.Action);
+    }
+
+    [Fact]
+    public void Una_lectura_igual_al_umbral_de_bloqueo_no_retira_el_aviso()
+    {
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(30));
+        sm.Evaluate(history);
+
+        // «Por encima» es estricto: -80 no cuenta para retirarlo (y tampoco para bloquear)
+        time.Advance(TimeSpan.FromSeconds(5));
+        Fill(history, time, -80, 5);
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.PendingLock, sm.State);
+    }
+
+    [Fact]
+    public void Bloqueado_sigue_exigiendo_el_umbral_de_desbloqueo()
+    {
+        // El cambio solo afecta a la retirada del aviso: con la pantalla bloqueada (LockedArmed)
+        // -70 sigue sin bastar para enviar credenciales
+        var (sm, time, history) = Build(screenLocked: true);
+        time.Advance(TimeSpan.FromSeconds(16));
+        history.Add(-85, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(10));     // silencio tras señal débil → LockedArmed
+        sm.Evaluate(history);
+        Assert.Equal(ProximityState.LockedArmed, sm.State);
+
+        time.Advance(TimeSpan.FromSeconds(1));
+        Fill(history, time, -70, 5);
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.LockedArmed, sm.State);
     }
 
     [Fact]

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Ago_Hours" xml:space="preserve"><value>{0} 小时前</value></data>
+  <data name="Ago_Minutes" xml:space="preserve"><value>{0} 分钟前</value></data>
+  <data name="Ago_Never" xml:space="preserve"><value>从未</value></data>
+  <data name="Ago_Seconds" xml:space="preserve"><value>{0} 秒前</value></data>
+  <data name="Bond_AccessDenied" xml:space="preserve"><value>没有权限连接服务管道（需要管理员）：{0}</value></data>
+  <data name="Bond_ConnectFailed" xml:space="preserve"><value>无法连接服务：{0}</value></data>
+  <data name="Bond_InvalidResponse" xml:space="preserve"><value>服务返回了无效响应。</value></data>
+  <data name="Bond_NameWithAddress" xml:space="preserve"><value>{0}（{1}）</value></data>
+  <data name="Bond_NoData" xml:space="preserve"><value>服务没有返回数据。</value></data>
+  <data name="Bond_ReadFailed" xml:space="preserve"><value>读取已配对设备失败：{0}</value></data>
+  <data name="Bond_ServiceError" xml:space="preserve"><value>服务返回了错误。</value></data>
+  <data name="Bond_Timeout" xml:space="preserve"><value>读取超时（服务可能未运行）。</value></data>
+  <data name="Bond_Unparseable" xml:space="preserve"><value>服务返回了无法解析的数据。</value></data>
+  <data name="ByteOrder_Auto" xml:space="preserve"><value>自动检测（Auto）</value></data>
+  <data name="ByteOrder_Normal" xml:space="preserve"><value>正序（Normal）</value></data>
+  <data name="ByteOrder_Reversed" xml:space="preserve"><value>反序（Reversed）</value></data>
+  <data name="Config_InvalidValue" xml:space="preserve"><value>无效的 {0} 取值。</value></data>
+  <data name="Config_RootNotObject" xml:space="preserve"><value>配置文件的根必须是 JSON 对象。</value></data>
+  <data name="Device_NotSelected" xml:space="preserve"><value>未选择设备</value></data>
+  <data name="Device_Unknown" xml:space="preserve"><value>未知设备</value></data>
+  <data name="Diff_FieldModified" xml:space="preserve"><value>{0} 已修改</value></data>
+  <data name="Diff_FirstAndMore" xml:space="preserve"><value>{0}等 {1} 项</value></data>
+  <data name="Duration_HoursMinutes" xml:space="preserve"><value>{0} 小时 {1} 分</value></data>
+  <data name="Duration_MinutesSeconds" xml:space="preserve"><value>{0} 分 {1} 秒</value></data>
+  <data name="Duration_Seconds" xml:space="preserve"><value>{0} 秒</value></data>
+  <data name="Field_DeviceAddress" xml:space="preserve"><value>设备地址</value></data>
+  <data name="Field_DeviceIrk" xml:space="preserve"><value>设备 IRK</value></data>
+  <data name="Field_IrkByteOrder" xml:space="preserve"><value>IRK 字节序</value></data>
+  <data name="Field_LockConfirmSampleCount" xml:space="preserve"><value>锁屏确认个数</value></data>
+  <data name="Field_LockPromptSampleCount" xml:space="preserve"><value>弹窗触发个数</value></data>
+  <data name="Field_LockThreshold" xml:space="preserve"><value>锁定阈值（dBm）</value></data>
+  <data name="Field_NotificationMode" xml:space="preserve"><value>通知方式</value></data>
+  <data name="Field_Password" xml:space="preserve"><value>凭据密码</value></data>
+  <data name="Field_RejectSnooze" xml:space="preserve"><value>拒绝后暂缓（秒）</value></data>
+  <data name="Field_SampleInterval" xml:space="preserve"><value>RSSI 采样间隔（毫秒）</value></data>
+  <data name="Field_Snooze" xml:space="preserve"><value>稍后提醒（分钟）</value></data>
+  <data name="Field_StartupGrace" xml:space="preserve"><value>启动宽限（秒）</value></data>
+  <data name="Field_UnlockPendingTimeout" xml:space="preserve"><value>解锁等待超时（秒）</value></data>
+  <data name="Field_UnlockSampleCount" xml:space="preserve"><value>解锁确认个数</value></data>
+  <data name="Field_UnlockThreshold" xml:space="preserve"><value>解锁阈值（dBm）</value></data>
+  <data name="Field_UserName" xml:space="preserve"><value>凭据用户名</value></data>
+  <data name="LanguageProbe" xml:space="preserve"><value>中文</value></data>
+  <data name="Mode_Dialog" xml:space="preserve"><value>对话框（Dialog）</value></data>
+  <data name="Mode_Toast" xml:space="preserve"><value>系统通知（Toast）</value></data>
+  <data name="Secret_Plaintext" xml:space="preserve"><value>当前以明文存储；保存后将自动加密。</value></data>
+  <data name="Secret_StoredEncrypted" xml:space="preserve"><value>已加密存储，不会显示；输入新密码即可替换，保存时自动重新加密。</value></data>
+  <data name="Secret_Undecryptable" xml:space="preserve"><value>该加密值无法在本机解密（可能来自其他机器）；必须重新输入。</value></data>
+  <data name="State_LockedArmed" xml:space="preserve"><value>已锁定·监控中</value></data>
+  <data name="State_LockedWaitingDeparture" xml:space="preserve"><value>已锁定·等待离开</value></data>
+  <data name="State_PendingLock" xml:space="preserve"><value>待锁定</value></data>
+  <data name="State_Snoozed" xml:space="preserve"><value>已暂缓</value></data>
+  <data name="State_Suspended" xml:space="preserve"><value>已挂起</value></data>
+  <data name="State_Unknown" xml:space="preserve"><value>未知</value></data>
+  <data name="State_UnlockPending" xml:space="preserve"><value>解锁确认中</value></data>
+  <data name="State_Unlocked" xml:space="preserve"><value>已解锁</value></data>
+  <data name="Tray_BelowLockThreshold" xml:space="preserve"><value>{0}，低于锁定阈值 {1}</value></data>
+  <data name="Tray_ConnectingHint" xml:space="preserve"><value>服务启动后会自动连接</value></data>
+  <data name="Tray_ConnectingTitle" xml:space="preserve"><value>正在连接服务…</value></data>
+  <data name="Tray_LastMatch" xml:space="preserve"><value>{0}，最近匹配 {1}</value></data>
+  <data name="Tray_LeaveConfirm" xml:space="preserve"><value>离开确认 {0}/{1}</value></data>
+  <data name="Tray_LockConfirm" xml:space="preserve"><value>锁屏确认 {0}/{1}</value></data>
+  <data name="Tray_NoSignal" xml:space="preserve"><value>{0}，暂无信号</value></data>
+  <data name="Tray_Prefix" xml:space="preserve"><value>AutoUnlock：</value></data>
+  <data name="Tray_SignalDbm" xml:space="preserve"><value>{0} {1} dBm</value></data>
+  <data name="Tray_StoppedHint" xml:space="preserve"><value>右键选择「启动服务」即可恢复</value></data>
+  <data name="Tray_StoppedTitle" xml:space="preserve"><value>服务已停止</value></data>
+  <data name="Tray_SuspendedHint" xml:space="preserve"><value>在「配置」页更新密码后自动恢复</value></data>
+  <data name="Tray_SuspendedTitle" xml:space="preserve"><value>自动解锁已暂停，请检查密码</value></data>
+  <data name="Validation_AddressFormat" xml:space="preserve"><value>{0} 必须是合法的 6 字节 MAC 地址</value></data>
+  <data name="Validation_GraceNegative" xml:space="preserve"><value>{0} 不能为负数</value></data>
+  <data name="Validation_IrkFormat" xml:space="preserve"><value>{0} 必须是 32 个十六进制字符</value></data>
+  <data name="Validation_LockConfirmCountRange" xml:space="preserve"><value>{0} 必须在 1 到 50 之间</value></data>
+  <data name="Validation_LockPromptCountRange" xml:space="preserve"><value>{0} 必须在 1 到 50 之间</value></data>
+  <data name="Validation_PasswordControlChars" xml:space="preserve"><value>{0} 不能包含控制字符（换行、回车、制表符等）</value></data>
+  <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>{0} 必须为正数</value></data>
+  <data name="Validation_RejectSnoozePositive" xml:space="preserve"><value>{0} 必须为正数</value></data>
+  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）</value></data>
+  <data name="Validation_SnoozeMax" xml:space="preserve"><value>{0} 不能超过 {1:0} 分钟</value></data>
+  <data name="Validation_SnoozePositive" xml:space="preserve"><value>{0} 必须为正数</value></data>
+  <data name="Validation_ThresholdOrder" xml:space="preserve"><value>{0} 必须大于 LockThresholdDbm，否则死区为负</value></data>
+  <data name="Validation_UnlockCountRange" xml:space="preserve"><value>{0} 必须在 1 到 20 之间</value></data>
+  <data name="Validation_UserNameControlChars" xml:space="preserve"><value>{0} 不能包含控制字符（换行、回车、制表符等）</value></data>
+  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>{0} 不能为空</value></data>
+  <data name="Value_Empty" xml:space="preserve"><value>（空）</value></data>
+  <data name="Value_Encrypted" xml:space="preserve"><value>（已加密）</value></data>
+  <data name="Value_NotSet" xml:space="preserve"><value>（未设置）</value></data>
+  <data name="Zone_Away" xml:space="preserve"><value>离开区</value></data>
+  <data name="Zone_Hold" xml:space="preserve"><value>保持区</value></data>
+  <data name="Zone_Near" xml:space="preserve"><value>靠近区</value></data>
+</root>

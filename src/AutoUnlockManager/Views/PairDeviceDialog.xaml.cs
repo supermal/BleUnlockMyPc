@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using AutoUnlockManager.Core.Bonds;
 using AutoUnlockManager.Services.Ble;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Views;
 
@@ -36,7 +37,7 @@ public sealed partial class PairDeviceDialog : UserControl
     {
         InitializeComponent();
         DeviceList.ItemsSource = _nearby;
-        MachineNameText.Text = $"电脑名称：{Environment.MachineName}（手机/手表中看到的名字可能略有不同）";
+        MachineNameText.Text = string.Format(UiStrings.Pair_MachineName, Environment.MachineName);
         _scanTimer.Tick += OnScanTimerTick;
         _elapsedTimer.Tick += (_, _) => UpdateElapsed();
         _initialized = true;
@@ -113,7 +114,7 @@ public sealed partial class PairDeviceDialog : UserControl
             _advertisingSince = DateTimeOffset.UtcNow;
             SetPeripheralBusy(true);
             UpdateFooter();
-            PeripheralStatusText.Text = $"正在广播「{Environment.MachineName}」，等待设备连接…";
+            PeripheralStatusText.Text = string.Format(UiStrings.Pair_Advertising, Environment.MachineName);
 
             await BlePeripheralHost.Shared.StartAdvertisingAsync(_cts.Token);
             SetPeripheralStep(3);
@@ -121,12 +122,12 @@ public sealed partial class PairDeviceDialog : UserControl
         }
         catch (OperationCanceledException)
         {
-            PeripheralStatusText.Text = "已停止广播。";
+            PeripheralStatusText.Text = UiStrings.Pair_AdvertisingStopped;
             ResetPeripheral();
         }
         catch (Exception ex)
         {
-            PeripheralStatusText.Text = $"无法开始广播：{ex.Message}";
+            PeripheralStatusText.Text = string.Format(UiStrings.Pair_AdvertiseFailed, ex.Message);
             ResetPeripheral();
             BlePeripheralHost.Shared.StopAdvertising();
         }
@@ -140,7 +141,7 @@ public sealed partial class PairDeviceDialog : UserControl
     {
         _cts?.Cancel();
         BlePeripheralHost.Shared.StopAdvertising();
-        PeripheralStatusText.Text = "已停止广播。";
+        PeripheralStatusText.Text = UiStrings.Pair_AdvertisingStopped;
         ResetPeripheral();
     }
 
@@ -154,8 +155,7 @@ public sealed partial class PairDeviceDialog : UserControl
                 if (DateTimeOffset.UtcNow - _advertisingSince > PeripheralWaitLimit)
                 {
                     PeripheralStatusText.Text =
-                        "仍在等待配对库变化。如果手机/手表已显示配对成功但这里没有反应，" +
-                        "可能是设备没有提供 IRK（无法用于自动解锁）；请关闭本窗口后点「刷新列表」查看。";
+                        UiStrings.Pair_StillWaiting;
                 }
 
                 var result = await _bondClient.ListAsync(TimeSpan.FromSeconds(2), cancellationToken);
@@ -174,7 +174,7 @@ public sealed partial class PairDeviceDialog : UserControl
                 BlePeripheralHost.Shared.StopAdvertising();
                 SetPeripheralStep(5);
                 ResetPeripheral(keepStep: true);
-                PeripheralStatusText.Text = $"已配对：{PairedDevice.DisplayName}";
+                PeripheralStatusText.Text = string.Format(UiStrings.Pair_PairedWith, PairedDevice.DisplayName);
                 await Task.Delay(600, cancellationToken);
                 Close();
                 return;
@@ -186,7 +186,7 @@ public sealed partial class PairDeviceDialog : UserControl
         }
         catch (Exception ex)
         {
-            PeripheralStatusText.Text = $"等待配对结果失败：{ex.Message}";
+            PeripheralStatusText.Text = string.Format(UiStrings.Pair_WaitResultFailed, ex.Message);
             BlePeripheralHost.Shared.StopAdvertising();
             ResetPeripheral();
         }
@@ -226,7 +226,7 @@ public sealed partial class PairDeviceDialog : UserControl
     private void UpdateElapsed()
     {
         var elapsed = DateTimeOffset.UtcNow - _advertisingSince;
-        ElapsedText.Text = $"已等待 {(int)elapsed.TotalMinutes}:{elapsed.Seconds:00}";
+        ElapsedText.Text = string.Format(UiStrings.Pair_Elapsed, (int)elapsed.TotalMinutes, elapsed.Seconds);
     }
 
     private void ResetPeripheral(bool keepStep = false)
@@ -264,11 +264,11 @@ public sealed partial class PairDeviceDialog : UserControl
             _nearby.Clear();
             _scanTimer.Start();
             CentralProgress.Visibility = Visibility.Visible;
-            CentralStatusText.Text = "正在扫描附近的设备…请让耳机/鼠标进入配对模式。";
+            CentralStatusText.Text = UiStrings.Pair_Scanning;
         }
         catch (Exception ex)
         {
-            CentralStatusText.Text = $"无法开始扫描：{ex.Message}";
+            CentralStatusText.Text = string.Format(UiStrings.Pair_ScanFailed, ex.Message);
             StopScanning();
         }
         finally
@@ -281,7 +281,7 @@ public sealed partial class PairDeviceDialog : UserControl
     private void OnStopScanClicked(object sender, RoutedEventArgs e)
     {
         StopScanning();
-        CentralStatusText.Text = "扫描已停止。可以重新开始扫描，或从列表选择设备。";
+        CentralStatusText.Text = UiStrings.Pair_ScanStopped;
     }
 
     private async void OnPairSelectedClicked(object sender, RoutedEventArgs e)
@@ -296,7 +296,7 @@ public sealed partial class PairDeviceDialog : UserControl
         _cts = new CancellationTokenSource();
         CentralProgress.Visibility = Visibility.Visible;
         UpdateFooter();
-        CentralStatusText.Text = $"正在与「{selected.Name ?? selected.Address}」配对；确认/PIN 会在本窗口弹出…";
+        CentralStatusText.Text = string.Format(UiStrings.Pair_PairingWith, selected.Name ?? selected.Address);
 
         try
         {
@@ -311,28 +311,27 @@ public sealed partial class PairDeviceDialog : UserControl
                 return;
             }
 
-            CentralStatusText.Text = "配对成功，正在读取服务端的 IRK…";
+            CentralStatusText.Text = UiStrings.Pair_ReadingIrk;
             var found = await WaitForNewBondAsync(selected, _cts.Token);
             if (found is null)
             {
                 CentralStatusText.Text =
-                    "Windows 已配对，但服务没有读到该设备的 IRK。该设备可能不提供 IRK（无法用于自动解锁），" +
-                    "请关闭本窗口后点「刷新列表」确认。";
+                    UiStrings.Pair_NoIrkAfterPairing;
                 return;
             }
 
             PairedDevice = found;
-            CentralStatusText.Text = $"已配对：{found.DisplayName}";
+            CentralStatusText.Text = string.Format(UiStrings.Pair_PairedWithFound, found.DisplayName);
             await Task.Delay(500, _cts.Token);
             Close();
         }
         catch (OperationCanceledException)
         {
-            CentralStatusText.Text = "已取消配对。";
+            CentralStatusText.Text = UiStrings.Pair_Cancelled;
         }
         catch (Exception ex)
         {
-            CentralStatusText.Text = $"配对失败：{ex.Message}";
+            CentralStatusText.Text = string.Format(UiStrings.Pair_Failed, ex.Message);
         }
         finally
         {
@@ -379,20 +378,20 @@ public sealed partial class PairDeviceDialog : UserControl
     {
         PairingPromptTitle.Text = prompt.Kind switch
         {
-            PairingPromptKind.ConfirmOnly => "允许配对？",
-            PairingPromptKind.DisplayPin => "在设备上输入 PIN",
-            PairingPromptKind.ProvidePin => "输入设备 PIN",
-            PairingPromptKind.ConfirmPinMatch => "核对 PIN",
-            _ => "配对确认",
+            PairingPromptKind.ConfirmOnly => UiStrings.Prompt_AllowPairing,
+            PairingPromptKind.DisplayPin => UiStrings.Prompt_EnterPinOnDevice,
+            PairingPromptKind.ProvidePin => UiStrings.Prompt_EnterDevicePin,
+            PairingPromptKind.ConfirmPinMatch => UiStrings.Prompt_ComparePin,
+            _ => UiStrings.Prompt_Confirm,
         };
         PairingPromptMessage.Text = prompt.Kind switch
         {
             PairingPromptKind.ConfirmOnly =>
-                $"设备「{prompt.DeviceName}」请求与本电脑配对。确认后由 Windows 保存配对信息，不会打开设置页。",
-            PairingPromptKind.DisplayPin => $"请在设备「{prompt.DeviceName}」上输入下面显示的 PIN，完成后点「已在设备输入」。",
-            PairingPromptKind.ProvidePin => $"请输入设备「{prompt.DeviceName}」上显示的 PIN。",
-            PairingPromptKind.ConfirmPinMatch => $"设备「{prompt.DeviceName}」显示的 PIN 如下。请核对设备屏幕，是否一致？",
-            _ => "请完成配对确认。",
+                string.Format(UiStrings.Prompt_AllowMessage, prompt.DeviceName),
+            PairingPromptKind.DisplayPin => string.Format(UiStrings.Prompt_DisplayPinMessage, prompt.DeviceName),
+            PairingPromptKind.ProvidePin => string.Format(UiStrings.Prompt_ProvidePinMessage, prompt.DeviceName),
+            PairingPromptKind.ConfirmPinMatch => string.Format(UiStrings.Prompt_ComparePinMessage, prompt.DeviceName),
+            _ => UiStrings.Prompt_CompleteConfirm,
         };
 
         var hasPin = !string.IsNullOrWhiteSpace(prompt.Pin);
@@ -404,11 +403,11 @@ public sealed partial class PairDeviceDialog : UserControl
         PairingPromptError.Visibility = Visibility.Collapsed;
         PairingAcceptButton.Content = prompt.Kind switch
         {
-            PairingPromptKind.DisplayPin => "已在设备输入",
-            PairingPromptKind.ConfirmPinMatch => "一致",
-            _ => "配对",
+            PairingPromptKind.DisplayPin => UiStrings.Prompt_EnteredOnDevice,
+            PairingPromptKind.ConfirmPinMatch => UiStrings.Prompt_Match,
+            _ => UiStrings.Pair_Pair,
         };
-        PairingRejectButton.Content = prompt.Kind == PairingPromptKind.ConfirmPinMatch ? "不一致" : "取消";
+        PairingRejectButton.Content = prompt.Kind == PairingPromptKind.ConfirmPinMatch ? UiStrings.Prompt_NoMatch : UiStrings.Common_Cancel;
         PairingPromptOverlay.Visibility = Visibility.Visible;
 
         if (prompt.Kind == PairingPromptKind.ProvidePin)
@@ -442,7 +441,7 @@ public sealed partial class PairDeviceDialog : UserControl
             var pin = PairingPinBox.Text.Trim();
             if (pin.Length == 0)
             {
-                PairingPromptError.Text = "请输入设备上显示的 PIN。";
+                PairingPromptError.Text = UiStrings.Prompt_PinRequired;
                 PairingPromptError.Visibility = Visibility.Visible;
                 PairingPinBox.Focus();
                 return;
@@ -486,11 +485,11 @@ public sealed partial class PairDeviceDialog : UserControl
 
     private async Task<bool> EnsureBaselineAsync(TextBlock status)
     {
-        status.Text = "正在读取 Windows 配对库…";
+        status.Text = UiStrings.Bonds_ReadingStore;
         var result = await _bondClient.ListAsync();
         if (result.Error is not null)
         {
-            status.Text = $"无法读取 Windows 配对库：{result.Error} 请先启动服务。";
+            status.Text = string.Format(UiStrings.Bonds_StoreReadFailed, result.Error);
             return false;
         }
 
@@ -540,8 +539,8 @@ public sealed partial class PairDeviceDialog : UserControl
         }
 
         CentralStatusText.Text = devices.Count == 0
-            ? "正在扫描…暂未发现带名字的可连接设备；请确认设备已进入配对模式。"
-            : $"发现 {devices.Count} 台可连接设备；选择后点「配对所选设备」。";
+            ? UiStrings.Pair_ScanningNoneYet
+            : string.Format(UiStrings.Pair_ScanFound, devices.Count);
         UpdateFooter();
     }
 

@@ -2,6 +2,7 @@
     x:Class="AutoUnlockManager.Views.OverviewPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:AutoUnlockManager.Localization"
     xmlns:controls="clr-namespace:AutoUnlockManager.Views.Controls"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:AutoUnlockManager.ViewModels">
@@ -73,18 +74,18 @@
                     Style="{StaticResource Ui.Button.Secondary}">
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Margin="0,0,8,0" Symbol="ArrowDownload16" />
-                        <TextBlock Text="导出样本 CSV" />
+                        <TextBlock Text="{loc:Loc Overview_ExportCsv}" />
                     </StackPanel>
                 </Button>
-                <TextBlock Style="{StaticResource Ui.TextStyle.Title}" Text="概览" />
+                <TextBlock Style="{StaticResource Ui.TextStyle.Title}" Text="{loc:Loc Overview_Title}" />
             </DockPanel>
 
             <ui:InfoBar
-                Title="无法连接到服务"
+                Title="{loc:Loc Overview_NoConnectionTitle}"
                 Margin="0,0,0,12"
                 IsClosable="False"
                 IsOpen="{Binding ConnectionBannerVisible, Mode=OneWay}"
-                Message="服务未运行或未安装；正在自动重试（每 2 秒）。"
+                Message="{loc:Loc Overview_NoConnectionMessage}"
                 Severity="Warning" />
             <ui:InfoBar
                 Title="{Binding BannerTitle}"
@@ -96,7 +97,7 @@
             <!--  ===== Señal en directo =====  -->
             <Border
                 Padding="20,20,20,16"
-                AutomationProperties.Name="实时信号"
+                AutomationProperties.Name="{loc:Loc Overview_LiveSignal}"
                 Style="{StaticResource Ui.Card}">
                 <StackPanel>
                     <Grid Margin="0,0,0,16">
@@ -106,7 +107,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Style="{StaticResource Ui.TextStyle.Caption}">
-                                <Run Text="{Binding Telemetry.DeviceName, Mode=OneWay}" /><Run Text=" 当前信号" />
+                                <Run Text="{Binding Telemetry.DeviceName, Mode=OneWay}" /><Run Text="{loc:Loc Overview_CurrentSignalSuffix}" />
                             </TextBlock>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock
@@ -128,7 +129,7 @@
                                 </Border>
                             </StackPanel>
                             <TextBlock Style="{StaticResource Ui.TextStyle.Caption}">
-                                <Run Text="5 秒均值" /> <Run Text="{Binding Avg5Text, Mode=OneWay}" /><Run Text="　10 秒均值" /> <Run Text="{Binding Avg10Text, Mode=OneWay}" />
+                                <Run Text="{loc:Loc Overview_Avg5}" /> <Run Text="{Binding Avg5Text, Mode=OneWay}" /><Run Text="{loc:Loc Overview_Avg10}" /> <Run Text="{Binding Avg10Text, Mode=OneWay}" />
                             </TextBlock>
                         </StackPanel>
                         <StackPanel Grid.Column="1" HorizontalAlignment="Right">
@@ -161,7 +162,7 @@
 
                     <controls:SignalChart
                         Height="242"
-                        AutomationProperties.Name="最近 5 分钟信号曲线，含锁定与解锁阈值"
+                        AutomationProperties.Name="{loc:Loc Overview_ChartName}"
                         AwayBrush="{DynamicResource Ui.Status.Danger.Fg}"
                         AxisBrush="{DynamicResource Ui.Stroke.Divider}"
                         LabelBrush="{DynamicResource Ui.Text.Tertiary}"
@@ -178,12 +179,12 @@
                         BorderBrush="{DynamicResource Ui.Stroke.Divider}"
                         BorderThickness="0,1,0,0" />
                     <StackPanel Margin="0,0,0,12" Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource Ui.TextStyle.BodyStrong}" Text="锁定周期" />
+                        <TextBlock Style="{StaticResource Ui.TextStyle.BodyStrong}" Text="{loc:Loc Overview_LockCycle}" />
                         <TextBlock
                             Margin="8,0,0,0"
                             VerticalAlignment="Bottom"
                             Style="{StaticResource Ui.TextStyle.Caption}"
-                            Text="解锁成功后回到「已解锁」；暂缓与挂起不在主线上" />
+                            Text="{loc:Loc Overview_LockCycleHint}" />
                     </StackPanel>
                     <controls:LockCycle Batch="{Binding Telemetry.Batch}" StateName="{Binding Telemetry.StateName}" />
                 </StackPanel>
@@ -199,7 +200,7 @@
 
                 <Border
                     Padding="20,16"
-                    AutomationProperties.Name="服务与健康"
+                    AutomationProperties.Name="{loc:Loc Overview_ServiceHealth}"
                     Style="{StaticResource Ui.Card}">
                     <StackPanel>
                         <DockPanel Margin="0,0,0,14">
@@ -207,13 +208,13 @@
                                 <Button
                                     Margin="8,0,0,0"
                                     Click="OnStartServiceClicked"
-                                    Content="启动服务"
+                                    Content="{loc:Loc Common_StartService}"
                                     Style="{StaticResource Ui.Button.Primary}"
                                     Visibility="{Binding CanStart, Converter={StaticResource BoolToVisibility}}" />
                                 <Button
                                     Margin="8,0,0,0"
                                     Click="OnStopServiceClicked"
-                                    Content="停止服务"
+                                    Content="{loc:Loc Common_StopService}"
                                     IsEnabled="{Binding CanStopOrRestart}"
                                     Style="{StaticResource Ui.Button.Subtle}" />
                                 <Button
@@ -223,14 +224,14 @@
                                     Style="{StaticResource Ui.Button.Secondary}">
                                     <StackPanel Orientation="Horizontal">
                                         <ui:SymbolIcon Margin="0,0,8,0" Symbol="ArrowClockwise16" />
-                                        <TextBlock Text="重启服务" />
+                                        <TextBlock Text="{loc:Loc Common_RestartService}" />
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
                             <TextBlock
                                 VerticalAlignment="Center"
                                 Style="{StaticResource Ui.TextStyle.BodyStrong}"
-                                Text="服务与健康" />
+                                Text="{loc:Loc Overview_ServiceHealth}" />
                         </DockPanel>
                         <ItemsControl
                             Focusable="False"
@@ -242,14 +243,14 @@
                 <Border
                     Grid.Column="2"
                     Padding="20,16"
-                    AutomationProperties.Name="目标设备"
+                    AutomationProperties.Name="{loc:Loc Overview_TargetDevice}"
                     Style="{StaticResource Ui.Card}">
                     <DockPanel>
                         <TextBlock
                             Margin="0,0,0,12"
                             DockPanel.Dock="Top"
                             Style="{StaticResource Ui.TextStyle.BodyStrong}"
-                            Text="目标设备" />
+                            Text="{loc:Loc Overview_TargetDevice}" />
                         <StackPanel Margin="0,0,0,12" DockPanel.Dock="Top" Orientation="Horizontal">
                             <Border
                                 Width="40"
@@ -274,13 +275,13 @@
                         <Button
                             HorizontalAlignment="Left"
                             Click="OnChangeDeviceClicked"
-                            Content="更换设备"
+                            Content="{loc:Loc Overview_ChangeDevice}"
                             DockPanel.Dock="Bottom"
                             Style="{StaticResource Ui.Button.Secondary}" />
                         <TextBlock
                             Margin="0,0,0,12"
                             Style="{StaticResource Ui.TextStyle.Caption}"
-                            Text="IRK 由服务从 Windows 蓝牙配对库读取，已加密保存在配置文件中。"
+                            Text="{loc:Loc Overview_IrkNote}"
                             TextWrapping="Wrap" />
                     </DockPanel>
                 </Border>

@@ -76,12 +76,14 @@ public sealed class TelemetryFormatTests
     [Theory]
     [InlineData(null, ScanHealth.Unknown)]
     [InlineData("", ScanHealth.Unknown)]
-    [InlineData("BLE 扫描已启动", ScanHealth.Running)]
-    [InlineData("蓝牙已关闭", ScanHealth.Degraded)]
-    [InlineData("未找到支持 BLE 的蓝牙适配器", ScanHealth.Degraded)]
-    [InlineData("启动 BLE 扫描失败：AccessDenied", ScanHealth.Degraded)]
-    public void ScanHealth_Classification(string? status, ScanHealth expected)
+    [InlineData("running", ScanHealth.Running)]
+    [InlineData("radioOff", ScanHealth.Degraded)]
+    [InlineData("noAdapter", ScanHealth.Degraded)]
+    [InlineData("startFailed", ScanHealth.Degraded)]
+    // El texto (que depende del idioma del servicio) ya no decide nada
+    [InlineData("BLE 扫描已启动", ScanHealth.Degraded)]
+    public void ScanHealth_Classification(string? code, ScanHealth expected)
     {
-        Assert.Equal(expected, TelemetryFormat.ClassifyScan(status));
+        Assert.Equal(expected, TelemetryFormat.ClassifyScan(code));
     }
 }

@@ -13,6 +13,9 @@ public static class AppPaths
     /// <summary>服务配置文件：DataDir\appsettings.json（服务热重载监听的文件）。</summary>
     public static string ConfigFile { get; } = Path.Combine(DataDir, "appsettings.json");
 
+    /// <summary>Resultado de la última recarga en caliente que escribe el servicio (OptionsGate).</summary>
+    public static string ReloadStatusFile { get; } = Path.Combine(DataDir, "reload-status.json");
+
     /// <summary>服务日志目录：DataDir\logs。</summary>
     public static string LogsDir { get; } = Path.Combine(DataDir, "logs");
 

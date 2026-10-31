@@ -22,6 +22,18 @@
   <ItemGroup>
     <!-- Se comparte el fichero en lugar de duplicarlo: una sola definicion del protocolo -->
     <Compile Include="..\AutoUnlockService\Session\HelperProtocol.cs" Link="HelperProtocol.cs" />
+    <Compile Include="..\Shared\AppLanguage.cs" Link="Shared\AppLanguage.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Textos visibles: inglés neutro, zh y es como satélites. Clase tipada generada al compilar;
+         su propiedad estática Culture cambia el idioma de todo el proceso al instante -->
+    <EmbeddedResource Update="Resources\HelperStrings.resx"
+                      StronglyTypedLanguage="CSharp"
+                      StronglyTypedNamespace="AutoUnlockHelper.Resources"
+                      StronglyTypedClassName="HelperStrings"
+                      StronglyTypedFileName="$(IntermediateOutputPath)HelperStrings.Designer.cs"
+                      PublicClass="true" />
   </ItemGroup>
 
 </Project>

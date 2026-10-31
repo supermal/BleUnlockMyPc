@@ -3,6 +3,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using AutoUnlockService.Core;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Credentials;
 
@@ -59,19 +60,19 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
             {
                 var pipe = CreatePipe();
                 _pipe = pipe;
-                log.LogInformation("凭据管道已就绪，等待凭据提供程序连接");
+                log.LogInformation(ServiceStrings.Log_CredPipeReady);
                 await pipe.WaitForConnectionAsync(ct);
                 wasConnected = true;
-                log.LogInformation("凭据提供程序已连接");
+                log.LogInformation(ServiceStrings.Log_CredProviderConnected);
                 Raise(Connected);
 
                 await ReadLoopAsync(pipe, ct);
-                log.LogInformation("凭据提供程序已断开");
+                log.LogInformation(ServiceStrings.Log_CredProviderDisconnected);
             }
             catch (OperationCanceledException) { break; }
             catch (Exception ex)
             {
-                log.LogWarning("凭据管道异常：{Message}，稍后重建", ex.Message);
+                log.LogWarning(ServiceStrings.Log_CredPipeError, ex.Message);
                 try { await Task.Delay(RebuildDelay, _time, ct); }
                 catch (OperationCanceledException) { break; }
             }
@@ -91,7 +92,7 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
         try { handler?.Invoke(); }
         catch (Exception ex)
         {
-            log.LogWarning("处理凭据管道连接事件时出错：{Message}", ex.Message);
+            log.LogWarning(ServiceStrings.Log_CredPipeEventError, ex.Message);
         }
     }
 
@@ -106,25 +107,25 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
 
             if (line.Trim() == "ACK")
             {
-                log.LogDebug("凭据提供程序已确认收到凭据");
+                log.LogDebug(ServiceStrings.Log_CredReceivedAck);
                 continue;
             }
 
             if (CredentialProtocol.TryParseResult(line, out var result))
             {
-                log.LogInformation("收到认证结果：成功={Success} NTSTATUS=0x{Status:X8}",
+                log.LogInformation(ServiceStrings.Log_AuthResult,
                     result.Success, result.NtStatus);
                 try { AuthResultReceived?.Invoke(result); }
                 catch (Exception ex)
                 {
                     // Un manejador defectuoso no debe costar la conexion
-                    log.LogError("处理认证结果的订阅者抛出异常：{Message}", ex.Message);
+                    log.LogError(ServiceStrings.Log_AuthResultSubscriberError, ex.Message);
                 }
                 continue;
             }
 
             // No se registra el contenido de la linea
-            log.LogWarning("凭据管道收到无法识别的消息");
+            log.LogWarning(ServiceStrings.Log_CredPipeUnknownMessage);
         }
     }
 
@@ -133,7 +134,7 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
         var pipe = _pipe;
         if (pipe is null || !IsClientConnected)
         {
-            log.LogWarning("要推送凭据时没有凭据提供程序连接，本次放弃");
+            log.LogWarning(ServiceStrings.Log_NoCredProviderToPush);
             return false;
         }
 
@@ -143,7 +144,7 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
         {
             // Defensa en profundidad: la comprobacion principal esta en OptionsValidator.Validate
             // (rechaza caracteres de control al guardar la configuracion). Mensaje fijo: sin valores
-            log.LogWarning("凭据包含换行符，无法按协议发送，本次放弃");
+            log.LogWarning(ServiceStrings.Log_CredContainsNewline);
             return false;
         }
 
@@ -159,12 +160,12 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
                 await pipe.WriteAsync(payload, linked.Token);
                 await pipe.FlushAsync(linked.Token);
                 // Nunca se registra la clave, solo el usuario
-                log.LogInformation("已向凭据提供程序推送凭据，用户 {User}", userName);
+                log.LogInformation(ServiceStrings.Log_CredPushed, userName);
                 return true;
             }
             catch (Exception ex)
             {
-                log.LogWarning("推送凭据失败：{Message}", ex.Message);
+                log.LogWarning(ServiceStrings.Log_CredPushFailed, ex.Message);
                 // Una escritura a medias deja el flujo desalineado: se descarta la conexion
                 // y el CP vuelve a conectar limpio
                 try { await pipe.DisposeAsync(); } catch (Exception) { }
@@ -219,7 +220,7 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
             try { await _loop.WaitAsync(DisposeJoinTimeout, _time); }
             catch (Exception ex) when (ex is TimeoutException or OperationCanceledException)
             {
-                log.LogWarning("凭据管道循环未在期限内退出");
+                log.LogWarning(ServiceStrings.Log_CredLoopStopTimeout);
             }
         }
 

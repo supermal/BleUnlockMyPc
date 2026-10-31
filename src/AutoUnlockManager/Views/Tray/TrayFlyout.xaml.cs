@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using AutoUnlockManager.Core;
 using AutoUnlockManager.Core.Telemetry;
 using AutoUnlockManager.Services;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Views.Tray;
 
@@ -53,8 +54,8 @@ public sealed partial class TrayFlyout : UserControl, INotifyPropertyChanged
     };
 
     public string StateSubText => _telemetry.IsLeaving
-        ? "正在确认是否离开"
-        : _telemetry.Connected ? $"已持续 {_telemetry.StateSinceText}" : "";
+        ? UiStrings.Overview_ConfirmingDeparture
+        : _telemetry.Connected ? string.Format(UiStrings.Overview_StateSince, _telemetry.StateSinceText) : "";
 
     public bool CanRestart => _telemetry.ServiceStatus == ServiceStatusKind.Running;
 

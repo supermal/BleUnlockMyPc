@@ -6,5 +6,6 @@ public enum AppPage
     Overview,
     Config,
     Logs,
+    Rules,
     Settings,
 }

@@ -1,12 +1,13 @@
 using AutoUnlockManager.Core.Config;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Core.Bonds;
 
 /// <summary>Nombre visible del dispositivo configurado, buscado por IRK en el almacén de emparejamientos.</summary>
 public static class TargetDevice
 {
-    public const string NotSelected = "未选择设备";
-    public const string Unknown = "未知设备";
+    public static string NotSelected => CoreStrings.Device_NotSelected;
+    public static string Unknown => CoreStrings.Device_Unknown;
 
     public static string Resolve(IReadOnlyList<BleBondDevice> bonds, string? irkPlain)
     {

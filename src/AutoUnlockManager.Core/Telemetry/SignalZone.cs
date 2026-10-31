@@ -1,3 +1,5 @@
+using AutoUnlockManager.Core.Resources;
+
 namespace AutoUnlockManager.Core.Telemetry;
 
 /// <summary>Zona de la señal respecto a los umbrales: cerca, mantener o lejos.</summary>
@@ -18,8 +20,8 @@ public static class SignalZones
 
     public static string DisplayName(SignalZone zone) => zone switch
     {
-        SignalZone.Near => "靠近区",
-        SignalZone.Away => "离开区",
-        _ => "保持区",
+        SignalZone.Near => CoreStrings.Zone_Near,
+        SignalZone.Away => CoreStrings.Zone_Away,
+        _ => CoreStrings.Zone_Hold,
     };
 }

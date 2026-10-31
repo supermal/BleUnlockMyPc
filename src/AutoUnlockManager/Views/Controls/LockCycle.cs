@@ -2,7 +2,9 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using AutoUnlockManager.Core.Localization;
 using AutoUnlockManager.Core.Management;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Views.Controls;
 
@@ -13,13 +15,14 @@ namespace AutoUnlockManager.Views.Controls;
 /// </summary>
 public sealed class LockCycle : ContentControl
 {
-    private static readonly (string State, string Label)[] Steps =
+    // Propiedad, no campo: las etiquetas se leen en el idioma vigente en cada reconstrucción
+    private static (string State, string Label)[] Steps =>
     [
-        ("Unlocked", "已解锁"),
-        ("PendingLock", "待锁定"),
-        ("LockedWaitingDeparture", "已锁定 · 等待离开"),
-        ("LockedArmed", "已锁定 · 监控中"),
-        ("UnlockPending", "解锁确认中"),
+        ("Unlocked", UiStrings.Cycle_Unlocked),
+        ("PendingLock", UiStrings.Cycle_PendingLock),
+        ("LockedWaitingDeparture", UiStrings.Cycle_LockedWaitingDeparture),
+        ("LockedArmed", UiStrings.Cycle_LockedArmed),
+        ("UnlockPending", UiStrings.Cycle_UnlockPending),
     ];
 
     private const int MaxSegments = 10;
@@ -34,7 +37,18 @@ public sealed class LockCycle : ContentControl
     {
         Focusable = false;
         Rebuild();
+
+        // Solo mientras está en pantalla: el aviso es estático y no debe retener el control. Al volver
+        // a mostrarse se reconstruye, por si el idioma cambió mientras estaba en otra página
+        Loaded += (_, _) =>
+        {
+            ManagerLanguage.Changed += OnLanguageChanged;
+            Rebuild();
+        };
+        Unloaded += (_, _) => ManagerLanguage.Changed -= OnLanguageChanged;
     }
+
+    private void OnLanguageChanged() => Dispatcher.BeginInvoke(Rebuild);
 
     public string? StateName { get => (string?)GetValue(StateNameProperty); set => SetValue(StateNameProperty, value); }
 
@@ -50,29 +64,36 @@ public sealed class LockCycle : ContentControl
         for (var i = 0; i < Steps.Length; i++)
         {
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            var step = BuildStep(Steps[i].Label, i == current, last: i == Steps.Length - 1);
+            var step = BuildStep(Steps[i].Label, i == current, first: i == 0, last: i == Steps.Length - 1);
             Grid.SetColumn(step, i);
             grid.Children.Add(step);
         }
 
-        AutomationProperties.SetName(grid, current >= 0 ? $"锁定周期：当前「{Steps[current].Label}」" : "锁定周期");
+        AutomationProperties.SetName(grid, current >= 0 ? string.Format(UiStrings.Cycle_NameCurrent, Steps[current].Label) : UiStrings.Overview_LockCycle);
         Content = grid;
     }
 
-    private FrameworkElement BuildStep(string label, bool isCurrent, bool last)
+    // Cada paso ocupa una quinta parte del ancho con el punto centrado: la línea une los centros de
+    // punto a punto (media línea a cada lado), así el ciclo llena la fila y queda simétrico
+    private FrameworkElement BuildStep(string label, bool isCurrent, bool first, bool last)
     {
         var panel = new StackPanel();
 
-        // Fila del punto con la línea que lo une al siguiente paso
         var dotRow = new Grid { Height = 12 };
-        if (!last)
+        dotRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        dotRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        if (!first)
         {
-            var line = new Rectangle { Height = 2, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-            line.SetResourceReference(Shape.FillProperty, "Ui.Stroke.Divider");
-            dotRow.Children.Add(line);
+            dotRow.Children.Add(Connector(column: 0));
         }
 
-        var dot = new Ellipse { Width = 12, Height = 12, StrokeThickness = 2, HorizontalAlignment = HorizontalAlignment.Left };
+        if (!last)
+        {
+            dotRow.Children.Add(Connector(column: 1));
+        }
+
+        var dot = new Ellipse { Width = 12, Height = 12, StrokeThickness = 2, HorizontalAlignment = HorizontalAlignment.Center };
+        Grid.SetColumnSpan(dot, 2);
         if (isCurrent)
         {
             dot.SetResourceReference(Shape.FillProperty, "Ui.Primary");
@@ -87,12 +108,16 @@ public sealed class LockCycle : ContentControl
         dotRow.Children.Add(dot);
         panel.Children.Add(dotRow);
 
+        // Centrado bajo el punto; los nombres largos (inglés, español) pasan a dos líneas en vez de cortarse
         var text = new TextBlock
         {
             Text = label,
-            Margin = new Thickness(0, 6, 8, 0),
+            Margin = new Thickness(4, 6, 4, 0),
             FontSize = 12,
             FontWeight = isCurrent ? FontWeights.SemiBold : FontWeights.Normal,
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
+            MaxHeight = 34,
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
         text.SetResourceReference(TextBlock.ForegroundProperty, isCurrent ? "Ui.Text.Primary" : "Ui.Text.Secondary");
@@ -106,36 +131,51 @@ public sealed class LockCycle : ContentControl
         return panel;
     }
 
+    private static Rectangle Connector(int column)
+    {
+        var line = new Rectangle { Height = 2, VerticalAlignment = VerticalAlignment.Center };
+        line.SetResourceReference(Shape.FillProperty, "Ui.Stroke.Divider");
+        Grid.SetColumn(line, column);
+        return line;
+    }
+
+    // Segmentos y texto centrados bajo el paso, uno encima del otro: en una sola fila no caben en
+    // una quinta parte del ancho cuando el lote es largo o el idioma alarga el texto
     private static FrameworkElement BuildProgress(SnapshotBatch batch)
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+        var block = new StackPanel { Margin = new Thickness(0, 6, 0, 0), HorizontalAlignment = HorizontalAlignment.Center };
+        var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
 
         // Lotes largos (hasta 50) se reducen a 10 segmentos proporcionales
         var segments = Math.Min(batch.Of, MaxSegments);
         var filled = batch.Of <= MaxSegments ? batch.N : (int)Math.Round(batch.N * (double)MaxSegments / batch.Of);
         for (var i = 0; i < segments; i++)
         {
-            var segment = new Border { Width = 14, Height = 4, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 3, 0) };
+            var segment = new Border { Width = 12, Height = 4, CornerRadius = new CornerRadius(2), Margin = new Thickness(i == 0 ? 0 : 3, 0, 0, 0) };
             segment.SetResourceReference(Border.BackgroundProperty, i < filled ? "Ui.Status.Warning.Fg" : "Ui.Bg.Badge");
             row.Children.Add(segment);
         }
 
+        block.Children.Add(row);
+
         var text = new TextBlock
         {
             Text = $"{KindLabel(batch.Kind)} {batch.N}/{batch.Of}",
-            Margin = new Thickness(5, 0, 0, 0),
+            Margin = new Thickness(0, 4, 0, 0),
             FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
         };
         text.SetResourceReference(TextBlock.ForegroundProperty, "Ui.Status.Warning.Fg");
-        row.Children.Add(text);
-        return row;
+        block.Children.Add(text);
+        return block;
     }
 
     private static string KindLabel(string kind) => kind switch
     {
-        "lockConfirm" => "锁屏确认",
-        "unlock" => "解锁确认",
-        _ => "离开确认",
+        "lockConfirm" => UiStrings.Batch_LockConfirm,
+        "unlock" => UiStrings.Batch_Unlock,
+        _ => UiStrings.Batch_Leave,
     };
 }

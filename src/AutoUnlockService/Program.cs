@@ -1,10 +1,14 @@
+using System.Globalization;
+using AutoUnlock.Shared;
 using AutoUnlockService.Ble;
 using AutoUnlockService.Bonds;
 using AutoUnlockService.Config;
 using AutoUnlockService.Core;
 using AutoUnlockService.Credentials;
+using AutoUnlockService.Localization;
 using AutoUnlockService.Management;
 using AutoUnlockService.Notifications;
+using AutoUnlockService.Resources;
 using AutoUnlockService.Session;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting.WindowsServices;
@@ -37,7 +41,12 @@ public static class Program
 
         try
         {
-            Log.Information("AutoUnlockService 正在启动");
+            // Los primeros mensajes salen antes de que exista ServiceLanguage: idioma del ajuste
+            // guardado, o del equipo; el asistente lo afinará al conectarse
+            ServiceStrings.Culture = AppLanguages.ToCulture(AppLanguages.Resolve(
+                ReadLanguageSetting(), CultureInfo.InstalledUICulture));
+
+            Log.Information(ServiceStrings.Log_ServiceStarting);
 
             var builder = Host.CreateApplicationBuilder(args);
             builder.Configuration.AddJsonFile(
@@ -57,7 +66,7 @@ public static class Program
             if (!earlyValidation.IsValid)
             {
                 foreach (var error in earlyValidation.Errors)
-                    Log.Fatal("配置无效，服务拒绝启动：{Error}", error);
+                    Log.Fatal(ServiceStrings.Log_ConfigInvalidRefuseStart, error);
                 Environment.ExitCode = 1;
                 return;
             }
@@ -80,20 +89,21 @@ public static class Program
                 var initial = sp.GetRequiredService<IOptionsMonitor<AutoUnlockOptions>>().CurrentValue;
                 if (!TryResolveSecrets(initial))
                 {
-                    throw new InvalidOperationException("appsettings.json 配置无效");
+                    throw new InvalidOperationException(ServiceStrings.Error_ConfigInvalid);
                 }
 
                 var validation = OptionsValidator.Validate(initial);
                 if (!validation.IsValid)
                 {
                     foreach (var error in validation.Errors)
-                        Log.Fatal("配置无效，服务拒绝启动：{Error}", error);
-                    throw new InvalidOperationException("appsettings.json 配置无效");
+                        Log.Fatal(ServiceStrings.Log_ConfigInvalidRefuseStart, error);
+                    throw new InvalidOperationException(ServiceStrings.Error_ConfigInvalid);
                 }
 
                 var gate = new OptionsGate(
                     initial, sp.GetRequiredService<ILogger<OptionsGate>>(),
-                    sp.GetRequiredService<TimeProvider>(), TimeSpan.FromMilliseconds(250));
+                    sp.GetRequiredService<TimeProvider>(), TimeSpan.FromMilliseconds(250),
+                    Path.Combine(DataDir, "reload-status.json"));
 
                 sp.GetRequiredService<IOptionsMonitor<AutoUnlockOptions>>()
                   .OnChange(candidate => gate.Submit(candidate));
@@ -101,6 +111,8 @@ public static class Program
                 return gate;
             });
 
+            builder.Services.AddSingleton(sp => new ServiceLanguage(
+                sp.GetRequiredService<OptionsGate>(), CultureInfo.InstalledUICulture));
             builder.Services.AddSingleton<IRssiSource, BleScanner>();
             builder.Services.AddSingleton<DeviceMatcher>();
             builder.Services.AddSingleton<CredentialValidator>();
@@ -124,6 +136,7 @@ public static class Program
 
             builder.Services.AddSingleton<IBondedDeviceSource, WindowsBondedDeviceSource>();
 
+            builder.Services.AddHostedService<HelperLanguageRelay>();
             builder.Services.AddHostedService<Worker>();
             builder.Services.AddHostedService<ManagementPipeServer>();
             builder.Services.AddHostedService<BondPipeServer>();
@@ -132,7 +145,7 @@ public static class Program
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "AutoUnlockService 启动失败");
+            Log.Fatal(ex, ServiceStrings.Log_ServiceStartFailed);
             throw;
         }
         finally
@@ -143,13 +156,28 @@ public static class Program
 
     // 敏感值（Device.Irk / Credentials.Password）解析：dpapi 密文 → 明文；
     // 明文记警告（管理端保存时自动加密）；密文解不开按配置无效处理（SCM 不进入运行态）
+    // Lectura mínima e indulgente: si el fichero falta o está dañado se sigue al sistema
+    private static string? ReadLanguageSetting()
+    {
+        try
+        {
+            return new ConfigurationBuilder()
+                .AddJsonFile(Path.Combine(DataDir, "appsettings.json"), optional: true)
+                .Build()[$"{AutoUnlockOptions.SectionName}:Ui:Language"];
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
     private static bool TryResolveSecrets(AutoUnlockOptions options)
     {
         OptionsSecrets.TryResolve(options, out var warnings, out var errors);
         foreach (var warning in warnings)
             Log.Warning("{Warning}", warning);
         foreach (var error in errors)
-            Log.Fatal("配置无效，服务拒绝启动：{Error}", error);
+            Log.Fatal(ServiceStrings.Log_ConfigInvalidRefuseStart, error);
         return errors.Count == 0;
     }
 }

@@ -1,6 +1,8 @@
 using System.Windows.Controls;
 using System.Windows.Media;
+using AutoUnlockManager.Core.Localization;
 using AutoUnlockManager.Core.Telemetry;
+using AutoUnlockManager.Localization;
 using AutoUnlockManager.Models;
 using AutoUnlockManager.Views.Tray;
 using H.NotifyIcon;
@@ -9,6 +11,7 @@ using Microsoft.Win32;
 using Wpf.Ui.Controls;
 using MenuItem = System.Windows.Controls.MenuItem;
 using TextBlock = System.Windows.Controls.TextBlock;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Services.Tray;
 
@@ -36,6 +39,7 @@ internal sealed class TrayHost : IDisposable
     private readonly MenuItem _stopItem;
     private readonly MenuItem _restartItem;
     private (TrayState State, bool Light, int Size)? _shownIcon;
+    private System.Drawing.Icon? _currentIcon;
     private DateTime _lastTooltipUpdate;
     private bool _operationInProgress;
     private bool _disposed;
@@ -50,13 +54,13 @@ internal sealed class TrayHost : IDisposable
         _flyout.OpenRequested += (_, _) => ShowWindow();
         _flyout.RestartRequested += (_, _) => _ = RunServiceOperationAsync(ct => _serviceControl.RestartAsync(ct));
 
-        _startItem = MenuEntry("启动服务", SymbolRegular.Play16, () => _ = RunServiceOperationAsync(ct => _serviceControl.StartAsync(ct)));
-        _stopItem = MenuEntry("停止服务", SymbolRegular.Stop16, () => _ = RunServiceOperationAsync(ct => _serviceControl.StopAsync(ct)));
-        _restartItem = MenuEntry("重启服务", SymbolRegular.ArrowClockwise16, () => _ = RunServiceOperationAsync(ct => _serviceControl.RestartAsync(ct)));
+        _startItem = MenuEntry("Common_StartService", SymbolRegular.Play16, () => _ = RunServiceOperationAsync(ct => _serviceControl.StartAsync(ct)));
+        _stopItem = MenuEntry("Common_StopService", SymbolRegular.Stop16, () => _ = RunServiceOperationAsync(ct => _serviceControl.StopAsync(ct)));
+        _restartItem = MenuEntry("Common_RestartService", SymbolRegular.ArrowClockwise16, () => _ = RunServiceOperationAsync(ct => _serviceControl.RestartAsync(ct)));
 
         _icon = new TaskbarIcon
         {
-            ToolTipText = "AutoUnlock 管理器",
+            ToolTipText = UiStrings.App_Title,
             TrayPopup = _flyout,
             PopupActivation = PopupActivationMode.LeftClick,
             ContextMenu = BuildMenu(),
@@ -76,6 +80,7 @@ internal sealed class TrayHost : IDisposable
             try
             {
                 _icon.Dispose();
+                _currentIcon?.Dispose();
             }
             catch
             {
@@ -87,6 +92,7 @@ internal sealed class TrayHost : IDisposable
 
         _telemetry.Updated += OnTelemetryUpdated;
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
+        ManagerLanguage.Changed += OnLanguageChanged;
         Refresh(force: true);
     }
 
@@ -103,9 +109,11 @@ internal sealed class TrayHost : IDisposable
         _disposed = true;
         _telemetry.Updated -= OnTelemetryUpdated;
         SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+        ManagerLanguage.Changed -= OnLanguageChanged;
         try
         {
             _icon.Dispose();
+            _currentIcon?.Dispose();
         }
         catch
         {
@@ -127,17 +135,20 @@ internal sealed class TrayHost : IDisposable
         header.Children.Add(new Border { Margin = new Thickness(20, 2, 0, 0), Child = _menuDevice });
         var status = new MenuItem { Header = header, IsHitTestVisible = false, Focusable = false };
 
-        var open = MenuEntry("打开管理器", SymbolRegular.Window16, ShowWindow);
+        var open = MenuEntry("Common_OpenManager", SymbolRegular.Window16, ShowWindow);
         open.FontWeight = FontWeights.SemiBold;
-        var logs = MenuEntry("查看日志", SymbolRegular.DocumentText16, () =>
+        var logs = MenuEntry("Tray_ViewLogs", SymbolRegular.DocumentText16, () =>
         {
             ShowWindow();
             _window.Navigate(AppPage.Logs);
         });
 
         var exitHeader = new StackPanel();
-        exitHeader.Children.Add(new TextBlock { Text = "退出管理器" });
-        var exitHint = new TextBlock { Text = "服务会继续在后台运行", FontSize = 12 };
+        var exitTitle = new TextBlock();
+        exitTitle.SetBinding(TextBlock.TextProperty, Loc.Binding("Tray_Exit"));
+        exitHeader.Children.Add(exitTitle);
+        var exitHint = new TextBlock { FontSize = 12 };
+        exitHint.SetBinding(TextBlock.TextProperty, Loc.Binding("Tray_ExitHint"));
         exitHint.SetResourceReference(TextBlock.ForegroundProperty, "Ui.Text.Secondary");
         exitHeader.Children.Add(exitHint);
         var exit = new MenuItem
@@ -162,9 +173,11 @@ internal sealed class TrayHost : IDisposable
         return menu;
     }
 
-    private static MenuItem MenuEntry(string text, SymbolRegular symbol, Action action)
+    // El texto se enlaza a la clave de recursos: el menú cambia de idioma sin reconstruirse
+    private static MenuItem MenuEntry(string textKey, SymbolRegular symbol, Action action)
     {
-        var item = new MenuItem { Header = text, Icon = new SymbolIcon(symbol) { FontSize = 16 } };
+        var item = new MenuItem { Icon = new SymbolIcon(symbol) { FontSize = 16 } };
+        item.SetBinding(HeaderedItemsControl.HeaderProperty, Loc.Binding(textKey));
         item.Click += (_, _) => action();
         return item;
     }
@@ -184,6 +197,9 @@ internal sealed class TrayHost : IDisposable
 
     private void OnTelemetryUpdated(object? sender, EventArgs e) => Refresh(force: false);
 
+    // El texto emergente y la cabecera del menú se rehacen ya, sin esperar a la siguiente trama
+    private void OnLanguageChanged() => _window.Dispatcher.BeginInvoke(() => Refresh(force: true));
+
     private void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e) =>
         _window.Dispatcher.BeginInvoke(() => Refresh(force: true));
 
@@ -194,15 +210,28 @@ internal sealed class TrayHost : IDisposable
             return;
         }
 
-        UpdateIcon();
         UpdateMenu();
+        UpdateIcon();
 
-        // El texto emergente lleva el dBm: cambia en cada trama, se limita a uno por segundo
+        // El texto emergente lleva el dBm: cambia en cada trama, se limita a uno por segundo.
+        // Shell_NotifyIcon falla de forma pasajera (p. ej. al volver de la suspensión, con el
+        // Explorador aún ocupado) y H.NotifyIcon lo convierte en excepción: se ignora y se
+        // reintenta con la siguiente trama
         var now = DateTime.UtcNow;
         if (force || now - _lastTooltipUpdate >= TooltipThrottle)
         {
             _lastTooltipUpdate = now;
-            _icon.ToolTipText = _telemetry.Tooltip.ToString();
+            try
+            {
+                _icon.ToolTipText = _telemetry.Tooltip.ToString();
+            }
+            catch (InvalidOperationException)
+            {
+                // El valor ya quedó guardado: sin borrarlo, un texto idéntico no volvería a enviarse
+                _lastTooltipUpdate = default;
+                try { _icon.ClearValue(TaskbarIcon.ToolTipTextProperty); }
+                catch (InvalidOperationException) { /* el siguiente intento lo enviará */ }
+            }
         }
     }
 
@@ -216,7 +245,19 @@ internal sealed class TrayHost : IDisposable
             return;
         }
 
-        _icon.Icon = TrayIconRenderer.Render(key.TrayState, light, size);
+        // Se usa UpdateIcon y no la propiedad Icon: si Shell_NotifyIcon falla, la propiedad lo ignora
+        // y el icono se quedaría en el estado anterior. Aquí el fallo se ve y se reintenta en la
+        // siguiente trama. El icono vigente se conserva: el shell lo reutiliza si el Explorador se reinicia
+        var rendered = TrayIconRenderer.Render(key.TrayState, light, size);
+        if (!_icon.UpdateIcon(rendered))
+        {
+            rendered.Dispose();
+            _shownIcon = null;
+            return;
+        }
+
+        _currentIcon?.Dispose();
+        _currentIcon = rendered;
         _shownIcon = key;
     }
 
@@ -286,16 +327,16 @@ internal sealed class TrayHost : IDisposable
         var message = string.IsNullOrWhiteSpace(result.Message)
             ? result.Status switch
             {
-                ServiceOperationStatus.NotInstalled => "服务未安装（Win32 1060）。",
-                ServiceOperationStatus.AccessDenied => "拒绝访问：需要管理员权限。",
-                ServiceOperationStatus.Timeout => "等待服务状态变化超时。",
-                _ => "未知错误。",
+                ServiceOperationStatus.NotInstalled => UiStrings.Op_NotInstalled,
+                ServiceOperationStatus.AccessDenied => UiStrings.Op_AccessDenied,
+                ServiceOperationStatus.Timeout => UiStrings.Op_Timeout,
+                _ => UiStrings.Op_UnknownError,
             }
             : result.Message!;
 
         try
         {
-            _icon.ShowNotification("服务操作失败", message, NotificationIcon.Warning);
+            _icon.ShowNotification(UiStrings.Tray_OperationFailed, message, NotificationIcon.Warning);
         }
         catch
         {

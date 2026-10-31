@@ -1,4 +1,9 @@
+using System.Globalization;
 using System.Windows.Threading;
+using AutoUnlock.Shared;
+using AutoUnlockManager.Core;
+using AutoUnlockManager.Core.Config;
+using AutoUnlockManager.Core.Localization;
 using AutoUnlockManager.Helpers;
 using AutoUnlockManager.Services;
 using AutoUnlockManager.Services.Tray;
@@ -6,6 +11,7 @@ using AutoUnlockManager.ViewModels;
 using AutoUnlockManager.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Wpf.Ui;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager;
 
@@ -34,6 +40,11 @@ public partial class App : Application
             Shutdown();
             return;
         }
+
+        // Idioma antes de crear cualquier ventana: ajuste guardado en la configuración del servicio
+        // o, si no hay (o es «system»), el idioma de Windows del usuario
+        ManagerLanguage.Set(AppLanguages.Resolve(
+            ConfigDocument.ReadLanguage(AppPaths.ConfigFile), CultureInfo.CurrentUICulture));
 
         _services = BuildServices();
         Services = _services;
@@ -80,6 +91,8 @@ public partial class App : Application
         services.AddSingleton<ConfigPage>();
         services.AddSingleton<LogsViewModel>();
         services.AddSingleton<LogsPage>();
+        services.AddSingleton<RulesViewModel>();
+        services.AddSingleton<RulesPage>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<SettingsPage>();
 
@@ -140,7 +153,7 @@ public partial class App : Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         // Un fallo de la interfaz no debe cerrar la bandeja: se informa y se continúa
-        MessageBox.Show(e.Exception.Message, "AutoUnlock 管理器", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(e.Exception.Message, UiStrings.App_Title, MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
 }

@@ -1,5 +1,10 @@
 using System.Diagnostics;
+using System.Globalization;
+using AutoUnlock.Shared;
 using AutoUnlockManager.Core;
+using AutoUnlockManager.Core.Config;
+using AutoUnlockManager.Core.Localization;
+using AutoUnlockManager.Core.Resources;
 using AutoUnlockManager.Helpers;
 using AutoUnlockManager.Models;
 
@@ -10,11 +15,53 @@ public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly ManagerSettings _settings = ManagerSettings.Load(AppPaths.ManagerSettingsFile);
 
+    // Orden de las opciones del desplegable de idioma
+    private static readonly string[] LanguageCodes = [AppLanguages.SystemSetting, "zh", "en", "es"];
+
+    private string _languageCode;
+    private string? _languageError;
+
     public SettingsViewModel()
     {
-        AutoStartText = "正在检查…";
+        AutoStartText = UiStrings.Settings_Checking;
         AutoStartTone = "neutral";
+
+        var saved = ConfigDocument.ReadLanguage(AppPaths.ConfigFile);
+        _languageCode = AppLanguages.TryParseCode(saved, out var language)
+            ? AppLanguages.ToCode(language)
+            : AppLanguages.SystemSetting;
+
+        // Los textos calculados aquí también cambian de idioma
+        ManagerLanguage.Changed += () =>
+        {
+            OnPropertyChanged(nameof(LanguageNote));
+            OnPropertyChanged(nameof(HasLanguageNote));
+            _ = RefreshAutoStartAsync();
+        };
     }
+
+    // —— Idioma (se guarda en la configuración del servicio: uno por equipo) ——
+
+    /// <summary>Sin configuración del servicio no hay dónde guardar el idioma.</summary>
+    public bool CanChangeLanguage => File.Exists(AppPaths.ConfigFile);
+
+    public int LanguageIndex
+    {
+        get => Math.Max(0, Array.IndexOf(LanguageCodes, _languageCode));
+        set
+        {
+            if (value >= 0 && value < LanguageCodes.Length)
+            {
+                SetLanguage(LanguageCodes[value]);
+            }
+        }
+    }
+
+    public string LanguageNote => !CanChangeLanguage
+        ? UiStrings.Settings_LanguageNeedsService
+        : _languageError ?? "";
+
+    public bool HasLanguageNote => LanguageNote.Length > 0;
 
     public ThemePreference Theme => _settings.Theme;
 
@@ -57,10 +104,35 @@ public sealed partial class SettingsViewModel : ObservableObject
         var registered = await Task.Run(IsAutoStartRegistered);
         (AutoStartText, AutoStartTone) = registered switch
         {
-            true => ("已启用", "ok"),
-            false => ("未注册（请运行安装脚本）", "warn"),
-            null => ("无法确认", "neutral"),
+            true => (UiStrings.Settings_AutoStartEnabled, "ok"),
+            false => (UiStrings.Settings_AutoStartMissing, "warn"),
+            null => (UiStrings.Settings_AutoStartUnknown, "neutral"),
         };
+    }
+
+    private void SetLanguage(string code)
+    {
+        if (code == _languageCode || !CanChangeLanguage)
+        {
+            return;
+        }
+
+        try
+        {
+            ConfigDocument.SaveLanguage(AppPaths.ConfigFile, code);
+            _languageCode = code;
+            _languageError = null;
+            ManagerLanguage.Set(AppLanguages.Resolve(code, CultureInfo.CurrentUICulture));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            // Sin guardar no se cambia: el desplegable vuelve a la opción anterior
+            _languageError = string.Format(UiStrings.Settings_LanguageSaveFailed, ex.Message);
+        }
+
+        OnPropertyChanged(nameof(LanguageIndex));
+        OnPropertyChanged(nameof(LanguageNote));
+        OnPropertyChanged(nameof(HasLanguageNote));
     }
 
     private void SetTheme(ThemePreference theme)

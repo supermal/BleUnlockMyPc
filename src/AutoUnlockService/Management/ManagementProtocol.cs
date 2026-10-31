@@ -47,11 +47,10 @@ public sealed record SnapshotFrame(
 // sinceMs = 进入当前状态的服务端 UTC 毫秒时间戳；服务刚启动尚未播种时为 null
 public sealed record SnapshotState(string? Name, long? SinceMs);
 
-// status 沿用现有状态上报的原文（v1 无结构化取值）。当前已知取值集合（BleScanner 的
-// StatusChanged）："BLE 扫描已启动"（运行中）、"未找到支持 BLE 的蓝牙适配器"、
-// "蓝牙已关闭"、"启动 BLE 扫描失败：…"（失败串为开放文本，可能带异常消息后缀；
-// 另注意"重试中"目前只是日志、不经 StatusChanged 上报）。detail 预留，目前恒为 null
-public sealed record SnapshotScan(string? Status, string? Detail);
+// code: running | noAdapter | radioOff | startFailed (ScanStatus), estable e independiente del idioma:
+// es lo único que el gestor interpreta. status: texto en el idioma del servicio (solo informativo).
+// detail: mensaje original del error al arrancar, si lo hubo
+public sealed record SnapshotScan(string? Status, string? Detail, string? Code);
 
 public sealed record SnapshotConnection(bool Connected);
 

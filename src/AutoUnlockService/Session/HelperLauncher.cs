@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Session;
 
@@ -84,7 +85,7 @@ public sealed class HelperLauncher : IDisposable
                 else if (!degradeRaised && failures >= MaxConsecutiveFailures)
                 {
                     degradeRaised = true;
-                    Raise($"助手连续 {MaxConsecutiveFailures} 次启动失败");
+                    Raise(string.Format(ServiceStrings.Reason_HelperStartFailures, MaxConsecutiveFailures));
                 }
 
                 await Task.Delay(failures >= MaxConsecutiveFailures ? SlowRetryDelay : RelaunchDelay, _time, ct);
@@ -93,7 +94,7 @@ public sealed class HelperLauncher : IDisposable
             catch (Exception ex)
             {
                 // Un error inesperado no puede matar al guardian: se registra y se reintenta
-                _log.LogWarning("助手守护出错：{Message}", ex.Message);
+                _log.LogWarning(ServiceStrings.Log_HelperGuardError, ex.Message);
                 try { await Task.Delay(RelaunchDelay, _time, ct); }
                 catch (OperationCanceledException) { break; }
             }
@@ -114,24 +115,24 @@ public sealed class HelperLauncher : IDisposable
         {
             case UserSessionStartResult.NoUserSession:
                 // Nadie ha iniciado sesion todavia: no es un fallo del ayudante, se espera
-                _log.LogInformation("尚无已登录的用户会话，稍后重试启动助手");
+                _log.LogInformation(ServiceStrings.Log_NoUserSessionYet);
                 return;
 
             case UserSessionStartResult.Failed:
                 var failed = Interlocked.Increment(ref _consecutiveFailures);
-                _log.LogWarning("启动助手失败（第 {Count} 次）", failed);
+                _log.LogWarning(ServiceStrings.Log_HelperStartFailed, failed);
                 return;
         }
 
         Volatile.Write(ref _helperPid, pid);
-        _log.LogInformation("助手进程已启动，等待连接");
+        _log.LogInformation(ServiceStrings.Log_HelperProcessStarted);
         if (_link.IsConnected) return;
 
         try { await signal.Task.WaitAsync(ConnectGrace, _time, ct); }
         catch (TimeoutException)
         {
             var failures = Interlocked.Increment(ref _consecutiveFailures);
-            _log.LogWarning("助手已启动但未在 {Seconds} 秒内连接（第 {Count} 次）", ConnectGrace.TotalSeconds, failures);
+            _log.LogWarning(ServiceStrings.Log_HelperConnectTimeout, ConnectGrace.TotalSeconds, failures);
 
             // Se retira el proceso que no conecto para no acumular ayudantes huerfanos
             RetireCurrentHelper();
@@ -147,7 +148,7 @@ public sealed class HelperLauncher : IDisposable
     private void Raise(string reason)
     {
         try { DegradeRequested?.Invoke(reason); }
-        catch (Exception ex) { _log.LogWarning("处理降级请求时出错：{Message}", ex.Message); }
+        catch (Exception ex) { _log.LogWarning(ServiceStrings.Log_DegradeRequestError, ex.Message); }
     }
 
     private void TerminateProcess(int pid)

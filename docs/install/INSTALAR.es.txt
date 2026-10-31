@@ -1,0 +1,48 @@
+Guía de instalación de AutoUnlock
+=================================
+
+1. Requisitos del equipo de destino
+  1. Windows 11 x64 con un adaptador Bluetooth compatible con BLE.
+  2. .NET 10 Runtime (x64). Solo hace falta «.NET Runtime», no Desktop ni ASP.NET:
+     https://dotnet.microsoft.com/download/dotnet/10.0
+     (lo necesitan el servicio y el asistente; el Gestor lleva su propio runtime)
+  3. La última versión de Visual C++ Redistributable (x64, la necesita el proveedor de credenciales):
+     https://aka.ms/vs/17/release/vc_redist.x64.exe
+  4. Instalar como administrador.
+
+2. Instalación
+  1. Copia la carpeta completa (o el paquete descomprimido) en una ubicación fija, por ejemplo C:\AutoUnlock-pkg.
+  2. Abre PowerShell como administrador, entra en esa carpeta y ejecuta:
+
+       Get-ChildItem -Recurse | Unblock-File
+       Set-ExecutionPolicy -Scope Process Bypass
+       .\scripts\install.ps1
+
+     La primera línea quita la marca «descargado de otro equipo»; si no, Windows puede
+     bloquear los scripts y la DLL.
+     Los mensajes del instalador siguen el idioma de Windows (chino / inglés / español;
+     cualquier otro idioma usa inglés).
+  3. Al terminar, el Gestor se inicia solo (icono azul de candado con señal en la bandeja).
+     Mientras falte la configuración, el servicio no se inicia; es lo esperado.
+  4. En la consola de Servicios, el servicio aparece como «AutoUnlock Proximity Unlock».
+
+3. Primera configuración
+  1. Empareja primero el teléfono o reloj con este equipo por Bluetooth
+     (o usa «Emparejar un dispositivo nuevo…» en la página Configuración del Gestor).
+  2. En la página Configuración del Gestor:
+     - elige el dispositivo en «Dispositivo Bluetooth»;
+     - introduce el usuario y la contraseña de Windows de este equipo;
+     - pulsa «Guardar cambios».
+  3. Pulsa «Iniciar servicio» en la página Resumen, o ejecuta en un PowerShell de administrador:
+       Start-Service AutoUnlockService
+
+4. Idioma
+  Gestor → Ajustes → Idioma: Usar el idioma del sistema / 中文 / English / Español.
+  El cambio se aplica al momento, también a los avisos de bloqueo, las notificaciones y las
+  nuevas entradas del registro.
+
+5. Si algo falla
+  - Registros del servicio: C:\ProgramData\AutoUnlock\logs\ (también en la página Registros del Gestor)
+  - Visor de eventos → Registros de Windows → Aplicación, origen AutoUnlock
+  - Desinstalar: ejecuta .\scripts\uninstall.ps1 en un PowerShell de administrador
+    (pregunta si quieres eliminar la configuración y los registros)

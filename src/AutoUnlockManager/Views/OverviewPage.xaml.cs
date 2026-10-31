@@ -5,12 +5,14 @@ using Microsoft.Win32;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Views;
 
 public partial class OverviewPage : UserControl
 {
     private readonly IContentDialogService _dialogs;
+    private Window? _window;
 
     public OverviewPage(OverviewViewModel viewModel, IContentDialogService dialogs)
     {
@@ -18,9 +20,39 @@ public partial class OverviewPage : UserControl
         _dialogs = dialogs;
         DataContext = viewModel;
         InitializeComponent();
+
+        // IsVisible cubre el cambio de página y la ventana oculta; minimizada sigue «visible»,
+        // por eso se escucha también el estado de la ventana
+        IsVisibleChanged += (_, _) => UpdateViewActive();
+        Loaded += (_, _) => AttachWindow();
     }
 
     public OverviewViewModel ViewModel { get; }
+
+    private void AttachWindow()
+    {
+        var window = Window.GetWindow(this);
+        if (window != _window)
+        {
+            if (_window is not null)
+            {
+                _window.StateChanged -= OnWindowStateChanged;
+            }
+
+            _window = window;
+            if (_window is not null)
+            {
+                _window.StateChanged += OnWindowStateChanged;
+            }
+        }
+
+        UpdateViewActive();
+    }
+
+    private void OnWindowStateChanged(object? sender, EventArgs e) => UpdateViewActive();
+
+    private void UpdateViewActive() =>
+        ViewModel.SetViewActive(IsVisible && _window?.WindowState != WindowState.Minimized);
 
     private async void OnStartServiceClicked(object sender, RoutedEventArgs e) =>
         await ConfirmAndRunAsync(ServiceOperationKind.Start);
@@ -35,9 +67,9 @@ public partial class OverviewPage : UserControl
     {
         var (title, content, primary) = kind switch
         {
-            ServiceOperationKind.Start => ("启动服务", "要启动 AutoUnlockService 服务吗？", "启动服务"),
-            ServiceOperationKind.Stop => ("停止服务", "停止后自动锁定与解锁将暂停，直到再次启动。", "停止服务"),
-            _ => ("重启服务", "要重启 AutoUnlockService 服务吗？", "重启服务"),
+            ServiceOperationKind.Start => (UiStrings.Common_StartService, UiStrings.Confirm_StartService, UiStrings.Common_StartService),
+            ServiceOperationKind.Stop => (UiStrings.Common_StopService, UiStrings.Confirm_StopService, UiStrings.Common_StopService),
+            _ => (UiStrings.Common_RestartService, UiStrings.Confirm_RestartService, UiStrings.Common_RestartService),
         };
 
         try
@@ -47,7 +79,7 @@ public partial class OverviewPage : UserControl
                 Title = title,
                 Content = content,
                 PrimaryButtonText = primary,
-                CloseButtonText = "取消",
+                CloseButtonText = UiStrings.Common_Cancel,
             });
 
             if (result == ContentDialogResult.Primary)
@@ -58,7 +90,7 @@ public partial class OverviewPage : UserControl
         catch (Exception ex)
         {
             // async void: ninguna excepción debe escapar al despachador
-            ViewModel.ShowBanner(InfoBarSeverity.Error, "操作失败", ex.Message);
+            ViewModel.ShowBanner(InfoBarSeverity.Error, UiStrings.Common_OperationFailed, ex.Message);
         }
     }
 
@@ -67,7 +99,7 @@ public partial class OverviewPage : UserControl
         var dialog = new SaveFileDialog
         {
             FileName = $"autounlock-samples-{DateTime.Now:yyyyMMdd-HHmmss}.csv",
-            Filter = "CSV 文件 (*.csv)|*.csv",
+            Filter = UiStrings.Overview_CsvFilter,
             DefaultExt = ".csv",
         };
 

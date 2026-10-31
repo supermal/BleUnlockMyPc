@@ -8,6 +8,7 @@ using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using TextBlock = System.Windows.Controls.TextBlock;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Views;
 
@@ -95,7 +96,7 @@ public partial class ConfigPage : UserControl
         }
         catch (Exception ex)
         {
-            ViewModel.ShowError("保存失败", ex.Message);
+            ViewModel.ShowError(UiStrings.Save_FailedTitle, ex.Message);
         }
     }
 
@@ -106,7 +107,7 @@ public partial class ConfigPage : UserControl
         try
         {
             if (ViewModel.IsDirty &&
-                !await ConfirmAsync("放弃未保存的更改？", "将从磁盘重新加载配置，当前表单中的未保存修改将丢失。", "重新加载"))
+                !await ConfirmAsync(UiStrings.Reload_DiscardTitle, UiStrings.Reload_DiscardMessage, UiStrings.Reload_Button))
             {
                 return;
             }
@@ -115,7 +116,7 @@ public partial class ConfigPage : UserControl
         }
         catch (Exception ex)
         {
-            ViewModel.ShowError("重新加载失败", ex.Message);
+            ViewModel.ShowError(UiStrings.Reload_FailedTitle, ex.Message);
         }
     }
 
@@ -127,7 +128,7 @@ public partial class ConfigPage : UserControl
         }
         catch (Exception ex)
         {
-            ViewModel.ShowError("打开文件夹失败", ex.Message);
+            ViewModel.ShowError(UiStrings.OpenFolder_FailedTitle, ex.Message);
         }
     }
 
@@ -142,8 +143,8 @@ public partial class ConfigPage : UserControl
             }
 
             var (title, content, primary) = action == ConfigBannerAction.StartService
-                ? ("启动服务", "要启动 AutoUnlockService 服务吗？", "启动服务")
-                : ("重启服务", "重启将短暂中断自动锁定与解锁。要重启 AutoUnlockService 服务吗？", "重启服务");
+                ? (UiStrings.Common_StartService, UiStrings.Confirm_StartService, UiStrings.Common_StartService)
+                : (UiStrings.Common_RestartService, UiStrings.Confirm_RestartInterrupts, UiStrings.Common_RestartService);
             if (await ConfirmAsync(title, content, primary))
             {
                 await ViewModel.RunBannerActionAsync(action);
@@ -151,7 +152,7 @@ public partial class ConfigPage : UserControl
         }
         catch (Exception ex)
         {
-            ViewModel.ShowError("操作失败", ex.Message);
+            ViewModel.ShowError(UiStrings.Common_OperationFailed, ex.Message);
         }
     }
 
@@ -163,7 +164,7 @@ public partial class ConfigPage : UserControl
         }
         catch (Exception ex)
         {
-            ViewModel.ShowError("读取设备列表失败", ex.Message);
+            ViewModel.ShowError(UiStrings.Bonds_ListFailedTitle, ex.Message);
         }
     }
 
@@ -185,12 +186,12 @@ public partial class ConfigPage : UserControl
 
             if (await ViewModel.SelectBondedDeviceAsync(device.Address))
             {
-                ViewModel.ShowBanner(InfoBarSeverity.Success, "配对成功", $"已选择「{device.DisplayName}」；请保存更改使其生效。");
+                ViewModel.ShowBanner(InfoBarSeverity.Success, UiStrings.Pair_SucceededTitle, string.Format(UiStrings.Pair_SelectedSave, device.DisplayName));
             }
         }
         catch (Exception ex)
         {
-            ViewModel.ShowError("配对失败", ex.Message);
+            ViewModel.ShowError(UiStrings.Pair_FailedTitle, ex.Message);
         }
     }
 
@@ -205,18 +206,17 @@ public partial class ConfigPage : UserControl
             }
 
             var content = ViewModel.IsSelectedDeviceActive
-                ? $"解除与「{device.DisplayName}」的 Windows 蓝牙配对？\n\n" +
-                  "该设备正是当前配置使用的设备：将同时清空 IRK 与设备地址，自动解锁暂停（服务继续运行以读取配对库）。" +
-                  (ViewModel.IsDirty ? "\n\n当前未保存的其他修改也会丢失。" : "")
-                : $"解除与「{device.DisplayName}」的 Windows 蓝牙配对？\n\n当前服务配置不受影响。";
-            if (await ConfirmAsync("解除配对", content, "解除配对"))
+                ? string.Format(UiStrings.Unpair_ConfirmActive, device.DisplayName) +
+                  (ViewModel.IsDirty ? UiStrings.Unpair_ConfirmDirtySuffix : "")
+                : string.Format(UiStrings.Unpair_ConfirmInactive, device.DisplayName);
+            if (await ConfirmAsync(UiStrings.Config_Unpair, content, UiStrings.Config_Unpair))
             {
                 await ViewModel.UnpairSelectedDeviceAsync();
             }
         }
         catch (Exception ex)
         {
-            ViewModel.ShowError("解除配对失败", ex.Message);
+            ViewModel.ShowError(UiStrings.Unpair_FailedTitle, ex.Message);
         }
     }
 
@@ -228,8 +228,8 @@ public partial class ConfigPage : UserControl
             panel.Children.Add(new TextBlock
             {
                 Text = change.IsSensitive || change.Field == ConfigFields.DeviceIrk
-                    ? $"{change.DisplayName}：已修改"
-                    : $"{change.DisplayName}：{change.OldText} → {change.NewText}",
+                    ? string.Format(UiStrings.Diff_Modified, change.DisplayName)
+                    : string.Format(UiStrings.Diff_Change, change.DisplayName, change.OldText, change.NewText),
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 8),
             });
@@ -237,10 +237,10 @@ public partial class ConfigPage : UserControl
 
         var result = await _dialogs.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
         {
-            Title = "确认保存更改",
+            Title = UiStrings.Save_ConfirmTitle,
             Content = new ScrollViewer { Content = panel, MaxHeight = 360 },
-            PrimaryButtonText = "保存更改",
-            CloseButtonText = "取消",
+            PrimaryButtonText = UiStrings.Config_Save,
+            CloseButtonText = UiStrings.Common_Cancel,
         });
         return result == ContentDialogResult.Primary;
     }
@@ -252,7 +252,7 @@ public partial class ConfigPage : UserControl
             Title = title,
             Content = content,
             PrimaryButtonText = primary,
-            CloseButtonText = "取消",
+            CloseButtonText = UiStrings.Common_Cancel,
         });
         return result == ContentDialogResult.Primary;
     }

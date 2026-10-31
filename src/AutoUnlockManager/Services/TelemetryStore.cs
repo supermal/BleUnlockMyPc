@@ -2,9 +2,11 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Threading;
 using AutoUnlockManager.Core;
+using AutoUnlockManager.Core.Localization;
 using AutoUnlockManager.Core.Management;
 using AutoUnlockManager.Core.Telemetry;
 using Wpf.Ui.Controls;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Services;
 
@@ -40,6 +42,9 @@ public sealed class TelemetryStore : ObservableObject, IDisposable
         _statusTimer = new DispatcherTimer(StatusPollInterval, DispatcherPriority.Background, (_, _) => _ = RefreshServiceStatusAsync(), _dispatcher);
         _statusTimer.Start();
         _ = RefreshServiceStatusAsync();
+
+        // Los textos derivados (distintivo, estado, aviso emergente) se recalculan en el idioma nuevo
+        ManagerLanguage.Changed += OnLanguageChanged;
     }
 
     /// <summary>El histórico se vació (sesión nueva o generación nueva): la curva se redibuja entera.</summary>
@@ -98,10 +103,10 @@ public sealed class TelemetryStore : ObservableObject, IDisposable
 
     public string ServiceBadgeText => ServiceStatus switch
     {
-        ServiceStatusKind.Running when Connected => "服务运行中",
-        ServiceStatusKind.Stopped => "服务已停止",
-        ServiceStatusKind.NotInstalled => "服务未安装",
-        _ => "正在连接服务",
+        ServiceStatusKind.Running when Connected => UiStrings.Badge_ServiceRunning,
+        ServiceStatusKind.Stopped => UiStrings.Badge_ServiceStopped,
+        ServiceStatusKind.NotInstalled => UiStrings.Badge_ServiceNotInstalled,
+        _ => UiStrings.Badge_Connecting,
     };
 
     public SymbolRegular ServiceBadgeIcon => ServiceBadgeTone switch
@@ -148,6 +153,7 @@ public sealed class TelemetryStore : ObservableObject, IDisposable
         _disposed = true;
         _statusTimer.Stop();
         _device.PropertyChanged -= OnDeviceChanged;
+        ManagerLanguage.Changed -= OnLanguageChanged;
         _client.FrameReceived -= OnFrameReceived;
         _client.ConnectionChanged -= OnConnectionChanged;
         _client.Dispose();
@@ -182,6 +188,14 @@ public sealed class TelemetryStore : ObservableObject, IDisposable
         });
 
     private void OnDeviceChanged(object? sender, PropertyChangedEventArgs e) => Publish();
+
+    private void OnLanguageChanged() => _dispatcher.BeginInvoke(() =>
+    {
+        if (!_disposed)
+        {
+            Publish();
+        }
+    });
 
     private void Publish()
     {

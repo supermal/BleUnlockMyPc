@@ -1,6 +1,7 @@
 using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Management;
 
@@ -69,7 +70,7 @@ public sealed class ManagementPipeServer : BackgroundService
             catch (Exception ex)
             {
                 // 建立/等待连接失败不能杀死循环；重建前稍作退避
-                _log.LogWarning("管理管道异常：{Message}，稍后重建", ex.Message);
+                _log.LogWarning(ServiceStrings.Log_MgmtPipeError, ex.Message);
                 try { await Task.Delay(RebuildDelay, _time, ct); }
                 catch (OperationCanceledException) { break; }
             }
@@ -78,7 +79,7 @@ public sealed class ManagementPipeServer : BackgroundService
 
     private async Task RunSessionAsync(NamedPipeServerStream pipe, CancellationToken ct)
     {
-        _log.LogInformation("管理端已连接");
+        _log.LogInformation(ServiceStrings.Log_ManagerConnected);
         _hub.BeginClientSession();
         _hub.Changed += PulseChanged;
         try
@@ -99,17 +100,17 @@ public sealed class ManagementPipeServer : BackgroundService
         {
             // 停服取消是正常路径；只有写超时触发（stop 未请求）才需要留痕
             if (!ct.IsCancellationRequested)
-                _log.LogWarning("管理端写入超时，连接已清理");
+                _log.LogWarning(ServiceStrings.Log_ManagerWriteTimeout);
         }
         catch (Exception ex)
         {
             // 写入失败/断连：清理并回到等待，等待下一个客户端
-            _log.LogWarning("管理端会话异常：{Message}，连接已清理", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_ManagerSessionError, ex.Message);
         }
         finally
         {
             _hub.Changed -= PulseChanged;
-            _log.LogInformation("管理端已断开");
+            _log.LogInformation(ServiceStrings.Log_ManagerDisconnected);
         }
     }
 

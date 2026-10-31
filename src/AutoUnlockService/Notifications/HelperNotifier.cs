@@ -1,4 +1,5 @@
 using AutoUnlockService.Session;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Notifications;
 
@@ -29,7 +30,7 @@ public sealed class HelperNotifier : INotifier
     public async Task<PromptOutcome> PromptAsync(double snoozeMinutes, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        if (!_pipe.IsConnected) throw new HelperUnavailableException("助手未连接");
+        if (!_pipe.IsConnected) throw new HelperUnavailableException(ServiceStrings.Helper_NotConnected);
 
         // El ayudante descarta los PROMPT fuera de rango: se ajusta aqui para que un valor
         // grande no se convierta en un aviso que nunca aparece
@@ -51,16 +52,16 @@ public sealed class HelperNotifier : INotifier
         try
         {
             // Si el ayudante cayo justo antes de registrar la espera, el evento ya paso: se comprueba aqui
-            if (!_pipe.IsConnected) throw new HelperUnavailableException("助手在发送提示前已断开");
+            if (!_pipe.IsConnected) throw new HelperUnavailableException(ServiceStrings.Helper_DisconnectedBeforePrompt);
 
             if (!await _pipe.SendAsync(HelperProtocol.BuildPrompt(id, snooze), ct))
             {
                 ct.ThrowIfCancellationRequested();
-                throw new HelperUnavailableException("向助手发送提示指令失败");
+                throw new HelperUnavailableException(ServiceStrings.Helper_SendPromptFailed);
             }
 
             // Se pudo desconectar mientras se enviaba
-            if (!_pipe.IsConnected) throw new HelperUnavailableException("助手在发送提示时断开");
+            if (!_pipe.IsConnected) throw new HelperUnavailableException(ServiceStrings.Helper_DisconnectedWhilePrompting);
 
             // 改版：没有自动期限。等待只由以下之一结束：用户响应、CancelAsync、
             // 助手断开（HelperUnavailableException）或调用方取消（ct）
@@ -106,7 +107,7 @@ public sealed class HelperNotifier : INotifier
         if (!await _pipe.SendAsync(HelperProtocol.BuildNotify(message), ct))
         {
             ct.ThrowIfCancellationRequested();
-            throw new HelperUnavailableException("向助手发送通知失败");
+            throw new HelperUnavailableException(ServiceStrings.Helper_SendNotifyFailed);
         }
     }
 
@@ -137,7 +138,7 @@ public sealed class HelperNotifier : INotifier
             tcs = _pending;
             _pending = null;
         }
-        _log.LogWarning("助手在提示未决时断开，改用对话框重新提示");
-        tcs.TrySetException(new HelperUnavailableException("助手在提示未决时断开"));
+        _log.LogWarning(ServiceStrings.Log_HelperLostDuringPrompt);
+        tcs.TrySetException(new HelperUnavailableException(ServiceStrings.Helper_DisconnectedWithPromptPending));
     }
 }

@@ -44,7 +44,7 @@ public sealed class ManagementFrameParserTests
         const string line = """
             {"t":"snapshot","v":1,"seq":813,"gen":2,"tsMs":1760648000123,"uptimeSec":532.4,
              "state":{"name":"LockedArmed","sinceMs":1760647911250},
-             "scan":{"status":"BLE 扫描已启动","detail":null},
+             "scan":{"status":"BLE 扫描已启动","detail":null,"code":"running"},
              "helper":{"connected":true},"cred":{"connected":true},
              "thr":{"lockDbm":-65,"unlockDbm":-45,"unlockCount":3,"lockPromptCount":5,"lockConfirmCount":10},
              "avg":{"w5":-57.3,"w10":-58.1,"n5":6,"n10":14},
@@ -62,6 +62,7 @@ public sealed class ManagementFrameParserTests
         Assert.Equal("LockedArmed", snapshot.State?.Name);
         Assert.Equal(1760647911250, snapshot.State?.SinceMs);
         Assert.Equal("BLE 扫描已启动", snapshot.Scan?.Status);
+        Assert.Equal("running", snapshot.Scan?.Code);
         Assert.True(snapshot.Helper?.Connected);
         Assert.True(snapshot.Cred?.Connected);
         Assert.Equal(-65, snapshot.Thr?.LockDbm);

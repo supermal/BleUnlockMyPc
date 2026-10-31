@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Windows.Documents;
 using System.Windows.Media;
+using AutoUnlockManager.Core.Localization;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Views.Controls;
 
@@ -45,6 +47,20 @@ public sealed class ThresholdBar : FrameworkElement
 
     protected override Size MeasureOverride(Size availableSize) => new(0, 76);
 
+    public ThresholdBar()
+    {
+        // Los textos se dibujan en OnRender: al cambiar el idioma basta con volver a dibujar
+        // Al volver a mostrarse se redibuja, por si el idioma cambió mientras estaba en otra página
+        Loaded += (_, _) =>
+        {
+            ManagerLanguage.Changed += OnLanguageChanged;
+            InvalidateVisual();
+        };
+        Unloaded += (_, _) => ManagerLanguage.Changed -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged() => Dispatcher.BeginInvoke(InvalidateVisual);
+
     protected override void OnRender(DrawingContext dc)
     {
         var width = ActualWidth;
@@ -65,13 +81,13 @@ public sealed class ThresholdBar : FrameworkElement
         dc.DrawRectangle(NearBrush, null, new Rect(unlockX, BarTop, width - unlockX, BarHeight));
         dc.Pop();
 
-        DrawMark(dc, lockX, $"锁定 {Whole(LockDbm)}", AwayTextBrush);
-        DrawMark(dc, unlockX, $"解锁 {Whole(UnlockDbm)}", NearTextBrush);
+        DrawMark(dc, lockX, string.Format(UiStrings.Bar_Lock, Whole(LockDbm)), AwayTextBrush);
+        DrawMark(dc, unlockX, string.Format(UiStrings.Bar_Unlock, Whole(UnlockDbm)), NearTextBrush);
 
         var zoneY = BarTop + BarHeight + 6;
-        DrawText(dc, "离开区", LabelBrush, new Point(0, zoneY));
-        DrawText(dc, "保持区", LabelBrush, new Point(lockX + 4, zoneY));
-        DrawText(dc, "靠近区", LabelBrush, new Point(unlockX + 4, zoneY));
+        DrawText(dc, UiStrings.Zone_Away, LabelBrush, new Point(0, zoneY));
+        DrawText(dc, UiStrings.Zone_Hold, LabelBrush, new Point(lockX + 4, zoneY));
+        DrawText(dc, UiStrings.Zone_Near, LabelBrush, new Point(unlockX + 4, zoneY));
 
         var scaleY = zoneY + 18;
         DrawText(dc, "-100 dBm", LabelBrush, new Point(0, scaleY));

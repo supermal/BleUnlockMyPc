@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.ServiceProcess;
 using AutoUnlockManager.Core;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Services;
 
@@ -94,9 +95,9 @@ public sealed class ServiceControlService
             var code = GetWin32ErrorCode(ex);
             return code switch
             {
-                1060 => new ServiceStatusInfo(ServiceStatusKind.NotInstalled, "服务未安装（Win32 1060）"),
+                1060 => new ServiceStatusInfo(ServiceStatusKind.NotInstalled, UiStrings.Svc_NotInstalled1060),
                 // 拒绝访问等查询失败：灰色「未知」（状态文案「未安装或不可用」仅用于 1060）
-                5 => new ServiceStatusInfo(ServiceStatusKind.Unknown, "拒绝访问（Win32 5）"),
+                5 => new ServiceStatusInfo(ServiceStatusKind.Unknown, UiStrings.Svc_AccessDenied5),
                 _ => new ServiceStatusInfo(ServiceStatusKind.Unknown, ex.Message),
             };
         }
@@ -130,7 +131,7 @@ public sealed class ServiceControlService
         }
         catch (System.ServiceProcess.TimeoutException)
         {
-            return new ServiceOperationResult(ServiceOperationStatus.Timeout, "等待服务进入运行状态超时（15 秒）");
+            return new ServiceOperationResult(ServiceOperationStatus.Timeout, UiStrings.Svc_StartTimeout);
         }
         catch (Exception ex)
         {
@@ -164,7 +165,7 @@ public sealed class ServiceControlService
         }
         catch (System.ServiceProcess.TimeoutException)
         {
-            return new ServiceOperationResult(ServiceOperationStatus.Timeout, "等待服务停止超时（15 秒）");
+            return new ServiceOperationResult(ServiceOperationStatus.Timeout, UiStrings.Svc_StopTimeout);
         }
         catch (Exception ex)
         {
@@ -203,7 +204,7 @@ public sealed class ServiceControlService
         }
         catch (System.ServiceProcess.TimeoutException)
         {
-            return new ServiceOperationResult(ServiceOperationStatus.Timeout, "等待服务完成重启超时（15 秒）");
+            return new ServiceOperationResult(ServiceOperationStatus.Timeout, UiStrings.Svc_RestartTimeout);
         }
         catch (Exception ex)
         {
@@ -226,8 +227,8 @@ public sealed class ServiceControlService
 
     private static ServiceOperationResult ClassifyOperationFailure(Exception ex) => GetWin32ErrorCode(ex) switch
     {
-        1060 => new ServiceOperationResult(ServiceOperationStatus.NotInstalled, "服务未安装（Win32 1060）"),
-        5 => new ServiceOperationResult(ServiceOperationStatus.AccessDenied, "拒绝访问（Win32 5）：需要管理员权限"),
+        1060 => new ServiceOperationResult(ServiceOperationStatus.NotInstalled, UiStrings.Svc_NotInstalled1060),
+        5 => new ServiceOperationResult(ServiceOperationStatus.AccessDenied, UiStrings.Svc_AccessDeniedAdmin),
         1056 => ServiceOperationResult.Success, // ERROR_SERVICE_ALREADY_RUNNING：目标状态已达成
         1062 => ServiceOperationResult.Success, // ERROR_SERVICE_NOT_ACTIVE：目标状态已达成
         _ => new ServiceOperationResult(ServiceOperationStatus.Failure, ex.Message),

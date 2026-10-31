@@ -27,7 +27,7 @@ internal sealed class SingleInstanceGuard : IDisposable
             _waitThread = new Thread(WaitLoop)
             {
                 IsBackground = true,
-                Name = "单实例唤醒监听",
+                Name = "SingleInstanceWakeupListener",
             };
             _waitThread.Start();
         }

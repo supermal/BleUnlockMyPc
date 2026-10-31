@@ -1,3 +1,5 @@
+using AutoUnlockService.Resources;
+
 namespace AutoUnlockService.Session;
 
 // Lo que HelperScreenLocker necesita del canal con el ayudante
@@ -32,13 +34,13 @@ public sealed class HelperScreenLocker : IScreenLocker
             && await _pipe.SendAsync(HelperProtocol.BuildLock(), ct)
             && await _pipe.WaitForLockedAsync(AckTimeout, ct))
         {
-            _log.LogInformation("助手已执行锁屏");
+            _log.LogInformation(ServiceStrings.Log_HelperLocked);
             return true;
         }
 
         // Bloquear la pantalla es lo mas importante del servicio: si el ayudante
         // no confirma, se intenta por la via directa antes de darse por vencido
-        _log.LogWarning("助手未确认锁屏，改用进程方式");
+        _log.LogWarning(ServiceStrings.Log_HelperLockUnconfirmed);
         return await _fallback.LockAsync(ct);
     }
 }

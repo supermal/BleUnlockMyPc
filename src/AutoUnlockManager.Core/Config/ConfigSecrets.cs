@@ -1,4 +1,5 @@
 using AutoUnlockService.Config;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Core.Config;
 
@@ -50,11 +51,11 @@ public static class ConfigSecrets
         if (SecretProtector.IsProtected(loadedValue))
         {
             return SecretProtector.TryUnprotect(loadedValue, out _)
-                ? "已加密存储，不会显示；输入新密码即可替换，保存时自动重新加密。"
-                : "该加密值无法在本机解密（可能来自其他机器）；必须重新输入。";
+                ? CoreStrings.Secret_StoredEncrypted
+                : CoreStrings.Secret_Undecryptable;
         }
 
-        return loadedValue.Length > 0 ? "当前以明文存储；保存后将自动加密。" : "";
+        return loadedValue.Length > 0 ? CoreStrings.Secret_Plaintext : "";
     }
 
     private static string ProtectIfNeeded(string value, ref bool changed)

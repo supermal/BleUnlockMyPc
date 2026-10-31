@@ -2,10 +2,12 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
 using AutoUnlockManager.Core;
+using AutoUnlockManager.Core.Localization;
 using AutoUnlockManager.Core.Logs;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Threading;
 using Wpf.Ui.Controls;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.ViewModels;
 
@@ -36,6 +38,9 @@ public sealed partial class LogsViewModel : ObservableObject
     private bool _followNewest;
     private bool _fileMissingNotified;
 
+    // Ventana oculta o minimizada: el seguimiento queda detenido sin tocar IsPaused
+    private bool _suspended;
+
     public LogsViewModel()
     {
         _keywordTimer = new DispatcherTimer(DispatcherPriority.Normal, _dispatcher) { Interval = KeywordDebounce };
@@ -47,13 +52,20 @@ public sealed partial class LogsViewModel : ObservableObject
 
         VisibleEntries = [];
         Keyword = "";
-        StatusText = "（未选择文件）";
+        StatusText = UiStrings.Logs_NoFileSelected;
         LogsDirText = AppPaths.LogsDir;
         OpenFolderPath = AppPaths.DataDir;
         BannerTitle = "";
         BannerMessage = "";
         ShowDebug = ShowInformation = ShowWarning = ShowError = true;
         AutoScroll = true;
+
+        // Cambio de idioma: botón de pausa y línea de estado; los avisos ya mostrados se quedan
+        ManagerLanguage.Changed += () => _dispatcher.BeginInvoke(() =>
+        {
+            OnPropertyChanged(nameof(PauseButtonText));
+            UpdateStatusText();
+        });
     }
 
     /// <summary>过滤视图整体重建后触发（过滤/加载/裁剪）；增量追加不触发——
@@ -130,7 +142,7 @@ public sealed partial class LogsViewModel : ObservableObject
     internal int MaxLineCount { get; set; } = 10_000;
 
     /// <summary>暂停/继续按钮文案。</summary>
-    public string PauseButtonText => IsPaused ? "继续跟随" : "暂停跟随";
+    public string PauseButtonText => IsPaused ? UiStrings.Logs_ResumeFollow : UiStrings.Logs_PauseFollow;
 
     /// <summary>当前过滤视图行数（导出提示用）。</summary>
     public int VisibleCount => VisibleEntries.Count;
@@ -208,8 +220,8 @@ public sealed partial class LogsViewModel : ObservableObject
         {
             ShowBanner(
                 InfoBarSeverity.Warning,
-                "日志目录不存在",
-                $"未找到 {AppPaths.LogsDir}（服务可能尚未安装或从未运行）。");
+                UiStrings.Logs_DirMissingTitle,
+                string.Format(UiStrings.Logs_DirMissingMessage, AppPaths.LogsDir));
             ClearEntries();
             SelectedFile = null;
             return;
@@ -234,8 +246,8 @@ public sealed partial class LogsViewModel : ObservableObject
             SelectedFile = null;
             ShowBanner(
                 InfoBarSeverity.Informational,
-                "暂无日志文件",
-                "目录中还没有 autounlock-*.log 文件，服务启动后将自动出现。");
+                UiStrings.Logs_NoFilesTitle,
+                UiStrings.Logs_NoFilesMessage);
         }
     }
 
@@ -262,6 +274,30 @@ public sealed partial class LogsViewModel : ObservableObject
 
             StartLoop(file.FullPath, _position, _carry);
             UpdateStatusText();
+        }
+    }
+
+    /// <summary>
+    /// La ventana se ocultó (bandeja) o se minimizó: nadie ve la lista ni el contador de la navegación,
+    /// así que se deja de leer el fichero. Al volver se continúa desde la última posición leída y se
+    /// recupera todo lo escrito mientras tanto. Es independiente de la pausa del usuario.
+    /// </summary>
+    public void SetWindowActive(bool active)
+    {
+        if (_suspended == !active)
+        {
+            return;
+        }
+
+        _suspended = !active;
+        if (_suspended)
+        {
+            StopLoop();
+        }
+        else if (!IsPaused && SelectedFile is { } file)
+        {
+            // El cambio de día durante la suspensión lo detecta la comprobación de rotación del bucle
+            StartLoop(file.FullPath, _position, _carry);
         }
     }
 
@@ -358,12 +394,23 @@ public sealed partial class LogsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            ShowBanner(InfoBarSeverity.Error, "加载日志失败", ex.Message);
+            ShowBanner(InfoBarSeverity.Error, UiStrings.Logs_LoadFailed, ex.Message);
         }
     }
 
     private void StartLoop(string path, long position, LogSeverity carry)
     {
+        if (_suspended)
+        {
+            // Se arrancará desde aquí al volver la ventana (SetWindowActive)
+            lock (_followGate)
+            {
+                _position = position;
+            }
+
+            return;
+        }
+
         var cts = new CancellationTokenSource();
         lock (_followGate)
         {
@@ -434,7 +481,7 @@ public sealed partial class LogsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _ = _dispatcher.BeginInvoke(() => ShowBanner(InfoBarSeverity.Error, "日志跟随中断", ex.Message));
+            _ = _dispatcher.BeginInvoke(() => ShowBanner(InfoBarSeverity.Error, UiStrings.Logs_FollowInterrupted, ex.Message));
         }
     }
 
@@ -478,8 +525,8 @@ public sealed partial class LogsViewModel : ObservableObject
             SelectedFile = Files[0]; // 触发重新加载 + 跟随（followNewest 自动为 true）
             ShowBanner(
                 InfoBarSeverity.Informational,
-                "已切换日志文件",
-                $"服务日志已轮转到 {Files[0].FileName}。");
+                UiStrings.Logs_RotatedTitle,
+                string.Format(UiStrings.Logs_RotatedMessage, Files[0].FileName));
         });
     }
 
@@ -498,8 +545,8 @@ public sealed partial class LogsViewModel : ObservableObject
                 _fileMissingNotified = true;
                 ShowBanner(
                     InfoBarSeverity.Warning,
-                    "日志文件不可读",
-                    $"{Path.GetFileName(path)} 当前无法读取（可能正被轮转）；恢复写入后自动继续。");
+                    UiStrings.Logs_UnreadableTitle,
+                    string.Format(UiStrings.Logs_UnreadableMessage, Path.GetFileName(path)));
             }
         });
     }
@@ -582,11 +629,11 @@ public sealed partial class LogsViewModel : ObservableObject
 
     private void UpdateStatusText()
     {
-        var file = SelectedFile?.FileName ?? "（无文件）";
-        var marker = IsPaused ? "已暂停" : _followNewest ? "跟随中" : "浏览";
-        StatusText = $"{file}｜{marker}｜显示 {VisibleEntries.Count.ToString("N0", CultureInfo.InvariantCulture)} / " +
-                     $"共 {_all.Count.ToString("N0", CultureInfo.InvariantCulture)} 行";
-        LineCountText = $"显示 {VisibleEntries.Count.ToString("N0", CultureInfo.InvariantCulture)} 行，" +
-                        $"共 {_all.Count.ToString("N0", CultureInfo.InvariantCulture)} 行";
+        var file = SelectedFile?.FileName ?? UiStrings.Logs_NoFile;
+        var marker = IsPaused ? UiStrings.Logs_MarkerPaused : _followNewest ? UiStrings.Logs_MarkerFollowing : UiStrings.Logs_MarkerBrowsing;
+        var shown = VisibleEntries.Count.ToString("N0", CultureInfo.InvariantCulture);
+        var total = _all.Count.ToString("N0", CultureInfo.InvariantCulture);
+        StatusText = string.Format(UiStrings.Logs_StatusLine, file, marker, shown, total);
+        LineCountText = string.Format(UiStrings.Logs_LineCount, shown, total);
     }
 }

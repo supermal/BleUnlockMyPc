@@ -2,6 +2,7 @@ using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Session;
 
@@ -27,6 +28,9 @@ public sealed class HelperPipeServer(
     private Task? _loop;
 
     public bool IsConnected => _pipe?.IsConnected == true;
+
+    // Cultura de interfaz que anuncio el ayudante en su HELLO (null si no la envio)
+    public string? HelperCulture { get; private set; }
 
     public event Action<int>? Connected;
     public event Action? Disconnected;
@@ -61,7 +65,7 @@ public sealed class HelperPipeServer(
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                log.LogWarning("助手管道异常：{Message}", ex.Message);
+                log.LogWarning(ServiceStrings.Log_HelperPipeError, ex.Message);
             }
             finally
             {
@@ -87,17 +91,18 @@ public sealed class HelperPipeServer(
     private void RaiseDisconnected()
     {
         try { Disconnected?.Invoke(); }
-        catch (Exception ex) { log.LogWarning("处理助手断开事件时出错：{Message}", ex.Message); }
+        catch (Exception ex) { log.LogWarning(ServiceStrings.Log_HelperDisconnectEventError, ex.Message); }
     }
 
     private void Dispatch(string line)
     {
         var trimmed = line.Trim();
 
-        if (trimmed.StartsWith("HELLO ", StringComparison.Ordinal)
-            && int.TryParse(trimmed[6..], out var sessionId))
+        if (HelperProtocol.TryParseHello(trimmed, out var sessionId, out var culture))
         {
-            log.LogInformation("助手已连接，会话 {Session}", sessionId);
+            // Antes de Connected: quien lo escuche ya ve la cultura de este ayudante
+            HelperCulture = culture;
+            log.LogInformation(ServiceStrings.Log_HelperConnected, sessionId);
             Raise(() => Connected?.Invoke(sessionId));
             return;
         }
@@ -110,19 +115,19 @@ public sealed class HelperPipeServer(
 
         if (HelperProtocol.TryParseResponse(trimmed, out var id, out var outcome))
         {
-            log.LogInformation("用户对锁屏提示的响应：{Outcome}", outcome);
+            log.LogInformation(ServiceStrings.Log_PromptResponse, outcome);
             Raise(() => ResponseReceived?.Invoke(id, outcome));
             return;
         }
 
-        log.LogWarning("助手管道收到无法识别的消息");
+        log.LogWarning(ServiceStrings.Log_HelperPipeUnknownMessage);
     }
 
     // Un suscriptor que falla no debe tumbar el bucle de lectura
     private void Raise(Action action)
     {
         try { action(); }
-        catch (Exception ex) { log.LogWarning("处理助手消息时出错：{Message}", ex.Message); }
+        catch (Exception ex) { log.LogWarning(ServiceStrings.Log_HelperMessageError, ex.Message); }
     }
 
     public async Task<bool> SendAsync(string line, CancellationToken ct)
@@ -143,7 +148,7 @@ public sealed class HelperPipeServer(
         }
         catch (Exception ex)
         {
-            log.LogWarning("向助手发送指令失败：{Message}", ex.Message);
+            log.LogWarning(ServiceStrings.Log_HelperSendFailed, ex.Message);
             // Un canal que no acepta escrituras esta muerto: cerrarlo hace que el bucle de lectura
             // salga y que se rompan las esperas pendientes
             if (ex is not OperationCanceledException || !ct.IsCancellationRequested)

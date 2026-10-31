@@ -1,4 +1,5 @@
 using System.Globalization;
+using AutoUnlockHelper.Resources;
 using AutoUnlockService.Session;
 using CommunityToolkit.WinUI.Notifications;
 using Windows.Data.Xml.Dom;
@@ -30,21 +31,25 @@ internal sealed class ToastPrompt : IDisposable
         // construir nada, para que un fallo al montar el nuevo no deje el viejo activo
         lock (_lock) RetractLocked();
 
+        // Textos en el idioma que fijo el servicio (LANG); se escapan porque van dentro del XML
+        static string X(string text) => System.Security.SecurityElement.Escape(text);
+        var snooze = string.Format(CultureInfo.InvariantCulture, HelperStrings.Prompt_Snooze, snoozeMinutes);
+
         var xml = new XmlDocument();
-        xml.LoadXml(string.Format(CultureInfo.InvariantCulture, """
+        xml.LoadXml($"""
             <toast scenario="reminder" launch="ignore">
               <visual>
                 <binding template="ToastGeneric">
-                  <text>即将锁定屏幕</text>
-                  <text>未检测到你的设备。若持续未检测到，屏幕将自动锁定。</text>
+                  <text>{X(HelperStrings.Prompt_Title)}</text>
+                  <text>{X(HelperStrings.Prompt_Body)}</text>
                 </binding>
               </visual>
               <actions>
-                <action content="拒绝" arguments="reject" activationType="foreground"/>
-                <action content="{0:0} 分钟内不锁定" arguments="snooze" activationType="foreground"/>
+                <action content="{X(HelperStrings.Prompt_Reject)}" arguments="reject" activationType="foreground"/>
+                <action content="{X(snooze)}" arguments="snooze" activationType="foreground"/>
               </actions>
             </toast>
-            """, snoozeMinutes));
+            """);
 
         var toast = new ToastNotification(xml) { Tag = "autounlock-lock-prompt" };
         toast.Activated += OnActivated;

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
 using AutoUnlockService.Session;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Notifications;
 
@@ -35,16 +36,13 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
         var sessionId = WtsNative.GetActiveConsoleSessionId();
         if (sessionId == WtsNative.InvalidSession)
         {
-            log.LogWarning("没有活动的控制台会话，无法弹出提示");
+            log.LogWarning(ServiceStrings.Log_NoConsoleSessionForPrompt);
             return Task.FromResult(PromptOutcome.Timeout);
         }
 
         const string title = "AutoUnlock";
-        var message = string.Format(CultureInfo.InvariantCulture,
-            "未检测到你的设备。若持续未检测到，屏幕将自动锁定。\n\n" +
-            "「是」= 本次不锁屏\n" +
-            "「否」= {0:0} 分钟内不锁屏",
-            snoozeMinutes);
+        // Los botones Sí/No los pinta Windows en el idioma de la sesión; el texto los nombra igual
+        var message = string.Format(CultureInfo.InvariantCulture, ServiceStrings.Dialog_LockPrompt, snoozeMinutes);
 
         return Task.Run(() =>
         {
@@ -61,7 +59,7 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
             {
                 // Sin dialogo el usuario no ha sido avisado; la nueva logica no bloquea por
                 // tiempo, asi que aqui solo se deja constancia
-                log.LogError("WTSSendMessage 调用失败（错误码 {Error}），用户未收到任何提示",
+                log.LogError(ServiceStrings.Log_WtsPromptFailed,
                     Marshal.GetLastWin32Error());
                 return PromptOutcome.Timeout;
             }
@@ -94,7 +92,7 @@ public sealed class WtsMessageNotifier(ILogger<WtsMessageNotifier> log) : INotif
             message, (uint)(message.Length * 2),
             mbOk | MbIconExclamation, NoticeTimeoutSeconds, out _, bWait: false);
         if (!ok)
-            log.LogError("WTSSendMessage 调用失败（错误码 {Error}），用户未收到通知：{Message}",
+            log.LogError(ServiceStrings.Log_WtsNotifyFailed,
                 Marshal.GetLastWin32Error(), message);
 
         return Task.CompletedTask;

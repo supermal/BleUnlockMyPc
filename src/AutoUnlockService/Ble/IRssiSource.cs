@@ -4,7 +4,7 @@ namespace AutoUnlockService.Ble;
 public interface IRssiSource
 {
     event Action<AdvertisementSample>? SampleReceived;
-    event Action<string>? StatusChanged;
+    event Action<ScanStatus>? StatusChanged;
 
     bool IsAvailable { get; }
 

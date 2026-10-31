@@ -1,5 +1,6 @@
 using AutoUnlockService.Config;
 using AutoUnlockService.Credentials;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Core;
 
@@ -121,9 +122,9 @@ public sealed class ProximityStateMachine
     // 摘要日志用：当前批次的收集进度
     public string BatchProgressText => Progress switch
     {
-        { Kind: BatchKind.LockConfirm } p => $"锁屏确认 {p.Count}/{p.Target}",
-        { Kind: BatchKind.Unlock } p => $"解锁确认 {p.Count}/{p.Target}",
-        { } p => $"离开确认 {p.Count}/{p.Target}",
+        { Kind: BatchKind.LockConfirm } p => string.Format(ServiceStrings.Batch_LockConfirm, p.Count, p.Target),
+        { Kind: BatchKind.Unlock } p => string.Format(ServiceStrings.Batch_Unlock, p.Count, p.Target),
+        { } p => string.Format(ServiceStrings.Batch_Leave, p.Count, p.Target),
         null => ""
     };
 
@@ -153,17 +154,19 @@ public sealed class ProximityStateMachine
 
         if (LockBatchConfirmed(history, now, Proximity.LockPromptSampleCount, out var reason))
             return Transition(ProximityState.PendingLock, ProximityAction.ShowLockPrompt,
-                $"检测到离开：{reason}");
+                string.Format(ServiceStrings.Reason_DepartureDetected, reason));
 
         return null;
     }
 
     private StateChange? EvaluatePendingLock(RssiHistory history, DateTimeOffset now)
     {
-        // Primero el regreso: si el usuario vuelve, el aviso se retira y no se bloquea
-        if (UnlockBatchNear(history, Proximity.UnlockSampleCount, out var nearReason))
+        // Primero el regreso: si el usuario vuelve, el aviso se retira y no se bloquea. Basta con
+        // superar el umbral de BLOQUEO (no el de desbloqueo): con la pantalla aún abierta, salir de
+        // la zona de «lejos» ya desmiente la salida (decisión del usuario, 2026-10-31)
+        if (UnlockBatchNear(history, Proximity.UnlockSampleCount, Proximity.LockThresholdDbm, out var nearReason))
             return Transition(ProximityState.Unlocked, ProximityAction.CancelLockPrompt,
-                $"信号恢复：{nearReason}");
+                string.Format(ServiceStrings.Reason_SignalRecovered, nearReason));
 
         // 弹窗后新收的一批（弹窗前的读数不参与）：全部低于阈值才锁屏。
         // 等待期没有任何自动超时：只有这批读数或用户点击能决定
@@ -171,7 +174,7 @@ public sealed class ProximityStateMachine
         {
             _screenLocked = true;
             return Transition(ProximityState.LockedWaitingDeparture, ProximityAction.LockScreen,
-                $"弹窗后确认离开：{reason}");
+                string.Format(ServiceStrings.Reason_DepartureConfirmedAfterPrompt, reason));
         }
 
         return null;
@@ -179,7 +182,7 @@ public sealed class ProximityStateMachine
 
     private StateChange? EvaluateSnoozed(DateTimeOffset now) =>
         now >= _snoozeUntil
-            ? Transition(ProximityState.Unlocked, ProximityAction.None, "延期结束")
+            ? Transition(ProximityState.Unlocked, ProximityAction.None, ServiceStrings.Reason_SnoozeEnded)
             : null;
 
     private StateChange? EvaluateWaitingDeparture(RssiHistory history, DateTimeOffset now)
@@ -192,18 +195,18 @@ public sealed class ProximityStateMachine
         if (now < _graceUntil) return null;
 
         if (LockBatchConfirmed(history, now, Proximity.LockPromptSampleCount, out var reason))
-            return Transition(ProximityState.LockedArmed, ProximityAction.None, $"已确认离开：{reason}");
+            return Transition(ProximityState.LockedArmed, ProximityAction.None, string.Format(ServiceStrings.Reason_DepartureConfirmed, reason));
 
         return null;
     }
 
     private StateChange? EvaluateArmed(RssiHistory history, DateTimeOffset now)
     {
-        if (!UnlockBatchNear(history, Proximity.UnlockSampleCount, out var reason)) return null;
+        if (!UnlockBatchNear(history, Proximity.UnlockSampleCount, Proximity.UnlockThresholdDbm, out var reason)) return null;
 
         _unlockSentAt = now;
         return Transition(ProximityState.UnlockPending, ProximityAction.SendCredentials,
-            $"已确认靠近：{reason}");
+            string.Format(ServiceStrings.Reason_ApproachConfirmed, reason));
     }
 
     private StateChange? EvaluateUnlockPending(DateTimeOffset now)
@@ -212,7 +215,7 @@ public sealed class ProximityStateMachine
         // Agotado el plazo volvemos a armar y reintentamos; esto NO es motivo para parar
         var timeout = TimeSpan.FromSeconds(Proximity.UnlockPendingTimeoutSeconds);
         return now - _unlockSentAt >= timeout
-            ? Transition(ProximityState.LockedArmed, ProximityAction.None, "等待认证结果超时，将重试")
+            ? Transition(ProximityState.LockedArmed, ProximityAction.None, ServiceStrings.Reason_AuthTimeoutRetry)
             : null;
     }
 
@@ -226,18 +229,18 @@ public sealed class ProximityStateMachine
             case PromptResponse.Reject:
                 _snoozeUntil = now + TimeSpan.FromSeconds(Notification.RejectSnoozeSeconds);
                 return Transition(ProximityState.Snoozed, ProximityAction.None,
-                    $"用户拒绝锁屏，{Notification.RejectSnoozeSeconds:0} 秒内不再提示");
+                    string.Format(ServiceStrings.Reason_UserRejected, Notification.RejectSnoozeSeconds));
 
             case PromptResponse.Snooze:
                 _snoozeUntil = now + TimeSpan.FromMinutes(Notification.SnoozeMinutes);
                 return Transition(ProximityState.Snoozed, ProximityAction.None,
-                    $"用户延期 {Notification.SnoozeMinutes:0} 分钟");
+                    string.Format(ServiceStrings.Reason_UserSnoozed, Notification.SnoozeMinutes));
 
             case PromptResponse.Dismissed:
                 // Cerrar la X es una orden explicita del usuario: bloquear ya
                 _screenLocked = true;
                 return Transition(ProximityState.LockedWaitingDeparture, ProximityAction.LockScreen,
-                    "用户关闭了通知");
+                    ServiceStrings.Reason_UserDismissed);
 
             default:
                 // 改版：超时不再锁屏（弹窗本身也不会自动超时；这里只剩降级对话框的自身期限）。
@@ -265,7 +268,7 @@ public sealed class ProximityStateMachine
             var action = State == ProximityState.PendingLock
                 ? ProximityAction.CancelLockPrompt
                 : ProximityAction.None;
-            return Transition(ProximityState.LockedWaitingDeparture, action, "屏幕已锁定");
+            return Transition(ProximityState.LockedWaitingDeparture, action, ServiceStrings.Reason_ScreenLocked);
         }
 
         _screenLocked = false;
@@ -275,7 +278,7 @@ public sealed class ProximityStateMachine
         var unlockAction = State == ProximityState.PendingLock
             ? ProximityAction.CancelLockPrompt
             : ProximityAction.None;
-        return Transition(ProximityState.Unlocked, unlockAction, "屏幕已解锁");
+        return Transition(ProximityState.Unlocked, unlockAction, ServiceStrings.Reason_ScreenUnlocked);
     }
 
     public StateChange? OnAuthResult(AuthResult result)
@@ -285,15 +288,15 @@ public sealed class ProximityStateMachine
         if (result.Success)
         {
             _screenLocked = false;
-            return Transition(ProximityState.Unlocked, ProximityAction.None, "自动解锁成功");
+            return Transition(ProximityState.Unlocked, ProximityAction.None, ServiceStrings.Reason_AutoUnlockSucceeded);
         }
 
         if (NtStatusPolicy.ShouldSuspend(result.NtStatus))
             return Transition(ProximityState.Suspended, ProximityAction.NotifySuspended,
-                $"自动解锁已暂停：{NtStatusPolicy.Describe(result.NtStatus)}");
+                string.Format(ServiceStrings.Reason_AutoUnlockSuspended, NtStatusPolicy.Describe(result.NtStatus)));
 
         return Transition(ProximityState.LockedArmed, ProximityAction.None,
-            $"解锁失败将重试：{NtStatusPolicy.Describe(result.NtStatus)}");
+            string.Format(ServiceStrings.Reason_UnlockFailedRetry, NtStatusPolicy.Describe(result.NtStatus)));
     }
 
     // La llama el orquestador cuando cambian usuario o clave en el fichero,
@@ -308,7 +311,7 @@ public sealed class ProximityStateMachine
             var action = State == ProximityState.PendingLock
                 ? ProximityAction.CancelLockPromptAndNotifySuspended
                 : ProximityAction.NotifySuspended;
-            return Transition(ProximityState.Suspended, action, "凭据预验证失败，自动解锁已暂停");
+            return Transition(ProximityState.Suspended, action, ServiceStrings.Reason_CredentialPrecheckFailed);
         }
 
         if (State != ProximityState.Suspended) return null;
@@ -316,7 +319,7 @@ public sealed class ProximityStateMachine
         var target = _screenLocked
             ? ProximityState.LockedWaitingDeparture
             : ProximityState.Unlocked;
-        return Transition(target, ProximityAction.None, "凭据已更新且验证通过，自动解锁恢复");
+        return Transition(target, ProximityAction.None, ServiceStrings.Reason_CredentialsRestored);
     }
 
     // Tras despertar de suspension el reloj puede haber saltado horas. El orquestador
@@ -335,7 +338,7 @@ public sealed class ProximityStateMachine
         // y ya no tiene sentido mantenerlo, asi que se retira y se reevalua desde cero
         if (State == ProximityState.PendingLock)
             return Transition(ProximityState.Unlocked, ProximityAction.CancelLockPrompt,
-                "系统从睡眠恢复，旧的锁屏提示已作废");
+                ServiceStrings.Reason_ResumeDiscardsPrompt);
 
         // El historico se vacia en el orquestador: los lotes a medias ya no valen
         ResetSides(State);
@@ -412,11 +415,11 @@ public sealed class ProximityStateMachine
     }
 
     // 解锁侧：第一个高于阈值的读数只做触发、不计入；之后每个读数都必须高于阈值，
-    // 收满 size 个才算靠近。间隙超过静默宽限的旧值作废：宁可重新数，不拿陈旧证据解锁
-    private bool UnlockBatchNear(RssiHistory history, int target, out string reason)
+    // 收满 size 个才算靠近。间隙超过静默宽限的旧值作废：宁可重新数，不拿陈旧证据解锁。
+    // threshold：LockedArmed 用解锁阈值；PendingLock 撤回提示用锁定阈值
+    private bool UnlockBatchNear(RssiHistory history, int target, double threshold, out string reason)
     {
         reason = "";
-        var threshold = Proximity.UnlockThresholdDbm;
         var size = Math.Max(1, target);
 
         foreach (var (at, rssi) in history.Since(_unlockWatermark))
@@ -445,7 +448,7 @@ public sealed class ProximityStateMachine
             _unlockLastValueAt = at;
             if (_unlockBatchCount >= size)
             {
-                reason = $"{size} 个读数全部 > {threshold:0} dBm";
+                reason = string.Format(ServiceStrings.Reason_AllAbove, size, threshold);
                 return true;
             }
         }
@@ -475,8 +478,8 @@ public sealed class ProximityStateMachine
 
     private string DescribeLockBatch(int count, double threshold) =>
         _lockBatchSilentCount > 0
-            ? $"{count} 个读数全部 < {threshold:0} dBm（含 {_lockBatchSilentCount} 个静默值）"
-            : $"{count} 个读数全部 < {threshold:0} dBm";
+            ? string.Format(ServiceStrings.Reason_AllBelowWithSilent, count, threshold, _lockBatchSilentCount)
+            : string.Format(ServiceStrings.Reason_AllBelow, count, threshold);
 
     // 每次转换都从零开始：批次属于状态，跨状态不继承任何收集。
     // 例外：进入 PendingLock 立即启动「弹窗后」的确认批次（不需要触发读数）

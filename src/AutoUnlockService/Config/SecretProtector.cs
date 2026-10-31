@@ -37,7 +37,9 @@ public static class SecretProtector
         }
 
         var blob = Transform(Encoding.UTF8.GetBytes(plaintext), protect: true)
-            ?? throw new CryptographicException("凭据加密失败（Windows DPAPI 调用失败）");
+            // Sin texto propio: este fichero se comparte con el gestor y no ve sus recursos;
+            // quien lo captura muestra el mensaje en su idioma
+            ?? throw new CryptographicException();
         return Prefix + Convert.ToBase64String(blob);
     }
 

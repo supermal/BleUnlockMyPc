@@ -3,6 +3,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
+using AutoUnlockService.Resources;
 
 namespace AutoUnlockService.Bonds;
 
@@ -61,7 +62,7 @@ public sealed class BondPipeServer : BackgroundService
             catch (Exception ex)
             {
                 // 建立/处理会话失败不能杀死循环；重建前稍作退避
-                _log.LogWarning("BLE 设备列表管道异常：{Message}，稍后重建", ex.Message);
+                _log.LogWarning(ServiceStrings.Log_BondPipeError, ex.Message);
                 try { await Task.Delay(RebuildDelay, ct); }
                 catch (OperationCanceledException) { break; }
             }
@@ -117,7 +118,7 @@ public sealed class BondPipeServer : BackgroundService
         }
         catch (Exception ex)
         {
-            _log.LogWarning("BLE 设备列表会话异常：{Message}", ex.Message);
+            _log.LogWarning(ServiceStrings.Log_BondSessionError, ex.Message);
         }
     }
 
@@ -125,7 +126,7 @@ public sealed class BondPipeServer : BackgroundService
     {
         if (line.Length > MaxRequestChars)
         {
-            return BondProtocol.Error(0, "请求过长");
+            return BondProtocol.Error(0, ServiceStrings.Bonds_RequestTooLong);
         }
 
         BondRequest? request;
@@ -135,17 +136,17 @@ public sealed class BondPipeServer : BackgroundService
         }
         catch (JsonException)
         {
-            return BondProtocol.Error(0, "无法解析请求");
+            return BondProtocol.Error(0, ServiceStrings.Bonds_RequestUnparseable);
         }
 
         if (request is null || !string.Equals(request.T, "req", StringComparison.Ordinal))
         {
-            return BondProtocol.Error(request?.Id ?? 0, "无法解析请求");
+            return BondProtocol.Error(request?.Id ?? 0, ServiceStrings.Bonds_RequestUnparseable);
         }
 
         if (!string.Equals(request.Op, "list", StringComparison.Ordinal))
         {
-            return BondProtocol.Error(request.Id, $"未知操作：{request.Op}");
+            return BondProtocol.Error(request.Id, string.Format(ServiceStrings.Bonds_UnknownOperation, request.Op));
         }
 
         var result = _source.ReadAll();
@@ -154,7 +155,7 @@ public sealed class BondPipeServer : BackgroundService
             return BondProtocol.Error(request.Id, result.Error);
         }
 
-        _log.LogDebug("已读取 {Count} 台已配对 BLE 设备", result.Devices.Count);
+        _log.LogDebug(ServiceStrings.Log_BondsRead, result.Devices.Count);
         return BondProtocol.OkList(request.Id, result.Devices);
     }
 

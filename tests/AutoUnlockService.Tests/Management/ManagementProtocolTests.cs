@@ -18,7 +18,7 @@ public class ManagementProtocolTests
         TsMs: T0.ToUnixTimeMilliseconds(),
         UptimeSec: 532.4,
         State: new SnapshotState("LockedArmed", T0.AddSeconds(-88).ToUnixTimeMilliseconds()),
-        Scan: new SnapshotScan(scanStatus, null),
+        Scan: new SnapshotScan(scanStatus, null, "running"),
         Helper: new SnapshotConnection(true),
         Cred: new SnapshotConnection(false),
         Thr: new SnapshotThresholds(-65, -45, 3, 5, 10),
@@ -71,7 +71,7 @@ public class ManagementProtocolTests
 
         Assert.Equal(["name", "sinceMs"],
             root.GetProperty("state").EnumerateObject().Select(p => p.Name));
-        Assert.Equal(["status", "detail"],
+        Assert.Equal(["status", "detail", "code"],
             root.GetProperty("scan").EnumerateObject().Select(p => p.Name));
         Assert.Equal(["connected"],
             root.GetProperty("helper").EnumerateObject().Select(p => p.Name));
@@ -143,6 +143,7 @@ public class ManagementProtocolTests
         var frame = JsonSerializer.Deserialize<SnapshotFrame>(line, ManagementProtocol.JsonOptions)!;
 
         Assert.Equal(status, frame.Scan.Status);
+        Assert.Equal("running", frame.Scan.Code);
         Assert.Equal("LockedArmed", frame.State.Name);
         Assert.Equal(813, frame.Seq);
         Assert.Equal(2, frame.Gen);

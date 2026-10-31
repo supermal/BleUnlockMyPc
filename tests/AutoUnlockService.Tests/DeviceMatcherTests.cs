@@ -12,7 +12,7 @@ public class DeviceMatcherTests
     private const ulong Identity = 0xAABBCCDDEEFFUL;
 
     private static AdvertisementSample Sample(ulong address, bool isRandom) =>
-        new(address, isRandom, -50, null, DateTimeOffset.UnixEpoch);
+        new(address, isRandom, -50, DateTimeOffset.UnixEpoch);
 
     [Fact]
     public void IsTarget_reconoce_la_rpa_por_irk()

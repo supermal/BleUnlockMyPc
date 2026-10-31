@@ -3,6 +3,7 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Radios;
 using Windows.Storage.Streams;
+using AutoUnlockManager.Core.Resources;
 
 namespace AutoUnlockManager.Services.Ble;
 
@@ -94,8 +95,7 @@ public sealed class BlePeripheralHost
                     provider.StopAdvertising();
                     cancellationToken.ThrowIfCancellationRequested();
                     throw new TimeoutException(
-                        $"蓝牙广播在 10 秒内没有启动（最后状态：{lastStatus}，错误：{lastError}）；" +
-                        "请检查蓝牙开关、驱动和组策略。");
+                        string.Format(UiStrings.Ble_AdvertiseStartTimeout, lastStatus, lastError));
                 }
 
                 try
@@ -157,31 +157,31 @@ public sealed class BlePeripheralHost
         var adapter = await BluetoothAdapter.GetDefaultAsync();
         if (adapter is null)
         {
-            throw new InvalidOperationException("未找到蓝牙适配器；请确认电脑有可用的蓝牙硬件。");
+            throw new InvalidOperationException(UiStrings.Ble_NoAdapter);
         }
 
         if (!adapter.IsLowEnergySupported)
         {
-            throw new InvalidOperationException("当前蓝牙适配器不支持低功耗蓝牙（BLE）。");
+            throw new InvalidOperationException(UiStrings.Ble_NoLowEnergy);
         }
 
         if (!adapter.IsPeripheralRoleSupported)
         {
             throw new InvalidOperationException(
-                "当前蓝牙适配器不支持外设角色，无法让手机/手表主动配对。请改用「耳机 / 鼠标等（电脑发起）」方式。");
+                UiStrings.Ble_NoPeripheralRole);
         }
 
         var radio = await adapter.GetRadioAsync();
         if (radio is not null && radio.State != RadioState.On)
         {
-            throw new InvalidOperationException("蓝牙当前未开启；请先在 Windows 设置中打开蓝牙。");
+            throw new InvalidOperationException(UiStrings.Ble_RadioOff);
         }
 
         var result = await GattServiceProvider.CreateAsync(HeartRateServiceUuid);
         if (result.Error != BluetoothError.Success || result.ServiceProvider is null)
         {
             throw new InvalidOperationException(
-                $"创建心率广播服务失败（{result.Error}）。如果参考工具或其他程序正在广播同一服务，请先关闭它。");
+                string.Format(UiStrings.Ble_ServiceCreateFailed, result.Error));
         }
 
         var provider = result.ServiceProvider;
@@ -196,7 +196,7 @@ public sealed class BlePeripheralHost
             HeartRateMeasurementUuid, measurementParams);
         if (measurement.Error != BluetoothError.Success || measurement.Characteristic is null)
         {
-            throw new InvalidOperationException($"创建心率测量特征失败（{measurement.Error}）。");
+            throw new InvalidOperationException(string.Format(UiStrings.Ble_CharacteristicCreateFailed, measurement.Error));
         }
 
         measurement.Characteristic.ReadRequested += OnReadRequested;
