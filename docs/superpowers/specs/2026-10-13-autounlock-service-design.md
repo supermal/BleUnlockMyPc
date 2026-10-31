@@ -200,6 +200,8 @@ AutoUnlockMyPc/
 
 ### 6.3 转换
 
+> 2026-10-18 起判定改为「批次全数达标」，下表中的 `IsFar` / `IsNear` 时间窗与提示倒计时已不再使用。**当前的完整判定条件以 [`docs/lock-unlock-detailed-conditions.md`](../../lock-unlock-detailed-conditions.md) 为准。**
+
 | 当前状态 | 事件 | 新状态 | 副作用 |
 |---------|------|-------|-------|
 | `Unlocked` | `IsFar` 且已过启动宽限 | `PendingLock` | 弹通知，启动 `PromptTimeoutSeconds` 倒计时 |
@@ -214,6 +216,7 @@ AutoUnlockMyPc/
 | `UnlockPending` | `RESULT FAIL` 且属停摆状态码 | `Suspended` | 弹通知告知原因 |
 | `UnlockPending` | `RESULT FAIL` 但不属停摆状态码 | `LockedArmed` | 记日志，允许重试 |
 | `UnlockPending` | `UnlockPendingTimeoutSeconds` 超时 | `LockedArmed` | 记 Warning，允许重试 |
+| 除 `Suspended` 外的任意状态 | 配置中凭据变更（或服务启动时）`LogonUser` 预验证失败 | `Suspended` | 弹通知告知原因；若当前为 `PendingLock`，先撤销未决通知 |
 | `Suspended` | 配置中凭据变更且 `LogonUser` 预验证通过 | 按当前屏幕状态回到 `Unlocked` 或 `LockedWaitingDeparture` | — |
 | 除 `Suspended` 外的任意状态 | `SessionLock`（任何来源） | `LockedWaitingDeparture` | 撤销未决通知 |
 | 除 `Suspended` 外的任意状态 | `SessionUnlock`（任何来源） | `Unlocked` | — |
