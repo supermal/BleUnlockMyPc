@@ -1,6 +1,6 @@
 ﻿#Requires -RunAsAdministrator
 <#
-    Instala AutoUnlock: servicio, asistente, proveedor de credenciales y Gestor.
+    Instala BleUnlock: servicio, asistente, proveedor de credenciales y Gestor.
     Idempotente: se puede volver a ejecutar para actualizar. El Gestor se inicia con la sesión mediante una
     tarea programada (permisos completos, sin aviso de UAC). Los mensajes siguen el idioma de Windows (i18n.ps1).
 #>
@@ -8,14 +8,14 @@ param(
     [string]$Configuration     = 'Release',
     [string]$SourceDir         = '',
     [string]$ManagerSourceDir  = '',
-    [string]$InstallDir        = 'C:\Program Files\AutoUnlock',
-    [string]$DataDir           = (Join-Path $env:ProgramData 'AutoUnlock'),
+    [string]$InstallDir        = 'C:\Program Files\BleUnlock',
+    [string]$DataDir           = (Join-Path $env:ProgramData 'BleUnlock'),
     [string]$ManagerUser       = ''
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'i18n.ps1')
-$serviceName = 'AutoUnlockService'
+$serviceName = 'BleUnlockService'
 $repoRoot    = Split-Path $PSScriptRoot -Parent
 $tfm         = 'net10.0-windows10.0.19041.0'
 
@@ -48,28 +48,128 @@ function Resolve-Artifact {
 }
 
 $serviceCandidates = if ($SourceDir) { @($SourceDir) } else { @(
-    (Join-Path $repoRoot "src\AutoUnlockService\bin\x64\$Configuration\$tfm"),
-    (Join-Path $repoRoot "src\AutoUnlockService\bin\$Configuration\$tfm")
+    (Join-Path $repoRoot "src\BleUnlockService\bin\x64\$Configuration\$tfm"),
+    (Join-Path $repoRoot "src\BleUnlockService\bin\$Configuration\$tfm")
 ) }
-$serviceOut = Resolve-Artifact (T 'NameService') $serviceCandidates 'AutoUnlockService.exe'
+$serviceOut = Resolve-Artifact (T 'NameService') $serviceCandidates 'BleUnlockService.exe'
 $helperOut  = Resolve-Artifact (T 'NameHelper') @(
-    (Join-Path $repoRoot "src\AutoUnlockHelper\bin\x64\$Configuration\$tfm"),
-    (Join-Path $repoRoot "src\AutoUnlockHelper\bin\$Configuration\$tfm")
-) 'AutoUnlockHelper.exe'
+    (Join-Path $repoRoot "src\BleUnlockHelper\bin\x64\$Configuration\$tfm"),
+    (Join-Path $repoRoot "src\BleUnlockHelper\bin\$Configuration\$tfm")
+) 'BleUnlockHelper.exe'
 $cpOut      = Resolve-Artifact (T 'NameCredProvider') @(
-    (Join-Path $repoRoot "src\AutoUnlockCredentialProvider\bin\$Configuration\x64")
-) 'AutoUnlockCredentialProvider.dll'
+    (Join-Path $repoRoot "src\BleUnlockCredentialProvider\bin\$Configuration\x64")
+) 'BleUnlockCredentialProvider.dll'
 
 # 管理端是自包含发布产物：以 win-x64 publish 目录整体分发
 $managerCandidates = if ($ManagerSourceDir) { @($ManagerSourceDir) } else { @(
-    (Join-Path $repoRoot "src\AutoUnlockManager\bin\$Configuration\net10.0-windows10.0.19041.0\win-x64\publish")
+    (Join-Path $repoRoot "src\BleUnlockManager\bin\$Configuration\net10.0-windows10.0.19041.0\win-x64\publish")
 ) }
-$managerOut = Resolve-Artifact (T 'NameManagerPublish') $managerCandidates 'AutoUnlockManager.exe'
+$managerOut = Resolve-Artifact (T 'NameManagerPublish') $managerCandidates 'BleUnlockManager.exe'
 
 Write-Host (T 'ServiceOutput' $serviceOut)
 Write-Host (T 'HelperOutput' $helperOut)
 Write-Host (T 'CredProviderOutput' $cpOut)
 Write-Host (T 'ManagerOutput' $managerOut)
+
+# ── 0. Migración desde AutoUnlock (nombre anterior del producto) ──────────────
+# Se quita la instalación antigua con sus nombres de entonces y su carpeta de datos se traslada entera
+# a la nueva, de modo que el dispositivo, los umbrales, la contraseña y el idioma se conservan.
+# El CLSID del proveedor de credenciales no cambió: el registro de abajo sobrescribe el anterior.
+function Invoke-LegacyMigration {
+    $legacyService = 'AutoUnlockService'
+    $legacyInstall = 'C:\Program Files\AutoUnlock'
+    $legacyData    = Join-Path $env:ProgramData 'AutoUnlock'
+
+    $svc = Get-Service -Name $legacyService -ErrorAction SilentlyContinue
+    if (-not $svc -and -not (Test-Path $legacyInstall) -and -not (Test-Path $legacyData)) { return }
+    Write-Host (T 'LegacyFound')
+
+    if ($svc) {
+        if ($svc.Status -ne 'Stopped') {
+            sc.exe stop $legacyService | Out-Null
+            Assert-ScOk (T 'ActStopService') -Allowed 0, 1061, 1062
+            try {
+                $svc.WaitForStatus('Stopped', [TimeSpan]::FromSeconds(30))
+            } catch [System.ServiceProcess.TimeoutException] {
+                throw (T 'StopTimeout' (Get-Service -Name $legacyService).Status)
+            }
+        }
+        sc.exe delete $legacyService | Out-Null
+        Assert-ScOk (T 'ActDeleteService')
+        $deadline = (Get-Date).AddSeconds(30)
+        while ((Get-Service -Name $legacyService -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+            Start-Sleep -Milliseconds 500
+        }
+        if (Get-Service -Name $legacyService -ErrorAction SilentlyContinue) { throw (T 'DeleteStuck') }
+    }
+
+    Get-Process -Name 'AutoUnlockHelper', 'AutoUnlockManager' -ErrorAction SilentlyContinue | Stop-Process -Force
+    $deadline = (Get-Date).AddSeconds(10)
+    while ((Get-Process -Name 'AutoUnlockHelper', 'AutoUnlockManager' -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+        Start-Sleep -Milliseconds 250
+    }
+
+    if (Get-ScheduledTask -TaskName 'AutoUnlockManager' -ErrorAction SilentlyContinue) {
+        Unregister-ScheduledTask -TaskName 'AutoUnlockManager' -Confirm:$false
+    }
+    foreach ($name in 'AutoUnlock 管理器', 'AutoUnlock Manager', 'Gestor de AutoUnlock') {
+        $lnk = Join-Path ([Environment]::GetFolderPath('CommonStartMenu')) "Programs\$name.lnk"
+        if (Test-Path $lnk) { Remove-Item $lnk -Force }
+    }
+
+    $legacyDll = Join-Path $legacyInstall 'AutoUnlockCP.dll'
+    if (Test-Path $legacyDll) {
+        Start-Process regsvr32.exe -ArgumentList "/u /s `"$legacyDll`"" -Wait -NoNewWindow
+    }
+    if (Test-Path $legacyInstall) {
+        Remove-Item -Recurse -Force $legacyInstall -ErrorAction SilentlyContinue
+        if (Test-Path $legacyInstall) { Write-Warning (T 'LegacyFilesLeft' $legacyInstall) }
+    }
+
+    if ([System.Diagnostics.EventLog]::SourceExists('AutoUnlock')) {
+        Remove-EventLog -Source 'AutoUnlock' -ErrorAction SilentlyContinue
+    }
+
+    # Datos por usuario (solo los de la cuenta que instala)
+    foreach ($pair in @(@('AutoUnlock', 'BleUnlock'), @('AutoUnlockManager', 'BleUnlockManager'))) {
+        $old = Join-Path $env:LOCALAPPDATA $pair[0]
+        $new = Join-Path $env:LOCALAPPDATA $pair[1]
+        if ((Test-Path $old) -and -not (Test-Path $new)) { Move-Item $old $new -ErrorAction SilentlyContinue }
+    }
+
+    if (Test-Path $legacyData) {
+        if (Test-Path (Join-Path $DataDir 'appsettings.json')) {
+            # Ya hay una configuración nueva: manda ella y la carpeta antigua se deja intacta
+            Write-Warning (T 'LegacyDataSkipped' $legacyData, $DataDir)
+        } else {
+            # La carpeta nueva puede existir ya (setup.exe abre ahí setup.log antes de llegar aquí):
+            # se mueve el contenido elemento a elemento y lo que ya exista en la nueva se queda
+            New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
+            foreach ($item in Get-ChildItem $legacyData -Force) {
+                $dest = Join-Path $DataDir $item.Name
+                if (-not (Test-Path $dest)) { Move-Item $item.FullName $dest }
+            }
+            Remove-Item -Recurse -Force $legacyData -ErrorAction SilentlyContinue
+            # La sección de configuración cambió de nombre; también en las copias de seguridad
+            foreach ($json in Get-ChildItem $DataDir -Filter 'appsettings*.json*' -File) {
+                $text = [IO.File]::ReadAllText($json.FullName)
+                $fixed = [regex]::Replace($text, '"AutoUnlock"(\s*:)', '"BleUnlock"$1', 'IgnoreCase')
+                if ($fixed -ne $text) { [IO.File]::WriteAllText($json.FullName, $fixed, (New-Object Text.UTF8Encoding($false))) }
+            }
+            # El Gestor solo lista registros bleunlock-*.log
+            $logs = Join-Path $DataDir 'logs'
+            if (Test-Path $logs) {
+                foreach ($log in Get-ChildItem $logs -Filter 'autounlock-*' -File) {
+                    $target = Join-Path $logs ($log.Name -replace '^autounlock-', 'bleunlock-')
+                    if (-not (Test-Path $target)) { Rename-Item $log.FullName $target }
+                }
+            }
+            Write-Host (T 'LegacyDataMoved' $legacyData, $DataDir)
+        }
+    }
+    Write-Host (T 'LegacyRemoved')
+}
+Invoke-LegacyMigration
 
 # ── 1. 停止旧服务 ────────────────────────────────────────────────────────────
 $existing = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
@@ -98,14 +198,14 @@ if ($existing) {
 }
 
 # 助手与管理端在交互会话中运行，可能占用安装目录中的文件
-Get-Process -Name 'AutoUnlockHelper' -ErrorAction SilentlyContinue | Stop-Process -Force
-Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name 'BleUnlockHelper' -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name 'BleUnlockManager' -ErrorAction SilentlyContinue | Stop-Process -Force
 # 结束是异步的：等旧进程完全退出，避免随后替换文件时被占用
 $deadline = (Get-Date).AddSeconds(10)
-while ((Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+while ((Get-Process -Name 'BleUnlockManager' -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
     Start-Sleep -Milliseconds 250
 }
-if (Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue) {
+if (Get-Process -Name 'BleUnlockManager' -ErrorAction SilentlyContinue) {
     throw (T 'ManagerStillRunning')
 }
 
@@ -117,8 +217,8 @@ Write-Host (T 'CopyingFiles')
 Copy-Item -Path (Join-Path $serviceOut '*') -Destination $InstallDir -Recurse -Force
 Copy-Item -Path (Join-Path $helperOut  '*') -Destination $InstallDir -Recurse -Force
 
-$targetDll = Join-Path $InstallDir 'AutoUnlockCP.dll'
-Copy-Item -Path (Join-Path $cpOut 'AutoUnlockCredentialProvider.dll') -Destination $targetDll -Force
+$targetDll = Join-Path $InstallDir 'BleUnlockCP.dll'
+Copy-Item -Path (Join-Path $cpOut 'BleUnlockCredentialProvider.dll') -Destination $targetDll -Force
 
 # 管理端：整体替换 Manager 子目录（干净升级，避免上一版本残留文件）
 $managerDir = Join-Path $InstallDir 'Manager'
@@ -179,14 +279,14 @@ $proc = Start-Process regsvr32.exe -ArgumentList "/s `"$targetDll`"" -Wait -Pass
 if ($proc.ExitCode -ne 0) { throw (T 'RegsvrFailed' $proc.ExitCode) }
 
 # ── 5. 事件日志源 ───────────────────────────────────────────────────────────
-if (-not [System.Diagnostics.EventLog]::SourceExists('AutoUnlock')) {
-    New-EventLog -LogName Application -Source 'AutoUnlock'
+if (-not [System.Diagnostics.EventLog]::SourceExists('BleUnlock')) {
+    New-EventLog -LogName Application -Source 'BleUnlock'
     Write-Host (T 'EventSourceCreated')
 }
 
 # ── 6. 创建并启动服务 ───────────────────────────────────────────────────────
-$exePath = Join-Path $InstallDir 'AutoUnlockService.exe'
-sc.exe create $serviceName binPath= "`"$exePath`"" start= delayed-auto DisplayName= 'AutoUnlock Proximity Unlock' | Out-Null
+$exePath = Join-Path $InstallDir 'BleUnlockService.exe'
+sc.exe create $serviceName binPath= "`"$exePath`"" start= delayed-auto DisplayName= 'BleUnlock Proximity Unlock' | Out-Null
 Assert-ScOk (T 'ActCreateService')
 sc.exe description $serviceName 'Locks and unlocks Windows based on the Bluetooth signal of your phone.' | Out-Null
 Assert-ScOk (T 'ActSetDescription')
@@ -200,8 +300,8 @@ try {
 } catch {
     throw (T 'ConfigReadFailed' $configPath, $_.Exception.Message)
 }
-$configReady = -not ([string]::IsNullOrWhiteSpace($config.AutoUnlock.Device.Irk) -or
-                     [string]::IsNullOrWhiteSpace($config.AutoUnlock.Credentials.UserName))
+$configReady = -not ([string]::IsNullOrWhiteSpace($config.BleUnlock.Device.Irk) -or
+                     [string]::IsNullOrWhiteSpace($config.BleUnlock.Credentials.UserName))
 if ($configReady) {
     sc.exe start $serviceName | Out-Null
     Assert-ScOk (T 'ActStartService')
@@ -213,8 +313,8 @@ if ($configReady) {
 }
 
 # ── 7. 管理端：开始菜单快捷方式与登录自启计划任务 ─────────────────────────
-$managerExe = Join-Path $managerDir 'AutoUnlockManager.exe'
-$taskName   = 'AutoUnlockManager'
+$managerExe = Join-Path $managerDir 'BleUnlockManager.exe'
+$taskName   = 'BleUnlockManager'
 
 Write-Host (T 'CreatingShortcut')
 $shortcutPath = Join-Path ([Environment]::GetFolderPath('CommonStartMenu')) "Programs\$($script:ShortcutNames[$script:UiLang]).lnk"

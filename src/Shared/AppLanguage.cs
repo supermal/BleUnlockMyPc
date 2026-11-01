@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace AutoUnlock.Shared;
+namespace BleUnlock.Shared;
 
 // Idiomas de la interfaz. Fichero enlazado en el servicio, el asistente y el núcleo del gestor:
 // las tres partes deciden el idioma con la misma regla

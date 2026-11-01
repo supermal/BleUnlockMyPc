@@ -1,4 +1,4 @@
-AutoUnlock 安装说明
+BleUnlock 安装说明
 ==================
 
 一、目标电脑的前提
@@ -11,7 +11,7 @@ AutoUnlock 安装说明
   4. 用管理员身份安装。
 
 二、安装
-  1. 把整个文件夹（或 zip 解压后）放到一个固定位置，例如 C:\AutoUnlock-pkg。
+  1. 把整个文件夹（或 zip 解压后）放到一个固定位置，例如 C:\BleUnlock-pkg。
   2. 以「管理员」打开 PowerShell，进入该文件夹后依次执行：
 
        Get-ChildItem -Recurse | Unblock-File
@@ -22,7 +22,7 @@ AutoUnlock 安装说明
      安装脚本的提示语言跟随 Windows 显示语言（中文 / English / Español，其他语言用英语）。
   3. 安装完成后管理器会自动启动（托盘里的蓝色信号锁图标）。
      配置还没填时，服务不会启动，这是正常的。
-  4. 在「服务」管理工具中，服务显示为「AutoUnlock Proximity Unlock」。
+  4. 在「服务」管理工具中，服务显示为「BleUnlock Proximity Unlock」。
 
 三、首次配置
   1. 先让手机/手表与这台电脑完成蓝牙配对
@@ -32,13 +32,13 @@ AutoUnlock 安装说明
      - 填写这台电脑的 Windows 用户名和密码；
      - 点「保存更改」。
   3. 在「概览」页点「启动服务」，或在管理员 PowerShell 中执行：
-       Start-Service AutoUnlockService
+       Start-Service BleUnlockService
 
 四、语言
   管理器「设置」页 →「语言」：跟随系统 / 中文 / English / Español。
   切换后立即生效，同时用于锁屏提示、通知和之后写入的日志。
 
 五、出问题时
-  - 服务日志：C:\ProgramData\AutoUnlock\logs\（管理器「日志」页可直接查看）
-  - 事件查看器 → Windows 日志 → 应用程序，来源 AutoUnlock
+  - 服务日志：C:\ProgramData\BleUnlock\logs\（管理器「日志」页可直接查看）
+  - 事件查看器 → Windows 日志 → 应用程序，来源 BleUnlock
   - 卸载：管理员 PowerShell 执行 .\scripts\uninstall.ps1（会询问是否删除配置与日志）

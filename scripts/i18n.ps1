@@ -11,9 +11,9 @@ $script:UiLang = switch ((Get-UICulture).TwoLetterISOLanguageName) {
 
 # Nombre del acceso directo en cada idioma: el desinstalador los prueba todos
 $script:ShortcutNames = @{
-    zh = 'AutoUnlock 管理器'
-    en = 'AutoUnlock Manager'
-    es = 'Gestor de AutoUnlock'
+    zh = 'BleUnlock 管理器'
+    en = 'BleUnlock Manager'
+    es = 'Gestor de BleUnlock'
 }
 
 $script:Messages = @{
@@ -44,7 +44,7 @@ $script:Messages = @{
     AclNotApplied       = @{ zh = '权限收紧未生效（{0}）：SDDL={1}。请以管理员重试；若问题持续请反馈。'; en = 'The permission change did not take effect ({0}): SDDL={1}. Try again as administrator; report it if it persists.'; es = 'El cambio de permisos no surtió efecto ({0}): SDDL={1}. Vuelve a intentarlo como administrador; si persiste, notifícalo.' }
     RegisteringCp       = @{ zh = '注册凭据提供程序…'; en = 'Registering the credential provider…'; es = 'Registrando el proveedor de credenciales…' }
     RegsvrFailed        = @{ zh = 'regsvr32 失败，退出码 {0}'; en = 'regsvr32 failed, exit code {0}'; es = 'regsvr32 falló, código de salida {0}' }
-    EventSourceCreated  = @{ zh = '已注册事件日志源 AutoUnlock'; en = 'Registered the AutoUnlock event log source'; es = 'Se registró el origen de eventos AutoUnlock' }
+    EventSourceCreated  = @{ zh = '已注册事件日志源 BleUnlock'; en = 'Registered the BleUnlock event log source'; es = 'Se registró el origen de eventos BleUnlock' }
     ActCreateService    = @{ zh = '创建服务'; en = 'Creating the service'; es = 'Crear el servicio' }
     ActSetDescription   = @{ zh = '设置服务描述'; en = 'Setting the service description'; es = 'Establecer la descripción del servicio' }
     ActSetRecovery      = @{ zh = '设置失败恢复策略'; en = 'Setting the recovery policy'; es = 'Establecer la directiva de recuperación' }
@@ -55,9 +55,14 @@ $script:Messages = @{
     ConfigFillIn        = @{ zh = '请在管理器的「配置」页选择设备并填写凭据（配置文件：{0}），'; en = 'Choose the device and enter the credentials on the Manager''s Configuration page (file: {0}),'; es = 'Elige el dispositivo e introduce las credenciales en la página Configuración del Gestor (archivo: {0}),' }
     ConfigThenStart     = @{ zh = '然后执行： Start-Service {0}'; en = 'then run: Start-Service {0}'; es = 'y después ejecuta: Start-Service {0}' }
     CreatingShortcut    = @{ zh = '创建开始菜单快捷方式…'; en = 'Creating the Start menu shortcut…'; es = 'Creando el acceso directo del menú Inicio…' }
-    ShortcutDescription = @{ zh = 'AutoUnlock 管理器（实时监控与配置）'; en = 'AutoUnlock Manager (live monitoring and configuration)'; es = 'Gestor de AutoUnlock (supervisión en directo y configuración)' }
+    ShortcutDescription = @{ zh = 'BleUnlock 管理器（实时监控与配置）'; en = 'BleUnlock Manager (live monitoring and configuration)'; es = 'Gestor de BleUnlock (supervisión en directo y configuración)' }
     RegisteringTask     = @{ zh = '注册计划任务 {0}（用户：{1}；登录自启、最高权限）…'; en = 'Registering scheduled task {0} (user: {1}; starts at sign-in with full rights)…'; es = 'Registrando la tarea programada {0} (usuario: {1}; se inicia al iniciar sesión con permisos completos)…' }
-    TaskDescription     = @{ zh = 'AutoUnlock 管理器：登录时自动启动（最高权限，无 UAC 弹窗）'; en = 'AutoUnlock Manager: starts at sign-in (full rights, no UAC prompt)'; es = 'Gestor de AutoUnlock: se inicia al iniciar sesión (permisos completos, sin aviso de UAC)' }
+    TaskDescription     = @{ zh = 'BleUnlock 管理器：登录时自动启动（最高权限，无 UAC 弹窗）'; en = 'BleUnlock Manager: starts at sign-in (full rights, no UAC prompt)'; es = 'Gestor de BleUnlock: se inicia al iniciar sesión (permisos completos, sin aviso de UAC)' }
+    LegacyFound         = @{ zh = '发现旧版 AutoUnlock，正在移除并迁移数据…'; en = 'Found the previous AutoUnlock version; removing it and migrating its data…'; es = 'Se encontró la versión anterior AutoUnlock; quitándola y migrando sus datos…' }
+    LegacyFilesLeft     = @{ zh = '旧版程序目录未能完全删除：{0}（可在重启后手动删除）'; en = 'The old program folder could not be fully deleted: {0} (you can delete it manually after a restart)'; es = 'No se pudo eliminar por completo la carpeta antigua del programa: {0} (puedes borrarla a mano tras reiniciar)' }
+    LegacyDataSkipped   = @{ zh = '{1} 中已有配置，以它为准；旧数据目录 {0} 保持不动。'; en = '{1} already has a configuration, which is kept; the old data folder {0} is left untouched.'; es = '{1} ya tiene una configuración, que se conserva; la carpeta de datos antigua {0} no se toca.' }
+    LegacyDataMoved     = @{ zh = '已将配置和日志从 {0} 迁移到 {1}'; en = 'Moved the configuration and logs from {0} to {1}'; es = 'Se trasladaron la configuración y los registros de {0} a {1}' }
+    LegacyRemoved       = @{ zh = '旧版 AutoUnlock 已移除。'; en = 'The previous AutoUnlock version was removed.'; es = 'Se quitó la versión anterior AutoUnlock.' }
     StartingManager     = @{ zh = '启动管理端…'; en = 'Starting the Manager…'; es = 'Iniciando el Gestor…' }
     ManagerStarted      = @{ zh = '管理端已安装并已启动（见托盘图标）。'; en = 'The Manager is installed and running (see the tray icon).'; es = 'El Gestor está instalado y en ejecución (mira el icono de la bandeja).' }
     ManagerNextLogon    = @{ zh = '管理端将在该用户下次登录时启动（{0}）'; en = 'The Manager will start the next time this user signs in ({0})'; es = 'El Gestor se iniciará la próxima vez que este usuario inicie sesión ({0})' }

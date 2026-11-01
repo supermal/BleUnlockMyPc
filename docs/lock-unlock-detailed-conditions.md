@@ -1,6 +1,6 @@
 # 从未锁定到弹窗、锁定再到解锁的详细条件
 
-> 按当前代码（`src/AutoUnlockService/Core/ProximityStateMachine.cs`）整理，已包含 2026-10-31 的改动：锁屏提示出现后，信号回到锁定阈值以上即撤回提示。
+> 按当前代码（`src/BleUnlockService/Core/ProximityStateMachine.cs`）整理，已包含 2026-10-31 的改动：锁屏提示出现后，信号回到锁定阈值以上即撤回提示。
 > 下文数字均为**默认值**，都可以在管理器「配置」页修改。
 
 ## 〇、默认参数

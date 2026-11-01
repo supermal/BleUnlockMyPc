@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BleUnlockService</RootNamespace>
+    <OutputType>Exe</OutputType>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.13" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog.Sinks.EventLog" Version="4.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BleUnlockService.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Regla de idioma común al servicio, al asistente y al gestor -->
+    <Compile Include="..\Shared\AppLanguage.cs" Link="Shared\AppLanguage.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Textos visibles: inglés neutro, zh y es como satélites. Clase tipada generada al compilar;
+         su propiedad estática Culture cambia el idioma de todo el proceso al instante -->
+    <EmbeddedResource Update="Resources\ServiceStrings.resx"
+                      StronglyTypedLanguage="CSharp"
+                      StronglyTypedNamespace="BleUnlockService.Resources"
+                      StronglyTypedClassName="ServiceStrings"
+                      StronglyTypedFileName="$(IntermediateOutputPath)ServiceStrings.Designer.cs"
+                      PublicClass="true" />
+  </ItemGroup>
+
+</Project>

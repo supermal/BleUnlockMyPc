@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Auth_AccountLockedOut" xml:space="preserve"><value>账户已被锁定</value></data>
+  <data name="Auth_LogonFailedStatus" xml:space="preserve"><value>登录失败（NTSTATUS 0x{0}）</value></data>
+  <data name="Auth_LogonFailure" xml:space="preserve"><value>用户名或密码错误</value></data>
+  <data name="Auth_PasswordExpired" xml:space="preserve"><value>密码已过期</value></data>
+  <data name="Auth_PasswordMustChange" xml:space="preserve"><value>密码必须修改后才能登录</value></data>
+  <data name="Batch_Leave" xml:space="preserve"><value>离开确认 {0}/{1}</value></data>
+  <data name="Batch_LockConfirm" xml:space="preserve"><value>锁屏确认 {0}/{1}</value></data>
+  <data name="Batch_Unlock" xml:space="preserve"><value>解锁确认 {0}/{1}</value></data>
+  <data name="Bonds_AccessDenied" xml:space="preserve"><value>拒绝访问蓝牙配对库（{0}）</value></data>
+  <data name="Bonds_ReadFailed" xml:space="preserve"><value>读取蓝牙配对库失败（{0}）</value></data>
+  <data name="Bonds_ReadFailedTyped" xml:space="preserve"><value>读取蓝牙配对库失败（{0}: {1}）</value></data>
+  <data name="Bonds_RegistryKeyNotFound" xml:space="preserve"><value>未找到注册表键 HKLM\{0}</value></data>
+  <data name="Bonds_RequestTooLong" xml:space="preserve"><value>请求过长</value></data>
+  <data name="Bonds_RequestUnparseable" xml:space="preserve"><value>无法解析请求</value></data>
+  <data name="Bonds_UnknownOperation" xml:space="preserve"><value>未知操作：{0}</value></data>
+  <data name="Dialog_LockPrompt" xml:space="preserve"><value>未检测到你的设备。若持续未检测到，屏幕将自动锁定。
+
+「是」= 本次不锁屏
+「否」= {0:0} 分钟内不锁屏</value></data>
+  <data name="Error_ConfigInvalid" xml:space="preserve"><value>appsettings.json 配置无效</value></data>
+  <data name="Error_IrkLength" xml:space="preserve"><value>IRK 必须是 16 字节</value></data>
+  <data name="Helper_DisconnectedBeforePrompt" xml:space="preserve"><value>助手在发送提示前已断开</value></data>
+  <data name="Helper_DisconnectedWhilePrompting" xml:space="preserve"><value>助手在发送提示时断开</value></data>
+  <data name="Helper_DisconnectedWithPromptPending" xml:space="preserve"><value>助手在提示未决时断开</value></data>
+  <data name="Helper_NotConnected" xml:space="preserve"><value>助手未连接</value></data>
+  <data name="Helper_SendNotifyFailed" xml:space="preserve"><value>向助手发送通知失败</value></data>
+  <data name="Helper_SendPromptFailed" xml:space="preserve"><value>向助手发送提示指令失败</value></data>
+  <data name="LanguageProbe" xml:space="preserve"><value>中文</value></data>
+  <data name="Log_ActionFailed" xml:space="preserve"><value>执行动作 {Action} 时出错</value></data>
+  <data name="Log_ApplyConfigChangeFailed" xml:space="preserve"><value>应用配置变更时出错</value></data>
+  <data name="Log_AuthResult" xml:space="preserve"><value>收到认证结果：成功={Success} NTSTATUS=0x{Status:X8}</value></data>
+  <data name="Log_AuthResultSubscriberError" xml:space="preserve"><value>处理认证结果的订阅者抛出异常：{Message}</value></data>
+  <data name="Log_BleStatus" xml:space="preserve"><value>BLE 状态：{Status}</value></data>
+  <data name="Log_BleUnavailable" xml:space="preserve"><value>BLE 不可用：{Reason}</value></data>
+  <data name="Log_BondPipeError" xml:space="preserve"><value>BLE 设备列表管道异常：{Message}，稍后重建</value></data>
+  <data name="Log_BondSessionError" xml:space="preserve"><value>BLE 设备列表会话异常：{Message}</value></data>
+  <data name="Log_BondsRead" xml:space="preserve"><value>已读取 {Count} 台已配对 BLE 设备</value></data>
+  <data name="Log_ConfigInvalidRefuseStart" xml:space="preserve"><value>配置无效，服务拒绝启动：{Error}</value></data>
+  <data name="Log_ConfigRejected" xml:space="preserve"><value>配置校验失败，已保留原配置：{Error}</value></data>
+  <data name="Log_ConfigReloaded" xml:space="preserve"><value>配置已重载（设备变更={Device}，凭据变更={Credentials}）</value></data>
+  <data name="Log_CreateProcessAsUserFailed" xml:space="preserve"><value>CreateProcessAsUser 失败，错误码 {Error}</value></data>
+  <data name="Log_CredContainsNewline" xml:space="preserve"><value>凭据包含换行符，无法按协议发送，本次放弃</value></data>
+  <data name="Log_CredLoopStopTimeout" xml:space="preserve"><value>凭据管道循环未在期限内退出</value></data>
+  <data name="Log_CredPipeError" xml:space="preserve"><value>凭据管道异常：{Message}，稍后重建</value></data>
+  <data name="Log_CredPipeEventError" xml:space="preserve"><value>处理凭据管道连接事件时出错：{Message}</value></data>
+  <data name="Log_CredPipeReady" xml:space="preserve"><value>凭据管道已就绪，等待凭据提供程序连接</value></data>
+  <data name="Log_CredPipeUnknownMessage" xml:space="preserve"><value>凭据管道收到无法识别的消息</value></data>
+  <data name="Log_CredPrecheckFailed" xml:space="preserve"><value>凭据预验证失败，用户 {User}，错误码 {Error}</value></data>
+  <data name="Log_CredPrecheckPassed" xml:space="preserve"><value>凭据预验证通过，用户 {User}</value></data>
+  <data name="Log_CredProviderConnected" xml:space="preserve"><value>凭据提供程序已连接</value></data>
+  <data name="Log_CredProviderDisconnected" xml:space="preserve"><value>凭据提供程序已断开</value></data>
+  <data name="Log_CredPushFailed" xml:space="preserve"><value>推送凭据失败：{Message}</value></data>
+  <data name="Log_CredPushed" xml:space="preserve"><value>已向凭据提供程序推送凭据，用户 {User}</value></data>
+  <data name="Log_CredReceivedAck" xml:space="preserve"><value>凭据提供程序已确认收到凭据</value></data>
+  <data name="Log_CredentialBudgetExhausted" xml:space="preserve"><value>凭据重试预算已耗尽，跳过本次推送</value></data>
+  <data name="Log_CredentialRetriesPaused" xml:space="preserve"><value>连续 {Count} 次推送凭据均未收到认证结果，为避免账户锁定，已暂停自动解锁重试；手动解锁或修改凭据后恢复</value></data>
+  <data name="Log_CredentialRetriesStillPaused" xml:space="preserve"><value>自动解锁重试仍处于暂停状态（连续 {Count} 次推送凭据未收到认证结果）；手动解锁或修改凭据后恢复</value></data>
+  <data name="Log_DegradeRequestError" xml:space="preserve"><value>处理降级请求时出错：{Message}</value></data>
+  <data name="Log_HelperConnectTimeout" xml:space="preserve"><value>助手已启动但未在 {Seconds} 秒内连接（第 {Count} 次）</value></data>
+  <data name="Log_HelperConnected" xml:space="preserve"><value>助手已连接，会话 {Session}</value></data>
+  <data name="Log_HelperDisconnectEventError" xml:space="preserve"><value>处理助手断开事件时出错：{Message}</value></data>
+  <data name="Log_HelperGuardError" xml:space="preserve"><value>助手守护出错：{Message}</value></data>
+  <data name="Log_HelperLockUnconfirmed" xml:space="preserve"><value>助手未确认锁屏，改用进程方式</value></data>
+  <data name="Log_HelperLocked" xml:space="preserve"><value>助手已执行锁屏</value></data>
+  <data name="Log_HelperLostDuringPrompt" xml:space="preserve"><value>助手在提示未决时断开，改用对话框重新提示</value></data>
+  <data name="Log_HelperMessageError" xml:space="preserve"><value>处理助手消息时出错：{Message}</value></data>
+  <data name="Log_HelperPipeError" xml:space="preserve"><value>助手管道异常：{Message}</value></data>
+  <data name="Log_HelperPipeUnknownMessage" xml:space="preserve"><value>助手管道收到无法识别的消息</value></data>
+  <data name="Log_HelperProcessStarted" xml:space="preserve"><value>助手进程已启动，等待连接</value></data>
+  <data name="Log_HelperSendFailed" xml:space="preserve"><value>向助手发送指令失败：{Message}</value></data>
+  <data name="Log_HelperStartFailed" xml:space="preserve"><value>启动助手失败（第 {Count} 次）</value></data>
+  <data name="Log_ManagerConnected" xml:space="preserve"><value>管理端已连接</value></data>
+  <data name="Log_ManagerDisconnected" xml:space="preserve"><value>管理端已断开</value></data>
+  <data name="Log_ManagerSessionError" xml:space="preserve"><value>管理端会话异常：{Message}，连接已清理</value></data>
+  <data name="Log_ManagerWriteTimeout" xml:space="preserve"><value>管理端写入超时，连接已清理</value></data>
+  <data name="Log_MgmtPipeError" xml:space="preserve"><value>管理管道异常：{Message}，稍后重建</value></data>
+  <data name="Log_NoConsoleSessionForProcess" xml:space="preserve"><value>没有活动的控制台会话，无法在用户会话中启动进程</value></data>
+  <data name="Log_NoConsoleSessionForPrompt" xml:space="preserve"><value>没有活动的控制台会话，无法弹出提示</value></data>
+  <data name="Log_NoCredProviderToPush" xml:space="preserve"><value>要推送凭据时没有凭据提供程序连接，本次放弃</value></data>
+  <data name="Log_NoMatchFiveMinutes" xml:space="preserve"><value>已有 5 分钟未匹配到目标设备，请检查 IRK 配置或设备是否在范围内</value></data>
+  <data name="Log_NoUserSessionYet" xml:space="preserve"><value>尚无已登录的用户会话，稍后重试启动助手</value></data>
+  <data name="Log_NotifierDegraded" xml:space="preserve"><value>通知方式已降级为对话框：{Reason}</value></data>
+  <data name="Log_NotifierDegradedMidPrompt" xml:space="preserve"><value>通知方式在提示进行中降级，改用对话框重新提示</value></data>
+  <data name="Log_PromptResponse" xml:space="preserve"><value>用户对锁屏提示的响应：{Outcome}</value></data>
+  <data name="Log_PromptWithdrawn" xml:space="preserve"><value>动作 {Action} 的提示已被撤回（正常情况）</value></data>
+  <data name="Log_ReloadStatusWriteFailed" xml:space="preserve"><value>写入配置重载结果失败：{Message}</value></data>
+  <data name="Log_ResumedFromSleep" xml:space="preserve"><value>系统已从睡眠中恢复，清空 RSSI 历史并重新进入宽限期</value></data>
+  <data name="Log_RetryWaitError" xml:space="preserve"><value>BLE 重试等待出错</value></data>
+  <data name="Log_Rundll32LockFailed" xml:space="preserve"><value>通过 rundll32 锁屏失败：屏幕未被锁定</value></data>
+  <data name="Log_Rundll32Locked" xml:space="preserve"><value>已通过 rundll32 在用户会话中锁屏</value></data>
+  <data name="Log_ScanLoopExitError" xml:space="preserve"><value>BLE 扫描循环退出时出错</value></data>
+  <data name="Log_ScanLoopStopTimeout" xml:space="preserve"><value>BLE 扫描循环未在 {Seconds} 秒内退出</value></data>
+  <data name="Log_ScanLoopUnexpectedError" xml:space="preserve"><value>BLE 扫描循环发生意外错误</value></data>
+  <data name="Log_ScanUnavailableRetry" xml:space="preserve"><value>BLE 扫描不可用（第 {Count} 次），{Delay} 秒后重试</value></data>
+  <data name="Log_ScreenAtStartup" xml:space="preserve"><value>启动时屏幕{State}</value></data>
+  <data name="Log_ScreenStateUnknownAtStartup" xml:space="preserve"><value>无法确定启动时屏幕是否已锁，按未锁定处理</value></data>
+  <data name="Log_SendLanguageFailed" xml:space="preserve"><value>向助手发送界面语言失败：{Message}</value></data>
+  <data name="Log_ServiceStartFailed" xml:space="preserve"><value>BleUnlockService 启动失败</value></data>
+  <data name="Log_ServiceStarting" xml:space="preserve"><value>BleUnlockService 正在启动</value></data>
+  <data name="Log_SessionEventError" xml:space="preserve"><value>处理会话或电源事件时出错</value></data>
+  <data name="Log_StateTransition" xml:space="preserve"><value>状态 {From} → {To}：{Reason}</value></data>
+  <data name="Log_Summary" xml:space="preserve"><value>摘要：状态 {State}{Batch}，最近 30 秒 {Count} 个读数，平均 {Average:0.0} dBm，距上次匹配 {Since:0} 秒</value></data>
+  <data name="Log_SummaryBatch" xml:space="preserve"><value>（{0}）</value></data>
+  <data name="Log_TargetDeviceChanged" xml:space="preserve"><value>目标设备已变更，解析缓存与 RSSI 历史已清空</value></data>
+  <data name="Log_TelemetryBatchError" xml:space="preserve"><value>记录批次进度时出错（已忽略）：{Message}</value></data>
+  <data name="Log_TelemetryCredError" xml:space="preserve"><value>记录凭据提供程序连接状态时出错（已忽略）：{Message}</value></data>
+  <data name="Log_TelemetryHelperError" xml:space="preserve"><value>记录助手连接状态时出错（已忽略）：{Message}</value></data>
+  <data name="Log_TelemetryResetError" xml:space="preserve"><value>重置遥测历史时出错（已忽略）：{Message}</value></data>
+  <data name="Log_TelemetrySampleError" xml:space="preserve"><value>记录 RSSI 样本时出错（已忽略）：{Message}</value></data>
+  <data name="Log_TelemetryScanError" xml:space="preserve"><value>记录扫描状态时出错（已忽略）：{Message}</value></data>
+  <data name="Log_TelemetryStateError" xml:space="preserve"><value>记录状态变更时出错（已忽略）：{Message}</value></data>
+  <data name="Log_TelemetrySubscriberError" xml:space="preserve"><value>遥测变化订阅者抛出异常（已忽略）：{Message}</value></data>
+  <data name="Log_UserTokenFailed" xml:space="preserve"><value>获取用户令牌失败，错误码 {Error}</value></data>
+  <data name="Log_WatcherStoppedAbnormally" xml:space="preserve"><value>BLE Watcher 异常停止：{Error}</value></data>
+  <data name="Log_WatcherStoppedRestarting" xml:space="preserve"><value>BLE Watcher 已停止，准备重新启动</value></data>
+  <data name="Log_WtsNotifyFailed" xml:space="preserve"><value>WTSSendMessage 调用失败（错误码 {Error}），用户未收到通知：{Message}</value></data>
+  <data name="Log_WtsPromptFailed" xml:space="preserve"><value>WTSSendMessage 调用失败（错误码 {Error}），用户未收到任何提示</value></data>
+  <data name="Notify_FixConfigSuffix" xml:space="preserve"><value>，请修改 appsettings.json 后自动恢复</value></data>
+  <data name="Reason_AllAbove" xml:space="preserve"><value>{0} 个读数全部 &gt; {1:0} dBm</value></data>
+  <data name="Reason_AllBelow" xml:space="preserve"><value>{0} 个读数全部 &lt; {1:0} dBm</value></data>
+  <data name="Reason_AllBelowWithSilent" xml:space="preserve"><value>{0} 个读数全部 &lt; {1:0} dBm（含 {2} 个静默值）</value></data>
+  <data name="Reason_ApproachConfirmed" xml:space="preserve"><value>已确认靠近：{0}</value></data>
+  <data name="Reason_AuthTimeoutRetry" xml:space="preserve"><value>等待认证结果超时，将重试</value></data>
+  <data name="Reason_BleUnlockSucceeded" xml:space="preserve"><value>自动解锁成功</value></data>
+  <data name="Reason_BleUnlockSuspended" xml:space="preserve"><value>自动解锁已暂停：{0}</value></data>
+  <data name="Reason_CredentialPrecheckFailed" xml:space="preserve"><value>凭据预验证失败，自动解锁已暂停</value></data>
+  <data name="Reason_CredentialsRestored" xml:space="preserve"><value>凭据已更新且验证通过，自动解锁恢复</value></data>
+  <data name="Reason_DepartureConfirmed" xml:space="preserve"><value>已确认离开：{0}</value></data>
+  <data name="Reason_DepartureConfirmedAfterPrompt" xml:space="preserve"><value>弹窗后确认离开：{0}</value></data>
+  <data name="Reason_DepartureDetected" xml:space="preserve"><value>检测到离开：{0}</value></data>
+  <data name="Reason_DialogModeConfigured" xml:space="preserve"><value>配置指定使用对话框模式</value></data>
+  <data name="Reason_HelperStartFailures" xml:space="preserve"><value>助手连续 {0} 次启动失败</value></data>
+  <data name="Reason_ResumeDiscardsPrompt" xml:space="preserve"><value>系统从睡眠恢复，旧的锁屏提示已作废</value></data>
+  <data name="Reason_ScreenLocked" xml:space="preserve"><value>屏幕已锁定</value></data>
+  <data name="Reason_ScreenUnlocked" xml:space="preserve"><value>屏幕已解锁</value></data>
+  <data name="Reason_SignalRecovered" xml:space="preserve"><value>信号恢复：{0}</value></data>
+  <data name="Reason_SnoozeEnded" xml:space="preserve"><value>延期结束</value></data>
+  <data name="Reason_UnlockFailedRetry" xml:space="preserve"><value>解锁失败将重试：{0}</value></data>
+  <data name="Reason_UserDismissed" xml:space="preserve"><value>用户关闭了通知</value></data>
+  <data name="Reason_UserRejected" xml:space="preserve"><value>用户拒绝锁屏，{0:0} 秒内不再提示</value></data>
+  <data name="Reason_UserSnoozed" xml:space="preserve"><value>用户延期 {0:0} 分钟</value></data>
+  <data name="Scan_NoAdapter" xml:space="preserve"><value>未找到支持 BLE 的蓝牙适配器</value></data>
+  <data name="Scan_RadioOff" xml:space="preserve"><value>蓝牙已关闭</value></data>
+  <data name="Scan_Running" xml:space="preserve"><value>BLE 扫描已启动</value></data>
+  <data name="Scan_StartFailed" xml:space="preserve"><value>启动 BLE 扫描失败：{0}</value></data>
+  <data name="State_Locked" xml:space="preserve"><value>已锁定</value></data>
+  <data name="State_Unlocked" xml:space="preserve"><value>未锁定</value></data>
+  <data name="Validation_AddressFormat" xml:space="preserve"><value>Device.IdentityAddress 必须是合法的 6 字节 MAC 地址</value></data>
+  <data name="Validation_GraceNegative" xml:space="preserve"><value>Proximity.StartupGraceSeconds 不能为负数</value></data>
+  <data name="Validation_IrkFormat" xml:space="preserve"><value>Device.Irk 必须是 32 个十六进制字符</value></data>
+  <data name="Validation_LockConfirmCountRange" xml:space="preserve"><value>Proximity.LockConfirmSampleCount 必须在 1 到 50 之间</value></data>
+  <data name="Validation_LockPromptCountRange" xml:space="preserve"><value>Proximity.LockPromptSampleCount 必须在 1 到 50 之间</value></data>
+  <data name="Validation_PasswordControlChars" xml:space="preserve"><value>Credentials.Password 不能包含控制字符（换行、回车、制表符等）</value></data>
+  <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>Proximity.UnlockPendingTimeoutSeconds 必须为正数</value></data>
+  <data name="Validation_PlaintextSecret" xml:space="preserve"><value>{0} 以明文存储，建议在管理端保存一次以加密</value></data>
+  <data name="Validation_RejectSnoozePositive" xml:space="preserve"><value>Notification.RejectSnoozeSeconds 必须为正数</value></data>
+  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）</value></data>
+  <data name="Validation_SecretUndecryptable" xml:space="preserve"><value>{0} 无法解密（密文可能来自其他机器），请在管理端重新输入并保存</value></data>
+  <data name="Validation_SnoozeMax" xml:space="preserve"><value>Notification.SnoozeMinutes 不能超过 {0:0} 分钟</value></data>
+  <data name="Validation_SnoozePositive" xml:space="preserve"><value>Notification.SnoozeMinutes 必须为正数</value></data>
+  <data name="Validation_ThresholdOrder" xml:space="preserve"><value>Proximity.UnlockThresholdDbm 必须大于 LockThresholdDbm，否则死区为负</value></data>
+  <data name="Validation_UnlockCountRange" xml:space="preserve"><value>Proximity.UnlockSampleCount 必须在 1 到 20 之间</value></data>
+  <data name="Validation_UserNameControlChars" xml:space="preserve"><value>Credentials.UserName 不能包含控制字符（换行、回车、制表符等）</value></data>
+  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>Credentials.UserName 不能为空</value></data>
+</root>

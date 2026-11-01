@@ -22,7 +22,7 @@
 ## 做法
 
 - **内容生成（Manager.Core，可单元测试）：**
-  - `RuleValues`：从 `AutoUnlockConfig` 取 10 个数值，并提供默认值；
+  - `RuleValues`：从 `BleUnlockConfig` 取 10 个数值，并提供默认值；
   - `RuleExamples`：按阈值推算例子读数；
   - `RulesContent`：用 `UiStrings` 中带命名占位符（`{lock}`、`{prompt}` 等）的模板生成各节文字。
 - **页面（WPF）：** `RulesPage` + `RulesViewModel`。

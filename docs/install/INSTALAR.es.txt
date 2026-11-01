@@ -1,4 +1,4 @@
-Guía de instalación de AutoUnlock
+Guía de instalación de BleUnlock
 =================================
 
 1. Requisitos del equipo de destino
@@ -11,7 +11,7 @@ Guía de instalación de AutoUnlock
   4. Instalar como administrador.
 
 2. Instalación
-  1. Copia la carpeta completa (o el paquete descomprimido) en una ubicación fija, por ejemplo C:\AutoUnlock-pkg.
+  1. Copia la carpeta completa (o el paquete descomprimido) en una ubicación fija, por ejemplo C:\BleUnlock-pkg.
   2. Abre PowerShell como administrador, entra en esa carpeta y ejecuta:
 
        Get-ChildItem -Recurse | Unblock-File
@@ -24,7 +24,7 @@ Guía de instalación de AutoUnlock
      cualquier otro idioma usa inglés).
   3. Al terminar, el Gestor se inicia solo (icono azul de candado con señal en la bandeja).
      Mientras falte la configuración, el servicio no se inicia; es lo esperado.
-  4. En la consola de Servicios, el servicio aparece como «AutoUnlock Proximity Unlock».
+  4. En la consola de Servicios, el servicio aparece como «BleUnlock Proximity Unlock».
 
 3. Primera configuración
   1. Empareja primero el teléfono o reloj con este equipo por Bluetooth
@@ -34,7 +34,7 @@ Guía de instalación de AutoUnlock
      - introduce el usuario y la contraseña de Windows de este equipo;
      - pulsa «Guardar cambios».
   3. Pulsa «Iniciar servicio» en la página Resumen, o ejecuta en un PowerShell de administrador:
-       Start-Service AutoUnlockService
+       Start-Service BleUnlockService
 
 4. Idioma
   Gestor → Ajustes → Idioma: Usar el idioma del sistema / 中文 / English / Español.
@@ -42,7 +42,7 @@ Guía de instalación de AutoUnlock
   nuevas entradas del registro.
 
 5. Si algo falla
-  - Registros del servicio: C:\ProgramData\AutoUnlock\logs\ (también en la página Registros del Gestor)
-  - Visor de eventos → Registros de Windows → Aplicación, origen AutoUnlock
+  - Registros del servicio: C:\ProgramData\BleUnlock\logs\ (también en la página Registros del Gestor)
+  - Visor de eventos → Registros de Windows → Aplicación, origen BleUnlock
   - Desinstalar: ejecuta .\scripts\uninstall.ps1 en un PowerShell de administrador
     (pregunta si quieres eliminar la configuración y los registros)

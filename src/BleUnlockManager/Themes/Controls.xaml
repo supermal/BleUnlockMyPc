@@ -1,0 +1,632 @@
+<!--
+    Estilos de componentes (UiDesign.md, secciones 4 y 8.5).
+    Todos los pinceles se referencian con DynamicResource para seguir el cambio de tema.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:BleUnlockManager.Localization"
+    xmlns:controls="clr-namespace:BleUnlockManager.Views.Controls"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <!--  Se fusiona aquí para que StaticResource resuelva los tokens al cargar este diccionario  -->
+        <ResourceDictionary Source="pack://application:,,,/Themes/Tokens.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--  ===== Anillo de foco: exterior 2 px, interior 1 px (sección 6) =====  -->
+    <Style x:Key="Ui.FocusVisual">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border
+                        Margin="-3"
+                        BorderBrush="{DynamicResource Ui.Stroke.Focus.Outer}"
+                        BorderThickness="2"
+                        CornerRadius="6"
+                        SnapsToDevicePixels="True">
+                        <Border
+                            BorderBrush="{DynamicResource Ui.Stroke.Focus.Inner}"
+                            BorderThickness="1"
+                            CornerRadius="4" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  ===== Superficies =====  -->
+
+    <!--  Isla: panel principal de contenido  -->
+    <Style x:Key="Ui.Island" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Ui.Bg.Island}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Ui.Stroke.Island}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource Ui.Radius.Island}" />
+        <Setter Property="Margin" Value="{StaticResource Ui.Island.Margin}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!--  Tarjeta de ajuste: los grupos se separan 4 px  -->
+    <Style x:Key="Ui.Card" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Ui.Bg.Card}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Ui.Stroke.Card}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource Ui.Radius.Card}" />
+        <Setter Property="Padding" Value="{StaticResource Ui.Card.Padding}" />
+        <Setter Property="MinHeight" Value="{StaticResource Ui.Size.SettingRow}" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!--  Tarjeta de resumen: ancho fijo 196, alto mínimo 152 (sección 4.9)  -->
+    <Style x:Key="Ui.StatCard" TargetType="Border">
+        <Setter Property="Width" Value="196" />
+        <Setter Property="MinHeight" Value="152" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Margin" Value="0,0,12,12" />
+        <Setter Property="Background" Value="{DynamicResource Ui.Bg.Card}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Ui.Stroke.Card}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource Ui.Radius.Card}" />
+    </Style>
+
+    <!--  Separador interno de tarjeta  -->
+    <Style x:Key="Ui.Divider" TargetType="Border">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource Ui.Stroke.Divider}" />
+    </Style>
+
+    <!--  ===== Tipografía (sección 2.6) =====  -->
+    <Style x:Key="Ui.TextStyle.Title" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Ui.Font.Display}" />
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Title}" />
+        <Setter Property="LineHeight" Value="36" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="Ui.TextStyle.Subtitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Subtitle}" />
+        <Setter Property="LineHeight" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+    </Style>
+
+    <Style x:Key="Ui.TextStyle.Body" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Body}" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Ui.TextStyle.BodyStrong" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Body}" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+    </Style>
+
+    <Style x:Key="Ui.TextStyle.Secondary" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Body}" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Secondary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Ui.TextStyle.Caption" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Caption}" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Secondary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Ui.TextStyle.Stat" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Stat}" />
+        <Setter Property="LineHeight" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!--  Hipervínculo en línea  -->
+    <Style x:Key="Ui.Link" TargetType="Hyperlink">
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Link}" />
+        <Setter Property="TextDecorations" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource Ui.FocusVisual}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="TextDecorations" Value="Underline" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--  ===== Botones (sección 4.4) =====  -->
+
+    <!--  Base: la plantilla solo enlaza propiedades; cada variante define colores y estados  -->
+    <Style x:Key="Ui.Button.Base" TargetType="Button">
+        <Setter Property="Height" Value="{StaticResource Ui.Size.ControlHeight}" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Body}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource Ui.FocusVisual}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border
+                        x:Name="Bd"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{StaticResource Ui.Radius.Control}"
+                        SnapsToDevicePixels="True">
+                        <ContentPresenter
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="Center"
+                            RecognizesAccessKey="True"
+                            TextElement.Foreground="{TemplateBinding Foreground}">
+                            <!--  WPF UI aplica un estilo implícito a TextBlock; se fuerza el color del botón  -->
+                            <ContentPresenter.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </Style>
+                                <Style TargetType="ui:SymbolIcon">
+                                    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  Principal: como máximo uno por vista  -->
+    <Style
+        x:Key="Ui.Button.Primary"
+        BasedOn="{StaticResource Ui.Button.Base}"
+        TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource Ui.Primary}" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.OnPrimary}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Ui.Primary.Hover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Ui.Primary.Pressed}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{DynamicResource Ui.Bg.Badge}" />
+                <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Disabled}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--  Secundario (por defecto)  -->
+    <Style
+        x:Key="Ui.Button.Secondary"
+        BasedOn="{StaticResource Ui.Button.Base}"
+        TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource Ui.Bg.Control}" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Ui.Stroke.Control}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Ui.Bg.Control.Hover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Ui.Bg.Control.Pressed}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{DynamicResource Ui.Bg.Badge}" />
+                <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Disabled}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--  Sutil: barras de herramientas y acciones de baja prioridad  -->
+    <Style
+        x:Key="Ui.Button.Subtle"
+        BasedOn="{StaticResource Ui.Button.Base}"
+        TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Hover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Selected}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Disabled}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--  Botón de icono 32×32: requiere ToolTip y AutomationProperties.Name  -->
+    <Style
+        x:Key="Ui.Button.Icon"
+        BasedOn="{StaticResource Ui.Button.Subtle}"
+        TargetType="Button">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+
+    <!--  ===== Botón de expansión de tarjeta (sección 4.11) =====
+         Flecha de 16 en botón de 32; gira 180 grados con motion.normal (167 ms)  -->
+    <Style x:Key="Ui.ExpanderToggle" TargetType="ToggleButton">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Icon.Primary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource Ui.FocusVisual}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border
+                        x:Name="Bd"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="{StaticResource Ui.Radius.Control}">
+                        <ui:SymbolIcon
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            Foreground="{TemplateBinding Foreground}"
+                            RenderTransformOrigin="0.5,0.5"
+                            Symbol="ChevronDown16">
+                            <ui:SymbolIcon.RenderTransform>
+                                <RotateTransform x:Name="ChevronRotation" Angle="0" />
+                            </ui:SymbolIcon.RenderTransform>
+                        </ui:SymbolIcon>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Selected}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="ChevronRotation"
+                                            Storyboard.TargetProperty="Angle"
+                                            To="180"
+                                            Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="ChevronRotation"
+                                            Storyboard.TargetProperty="Angle"
+                                            To="0"
+                                            Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseIn" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  Encabezado de tarjeta expandible: toda la fila es clicable  -->
+    <Style x:Key="Ui.ExpanderHeader" TargetType="Border">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="MinHeight" Value="{StaticResource Ui.Size.SettingRow}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Ui.Bg.Control.Hover}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--  ===== Navegación lateral (sección 4.2) =====  -->
+    <Style x:Key="Ui.NavList" TargetType="ListBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBox">
+                    <ItemsPresenter />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Ui.NavItem" TargetType="ListBoxItem">
+        <Setter Property="Height" Value="{StaticResource Ui.Size.NavItemHeight}" />
+        <Setter Property="Margin" Value="8,0,8,2" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Body}" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource Ui.FocusVisual}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Grid Background="Transparent">
+                        <Border
+                            x:Name="Bg"
+                            Padding="{TemplateBinding Padding}"
+                            Background="Transparent"
+                            CornerRadius="{StaticResource Ui.Radius.Control}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                        <!--  Barra indicadora: 3×16, centrada verticalmente.
+                             Radio = mitad del ancho; un radio mayor que el elemento WPF lo dibuja como elipse  -->
+                        <Border
+                            x:Name="Indicator"
+                            Width="3"
+                            Height="16"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="{DynamicResource Ui.Indicator}"
+                            CornerRadius="1.5"
+                            Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Selected}" />
+                            <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Disabled}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  ===== Insignia de estado (sección 4.8) =====  -->
+    <Style x:Key="Ui.StatusBadge" TargetType="Border">
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="CornerRadius" Value="{StaticResource Ui.Radius.Pill}" />
+        <Setter Property="Background" Value="{DynamicResource Ui.Status.Neutral.Bg}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Neutral.Fg}" />
+        <Setter Property="TextElement.FontSize" Value="{StaticResource Ui.Type.Caption}" />
+    </Style>
+
+    <!--  Insignia con tono: Tag = ok | warn | danger | info | neutral (por defecto)  -->
+    <Style
+        x:Key="Ui.StatusBadge.Tone"
+        BasedOn="{StaticResource Ui.StatusBadge}"
+        TargetType="Border">
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Style.Triggers>
+            <Trigger Property="Tag" Value="ok">
+                <Setter Property="Background" Value="{DynamicResource Ui.Status.Success.Bg}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Success.Fg}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="warn">
+                <Setter Property="Background" Value="{DynamicResource Ui.Status.Warning.Bg}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Warning.Fg}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="danger">
+                <Setter Property="Background" Value="{DynamicResource Ui.Status.Danger.Bg}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Danger.Fg}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="info">
+                <Setter Property="Background" Value="{DynamicResource Ui.Status.Info.Bg}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Ui.Status.Info.Fg}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--  Campo numérico con unidad (sección 4.13): borde inferior fuerte, 2 px de acento al enfocar  -->
+    <Style TargetType="controls:UnitTextBox">
+        <Setter Property="Width" Value="132" />
+        <Setter Property="Height" Value="{StaticResource Ui.Size.ControlHeight}" />
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Body}" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource Ui.Text.Primary}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource Ui.Primary}" />
+        <Setter Property="HorizontalContentAlignment" Value="Right" />
+        <Setter Property="TextAlignment" Value="Right" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:UnitTextBox">
+                    <Grid>
+                        <Border
+                            Background="{DynamicResource Ui.Bg.Control}"
+                            BorderBrush="{DynamicResource Ui.Stroke.Control}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource Ui.Radius.Control}" />
+                        <Border
+                            x:Name="Underline"
+                            Height="1"
+                            Margin="2,0"
+                            VerticalAlignment="Bottom"
+                            Background="{DynamicResource Ui.Stroke.Control.Strong}" />
+                        <Grid Margin="10,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ScrollViewer
+                                x:Name="PART_ContentHost"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                HorizontalScrollBarVisibility="Hidden"
+                                VerticalScrollBarVisibility="Hidden" />
+                            <TextBlock
+                                Grid.Column="1"
+                                Margin="6,0,0,0"
+                                VerticalAlignment="Center"
+                                FontSize="{StaticResource Ui.Type.Caption}"
+                                Foreground="{DynamicResource Ui.Text.Tertiary}"
+                                Text="{TemplateBinding Unit}" />
+                        </Grid>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Underline" Property="Height" Value="2" />
+                            <Setter TargetName="Underline" Property="Background" Value="{DynamicResource Ui.Primary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Disabled}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  Tarjeta de ajuste (sección 4.10): icono 20 · texto · control a la derecha  -->
+    <Style TargetType="controls:SettingRow">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:SettingRow">
+                    <Border
+                        MinHeight="{StaticResource Ui.Size.SettingRow}"
+                        Padding="16,12"
+                        Background="{DynamicResource Ui.Bg.Card}"
+                        BorderBrush="{DynamicResource Ui.Stroke.Card}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Ui.Radius.Card}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:SymbolIcon
+                                x:Name="IconPart"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                FontSize="20"
+                                Foreground="{DynamicResource Ui.Icon.Primary}"
+                                Symbol="{TemplateBinding Icon}" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Foreground="{DynamicResource Ui.Text.Primary}"
+                                        Text="{TemplateBinding Header}" />
+                                    <Border
+                                        x:Name="ModifiedBadge"
+                                        Margin="8,0,0,0"
+                                        Style="{StaticResource Ui.StatusBadge.Tone}"
+                                        Tag="info"
+                                        Visibility="Collapsed">
+                                        <TextBlock Text="{loc:Loc Common_Modified}" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock
+                                    x:Name="DescriptionPart"
+                                    Margin="0,2,16,0"
+                                    Style="{StaticResource Ui.TextStyle.Caption}"
+                                    Text="{TemplateBinding Description}"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    x:Name="ErrorPart"
+                                    Margin="0,4,16,0"
+                                    FontSize="{StaticResource Ui.Type.Caption}"
+                                    Foreground="{DynamicResource Ui.Status.Danger.Fg}"
+                                    Text="{TemplateBinding Error}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ContentPresenter Grid.Column="2" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Icon" Value="Empty">
+                            <Setter TargetName="IconPart" Property="Visibility" Value="Hidden" />
+                        </Trigger>
+                        <Trigger Property="IsModified" Value="True">
+                            <Setter TargetName="ModifiedBadge" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="Description" Value="">
+                            <Setter TargetName="DescriptionPart" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Error" Value="">
+                            <Setter TargetName="ErrorPart" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  ===== Texto editable sin decoración (búsqueda y valores copiables) =====  -->
+    <Style x:Key="Ui.PlainTextBox" TargetType="TextBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="{StaticResource Ui.Type.Body}" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource Ui.Text.Primary}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource Ui.Primary}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <ScrollViewer
+                        x:Name="PART_ContentHost"
+                        VerticalAlignment="Center"
+                        Focusable="False"
+                        HorizontalScrollBarVisibility="Hidden"
+                        VerticalScrollBarVisibility="Hidden" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  Valor de una lista clave-valor: seleccionable para copiar (sección 4.12)  -->
+    <Style
+        x:Key="Ui.KeyValue.Value"
+        BasedOn="{StaticResource Ui.PlainTextBox}"
+        TargetType="TextBox">
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Secondary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Margin" Value="0,2" />
+    </Style>
+
+    <Style
+        x:Key="Ui.KeyValue.Key"
+        BasedOn="{StaticResource Ui.TextStyle.Body}"
+        TargetType="TextBlock">
+        <Setter Property="Margin" Value="0,2,16,2" />
+    </Style>
+</ResourceDictionary>

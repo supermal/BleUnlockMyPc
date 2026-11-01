@@ -1,0 +1,232 @@
+using System.IO.Pipes;
+using System.Security.AccessControl;
+using System.Security.Principal;
+using System.Text;
+using BleUnlockService.Core;
+using BleUnlockService.Resources;
+
+namespace BleUnlockService.Credentials;
+
+// Servidor de \\.\pipe\BleUnlock. Mantiene una conexion viva con el CP y empuja
+// las credenciales solo cuando la maquina de estados lo pide (nunca al conectar).
+// El CP responde ACK enseguida y RESULT cuando Windows resuelve la autenticacion;
+// RESULT puede tardar o no llegar jamas, por eso la lectura nunca bloquea nada mas
+public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, TimeProvider? timeProvider = null)
+    : IAsyncDisposable
+{
+    private const string PipeName = "BleUnlock";
+    private static readonly TimeSpan RebuildDelay = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan WriteTimeout = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan DisposeJoinTimeout = TimeSpan.FromSeconds(5);
+
+    private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private volatile NamedPipeServerStream? _pipe;
+    private Task? _loop;
+    private CancellationTokenSource? _cts;
+    private int _disposed;
+
+    public bool IsClientConnected
+    {
+        get
+        {
+            try { return _pipe?.IsConnected == true; }
+            catch (ObjectDisposedException) { return false; }
+        }
+    }
+
+    // Se invoca en el hilo de lectura: el manejador debe ser rapido y no bloquear
+    public event Action<AuthResult>? AuthResultReceived;
+
+    // 连接状态变化（遥测旁路订阅用）；订阅者异常不影响管道循环
+    public event Action? Connected;
+    public event Action? Disconnected;
+
+    public void Start(CancellationToken ct)
+    {
+        if (_cts is not null || Volatile.Read(ref _disposed) != 0) return;   // un solo arranque
+
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var token = _cts.Token;
+        _loop = Task.Run(() => AcceptLoopAsync(token), CancellationToken.None);
+    }
+
+    private async Task AcceptLoopAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            bool wasConnected = false;
+            try
+            {
+                var pipe = CreatePipe();
+                _pipe = pipe;
+                log.LogInformation(ServiceStrings.Log_CredPipeReady);
+                await pipe.WaitForConnectionAsync(ct);
+                wasConnected = true;
+                log.LogInformation(ServiceStrings.Log_CredProviderConnected);
+                Raise(Connected);
+
+                await ReadLoopAsync(pipe, ct);
+                log.LogInformation(ServiceStrings.Log_CredProviderDisconnected);
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                log.LogWarning(ServiceStrings.Log_CredPipeError, ex.Message);
+                try { await Task.Delay(RebuildDelay, _time, ct); }
+                catch (OperationCanceledException) { break; }
+            }
+            finally
+            {
+                // Cada instancia se libera siempre: ni una por reconexion se queda viva
+                var old = Interlocked.Exchange(ref _pipe, null);
+                if (old is not null) await old.DisposeAsync();
+                if (wasConnected) Raise(Disconnected);
+            }
+        }
+    }
+
+    // 通知订阅者连接变化；订阅者出错不得打断管道循环
+    private void Raise(Action? handler)
+    {
+        try { handler?.Invoke(); }
+        catch (Exception ex)
+        {
+            log.LogWarning(ServiceStrings.Log_CredPipeEventError, ex.Message);
+        }
+    }
+
+    private async Task ReadLoopAsync(NamedPipeServerStream pipe, CancellationToken ct)
+    {
+        using var reader = new StreamReader(pipe, new UTF8Encoding(false), false, leaveOpen: true);
+
+        while (!ct.IsCancellationRequested)
+        {
+            var line = await reader.ReadLineAsync(ct);
+            if (line is null) break;   // el CP cerro la conexion
+
+            if (line.Trim() == "ACK")
+            {
+                log.LogDebug(ServiceStrings.Log_CredReceivedAck);
+                continue;
+            }
+
+            if (CredentialProtocol.TryParseResult(line, out var result))
+            {
+                log.LogInformation(ServiceStrings.Log_AuthResult,
+                    result.Success, result.NtStatus);
+                try { AuthResultReceived?.Invoke(result); }
+                catch (Exception ex)
+                {
+                    // Un manejador defectuoso no debe costar la conexion
+                    log.LogError(ServiceStrings.Log_AuthResultSubscriberError, ex.Message);
+                }
+                continue;
+            }
+
+            // No se registra el contenido de la linea
+            log.LogWarning(ServiceStrings.Log_CredPipeUnknownMessage);
+        }
+    }
+
+    public async Task<bool> SendCredentialsAsync(string userName, string password, CancellationToken ct)
+    {
+        var pipe = _pipe;
+        if (pipe is null || !IsClientConnected)
+        {
+            log.LogWarning(ServiceStrings.Log_NoCredProviderToPush);
+            return false;
+        }
+
+        byte[] payload;
+        try { payload = CredentialProtocol.BuildCreds(userName, password); }
+        catch (ArgumentException)
+        {
+            // Defensa en profundidad: la comprobacion principal esta en OptionsValidator.Validate
+            // (rechaza caracteres de control al guardar la configuracion). Mensaje fijo: sin valores
+            log.LogWarning(ServiceStrings.Log_CredContainsNewline);
+            return false;
+        }
+
+        try
+        {
+            await _writeLock.WaitAsync(ct);
+            try
+            {
+                // Plazo de escritura con el reloj inyectado
+                using var timeout = new CancellationTokenSource(WriteTimeout, _time);
+                using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, timeout.Token);
+
+                await pipe.WriteAsync(payload, linked.Token);
+                await pipe.FlushAsync(linked.Token);
+                // Nunca se registra la clave, solo el usuario
+                log.LogInformation(ServiceStrings.Log_CredPushed, userName);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log.LogWarning(ServiceStrings.Log_CredPushFailed, ex.Message);
+                // Una escritura a medias deja el flujo desalineado: se descarta la conexion
+                // y el CP vuelve a conectar limpio
+                try { await pipe.DisposeAsync(); } catch (Exception) { }
+                return false;
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+        catch (ObjectDisposedException)
+        {
+            return false;   // cierre concurrente
+        }
+        finally
+        {
+            Array.Clear(payload);
+        }
+    }
+
+    // Solo SYSTEM puede conectarse: el servicio y winlogon/LogonUI corren con esa identidad.
+    // La DACL limita a los clientes; no impide que otro proceso elevado actue como servidor
+    private static NamedPipeServerStream CreatePipe()
+    {
+        var security = new PipeSecurity();
+        var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        security.AddAccessRule(new PipeAccessRule(system, PipeAccessRights.FullControl, AccessControlType.Allow));
+
+        return NamedPipeServerStreamAcl.Create(
+            PipeName,
+            PipeDirection.InOut,
+            maxNumberOfServerInstances: 1,
+            PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous,
+            inBufferSize: 4096,
+            outBufferSize: 4096,
+            security);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+
+        _cts?.Cancel();
+        if (_loop is not null)
+        {
+            // Con plazo: un cierre de servicio nunca debe colgarse esperando al bucle
+            try { await _loop.WaitAsync(DisposeJoinTimeout, _time); }
+            catch (Exception ex) when (ex is TimeoutException or OperationCanceledException)
+            {
+                log.LogWarning(ServiceStrings.Log_CredLoopStopTimeout);
+            }
+        }
+
+        var pipe = Interlocked.Exchange(ref _pipe, null);
+        if (pipe is not null) await pipe.DisposeAsync();
+        _cts?.Dispose();
+        // _writeLock no se libera: un envio concurrente podria seguir usandolo
+    }
+}

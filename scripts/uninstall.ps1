@@ -1,13 +1,13 @@
 ﻿#Requires -RunAsAdministrator
 param(
-    [string]$InstallDir = 'C:\Program Files\AutoUnlock',
-    [string]$DataDir    = (Join-Path $env:ProgramData 'AutoUnlock'),
+    [string]$InstallDir = 'C:\Program Files\BleUnlock',
+    [string]$DataDir    = (Join-Path $env:ProgramData 'BleUnlock'),
     [switch]$KeepData
 )
 
 $ErrorActionPreference = 'Continue'
 . (Join-Path $PSScriptRoot 'i18n.ps1')
-$serviceName = 'AutoUnlockService'
+$serviceName = 'BleUnlockService'
 
 # sc.exe no lanza excepciones: se comprueba el codigo de salida de forma explicita
 function Assert-ScOk {
@@ -43,15 +43,15 @@ if ($existing) {
 }
 
 # 助手与管理端在交互会话中运行，可能占用安装目录中的文件
-Get-Process -Name 'AutoUnlockHelper' -ErrorAction SilentlyContinue | Stop-Process -Force
-Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name 'BleUnlockHelper' -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name 'BleUnlockManager' -ErrorAction SilentlyContinue | Stop-Process -Force
 $deadline = (Get-Date).AddSeconds(10)
-while ((Get-Process -Name 'AutoUnlockManager' -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+while ((Get-Process -Name 'BleUnlockManager' -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
     Start-Sleep -Milliseconds 250
 }
 
 # 管理端：注销计划任务、删除开始菜单快捷方式（程序文件随安装目录一并删除）
-$managerTask = 'AutoUnlockManager'
+$managerTask = 'BleUnlockManager'
 if (Get-ScheduledTask -TaskName $managerTask -ErrorAction SilentlyContinue) {
     Unregister-ScheduledTask -TaskName $managerTask -Confirm:$false
     Write-Host (T 'TaskRemoved')
@@ -68,7 +68,7 @@ foreach ($shortcutName in $script:ShortcutNames.Values) {
 }
 
 # 先注销 CP 再删除文件：DllUnregisterServer 需要 DLL 还在原路径
-$targetDll = Join-Path $InstallDir 'AutoUnlockCP.dll'
+$targetDll = Join-Path $InstallDir 'BleUnlockCP.dll'
 if (Test-Path $targetDll) {
     $proc = Start-Process regsvr32.exe -ArgumentList "/u /s `"$targetDll`"" -Wait -PassThru -NoNewWindow
     if ($proc.ExitCode -eq 0) {
@@ -101,4 +101,4 @@ if (-not $KeepData) {
 }
 
 Write-Host (T 'UninstallDone')
-Write-Host (T 'ManagerSettingsKept' "$env:LOCALAPPDATA\AutoUnlockManager")
+Write-Host (T 'ManagerSettingsKept' "$env:LOCALAPPDATA\BleUnlockManager")

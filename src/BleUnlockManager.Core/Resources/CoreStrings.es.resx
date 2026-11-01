@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Ago_Hours" xml:space="preserve"><value>hace {0} h</value></data>
+  <data name="Ago_Minutes" xml:space="preserve"><value>hace {0} min</value></data>
+  <data name="Ago_Never" xml:space="preserve"><value>Nunca</value></data>
+  <data name="Ago_Seconds" xml:space="preserve"><value>hace {0} s</value></data>
+  <data name="Bond_AccessDenied" xml:space="preserve"><value>Sin permiso para conectar con la canalización del servicio (se requiere administrador): {0}</value></data>
+  <data name="Bond_ConnectFailed" xml:space="preserve"><value>No se pudo conectar con el servicio: {0}</value></data>
+  <data name="Bond_InvalidResponse" xml:space="preserve"><value>El servicio devolvió una respuesta no válida.</value></data>
+  <data name="Bond_NameWithAddress" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="Bond_NoData" xml:space="preserve"><value>El servicio no devolvió datos.</value></data>
+  <data name="Bond_ReadFailed" xml:space="preserve"><value>No se pudieron leer los dispositivos emparejados: {0}</value></data>
+  <data name="Bond_ServiceError" xml:space="preserve"><value>El servicio devolvió un error.</value></data>
+  <data name="Bond_Timeout" xml:space="preserve"><value>Se agotó el tiempo de lectura (puede que el servicio no esté en ejecución).</value></data>
+  <data name="Bond_Unparseable" xml:space="preserve"><value>El servicio devolvió datos que no se pudieron interpretar.</value></data>
+  <data name="ByteOrder_Auto" xml:space="preserve"><value>Detectar automáticamente (Auto)</value></data>
+  <data name="ByteOrder_Normal" xml:space="preserve"><value>Tal cual (Normal)</value></data>
+  <data name="ByteOrder_Reversed" xml:space="preserve"><value>Invertido (Reversed)</value></data>
+  <data name="Config_InvalidValue" xml:space="preserve"><value>Valor de {0} no válido.</value></data>
+  <data name="Config_RootNotObject" xml:space="preserve"><value>La raíz del archivo de configuración debe ser un objeto JSON.</value></data>
+  <data name="Device_NotSelected" xml:space="preserve"><value>Ningún dispositivo seleccionado</value></data>
+  <data name="Device_Unknown" xml:space="preserve"><value>Dispositivo desconocido</value></data>
+  <data name="Diff_FieldModified" xml:space="preserve"><value>{0} modificado</value></data>
+  <data name="Diff_FirstAndMore" xml:space="preserve"><value>{0} y {1} elementos en total</value></data>
+  <data name="Duration_HoursMinutes" xml:space="preserve"><value>{0} h {1} min</value></data>
+  <data name="Duration_MinutesSeconds" xml:space="preserve"><value>{0} min {1} s</value></data>
+  <data name="Duration_Seconds" xml:space="preserve"><value>{0} s</value></data>
+  <data name="Field_DeviceAddress" xml:space="preserve"><value>Dirección del dispositivo</value></data>
+  <data name="Field_DeviceIrk" xml:space="preserve"><value>IRK del dispositivo</value></data>
+  <data name="Field_IrkByteOrder" xml:space="preserve"><value>Orden de bytes del IRK</value></data>
+  <data name="Field_LockConfirmSampleCount" xml:space="preserve"><value>Lecturas para confirmar el bloqueo</value></data>
+  <data name="Field_LockPromptSampleCount" xml:space="preserve"><value>Lecturas para mostrar el aviso</value></data>
+  <data name="Field_LockThreshold" xml:space="preserve"><value>Umbral de bloqueo (dBm)</value></data>
+  <data name="Field_NotificationMode" xml:space="preserve"><value>Tipo de notificación</value></data>
+  <data name="Field_Password" xml:space="preserve"><value>Contraseña de las credenciales</value></data>
+  <data name="Field_RejectSnooze" xml:space="preserve"><value>Pausa tras rechazar (s)</value></data>
+  <data name="Field_SampleInterval" xml:space="preserve"><value>Intervalo de muestreo de RSSI (ms)</value></data>
+  <data name="Field_Snooze" xml:space="preserve"><value>Recordar más tarde (min)</value></data>
+  <data name="Field_StartupGrace" xml:space="preserve"><value>Gracia al iniciar (s)</value></data>
+  <data name="Field_UnlockPendingTimeout" xml:space="preserve"><value>Tiempo máximo de espera del desbloqueo (s)</value></data>
+  <data name="Field_UnlockSampleCount" xml:space="preserve"><value>Lecturas para confirmar el desbloqueo</value></data>
+  <data name="Field_UnlockThreshold" xml:space="preserve"><value>Umbral de desbloqueo (dBm)</value></data>
+  <data name="Field_UserName" xml:space="preserve"><value>Usuario de las credenciales</value></data>
+  <data name="LanguageProbe" xml:space="preserve"><value>Español</value></data>
+  <data name="Mode_Dialog" xml:space="preserve"><value>Cuadro de diálogo (Dialog)</value></data>
+  <data name="Mode_Toast" xml:space="preserve"><value>Notificación del sistema (Toast)</value></data>
+  <data name="Secret_Plaintext" xml:space="preserve"><value>Ahora se guarda sin cifrar; se cifrará al guardar.</value></data>
+  <data name="Secret_StoredEncrypted" xml:space="preserve"><value>Se guarda cifrada y no se muestra; escribe una contraseña nueva para sustituirla. Se vuelve a cifrar al guardar.</value></data>
+  <data name="Secret_Undecryptable" xml:space="preserve"><value>Este valor cifrado no se puede descifrar en este equipo (puede venir de otro); vuelve a introducirlo.</value></data>
+  <data name="State_LockedArmed" xml:space="preserve"><value>Bloqueado · vigilando</value></data>
+  <data name="State_LockedWaitingDeparture" xml:space="preserve"><value>Bloqueado · esperando la salida</value></data>
+  <data name="State_PendingLock" xml:space="preserve"><value>Pendiente de bloqueo</value></data>
+  <data name="State_Snoozed" xml:space="preserve"><value>Aplazado</value></data>
+  <data name="State_Suspended" xml:space="preserve"><value>Suspendido</value></data>
+  <data name="State_Unknown" xml:space="preserve"><value>Desconocido</value></data>
+  <data name="State_UnlockPending" xml:space="preserve"><value>Confirmando el desbloqueo</value></data>
+  <data name="State_Unlocked" xml:space="preserve"><value>Desbloqueado</value></data>
+  <data name="Tray_BelowLockThreshold" xml:space="preserve"><value>{0}, por debajo del umbral de bloqueo {1}</value></data>
+  <data name="Tray_ConnectingHint" xml:space="preserve"><value>Se conectará automáticamente cuando se inicie el servicio</value></data>
+  <data name="Tray_ConnectingTitle" xml:space="preserve"><value>Conectando con el servicio…</value></data>
+  <data name="Tray_LastMatch" xml:space="preserve"><value>{0}, última coincidencia {1}</value></data>
+  <data name="Tray_LeaveConfirm" xml:space="preserve"><value>Confirmación de salida {0}/{1}</value></data>
+  <data name="Tray_LockConfirm" xml:space="preserve"><value>Confirmación de bloqueo {0}/{1}</value></data>
+  <data name="Tray_NoSignal" xml:space="preserve"><value>{0}, sin señal todavía</value></data>
+  <data name="Tray_Prefix" xml:space="preserve"><value>BleUnlock:</value></data>
+  <data name="Tray_SignalDbm" xml:space="preserve"><value>{0} {1} dBm</value></data>
+  <data name="Tray_StoppedHint" xml:space="preserve"><value>Haz clic derecho y elige «Iniciar servicio» para reanudar</value></data>
+  <data name="Tray_StoppedTitle" xml:space="preserve"><value>El servicio está detenido</value></data>
+  <data name="Tray_SuspendedHint" xml:space="preserve"><value>Se reanuda al actualizar la contraseña en la página Configuración</value></data>
+  <data name="Tray_SuspendedTitle" xml:space="preserve"><value>Desbloqueo automático en pausa; revisa la contraseña</value></data>
+  <data name="Validation_AddressFormat" xml:space="preserve"><value>{0} debe ser una dirección MAC válida de 6 bytes</value></data>
+  <data name="Validation_GraceNegative" xml:space="preserve"><value>{0} no puede ser negativo</value></data>
+  <data name="Validation_IrkFormat" xml:space="preserve"><value>{0} debe tener 32 caracteres hexadecimales</value></data>
+  <data name="Validation_LockConfirmCountRange" xml:space="preserve"><value>{0} debe estar entre 1 y 50</value></data>
+  <data name="Validation_LockPromptCountRange" xml:space="preserve"><value>{0} debe estar entre 1 y 50</value></data>
+  <data name="Validation_PasswordControlChars" xml:space="preserve"><value>{0} no puede contener caracteres de control (saltos de línea, retornos de carro, tabulaciones, etc.)</value></data>
+  <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>{0} debe ser positivo</value></data>
+  <data name="Validation_RejectSnoozePositive" xml:space="preserve"><value>{0} debe ser positivo</value></data>
+  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs debe estar entre 0 y 2000 (0 significa sin límite)</value></data>
+  <data name="Validation_SnoozeMax" xml:space="preserve"><value>{0} no puede superar {1:0} minutos</value></data>
+  <data name="Validation_SnoozePositive" xml:space="preserve"><value>{0} debe ser positivo</value></data>
+  <data name="Validation_ThresholdOrder" xml:space="preserve"><value>{0} debe ser mayor que LockThresholdDbm; si no, la zona muerta es negativa</value></data>
+  <data name="Validation_UnlockCountRange" xml:space="preserve"><value>{0} debe estar entre 1 y 20</value></data>
+  <data name="Validation_UserNameControlChars" xml:space="preserve"><value>{0} no puede contener caracteres de control (saltos de línea, retornos de carro, tabulaciones, etc.)</value></data>
+  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>{0} no puede estar vacío</value></data>
+  <data name="Value_Empty" xml:space="preserve"><value>(vacío)</value></data>
+  <data name="Value_Encrypted" xml:space="preserve"><value>(cifrado)</value></data>
+  <data name="Value_NotSet" xml:space="preserve"><value>(sin definir)</value></data>
+  <data name="Zone_Away" xml:space="preserve"><value>Zona lejana</value></data>
+  <data name="Zone_Hold" xml:space="preserve"><value>Zona de espera</value></data>
+  <data name="Zone_Near" xml:space="preserve"><value>Zona cercana</value></data>
+</root>

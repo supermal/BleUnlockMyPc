@@ -1,13 +1,13 @@
-# AutoUnlockMyPc
+# BleUnlockMyPc
 
 基于 BLE RSSI 的 Windows 11 近距离自动锁屏与解锁。服务通过蓝牙扫描已配对设备的信号强度，判断用户远离还是靠近：远离自动锁屏，靠近自动解锁。
 
 四个组件：
 
-- **服务（AutoUnlockService.exe）**：以 Windows 服务运行，负责 BLE 扫描与 RSSI 状态机判定，执行锁屏，并向凭据提供程序推送凭据。
-- **助手（AutoUnlockHelper.exe）**：在交互会话中运行，负责弹 Toast 提示、执行锁屏（LockWorkStation），并把用户选择与执行结果回传服务。
-- **凭据提供程序（AutoUnlockCredentialProvider.dll，安装后复制为 AutoUnlockCP.dll）**：位于登录界面，接收服务推送的凭据完成登录。
-- **管理端（AutoUnlockManager.exe）**：WPF（WPF-UI）托盘常驻程序「AutoUnlock 管理器」，提供实时信号概览、配置编辑、设备配对、服务日志查看与亮/暗主题；由安装脚本注册为计划任务，随登录自动启动（最高权限运行，无 UAC 弹窗）。
+- **服务（BleUnlockService.exe）**：以 Windows 服务运行，负责 BLE 扫描与 RSSI 状态机判定，执行锁屏，并向凭据提供程序推送凭据。
+- **助手（BleUnlockHelper.exe）**：在交互会话中运行，负责弹 Toast 提示、执行锁屏（LockWorkStation），并把用户选择与执行结果回传服务。
+- **凭据提供程序（BleUnlockCredentialProvider.dll，安装后复制为 BleUnlockCP.dll）**：位于登录界面，接收服务推送的凭据完成登录。
+- **管理端（BleUnlockManager.exe）**：WPF（WPF-UI）托盘常驻程序「BleUnlock 管理器」，提供实时信号概览、配置编辑、设备配对、服务日志查看与亮/暗主题；由安装脚本注册为计划任务，随登录自动启动（最高权限运行，无 UAC 弹窗）。
 
 ## 前提条件
 
@@ -23,12 +23,12 @@
 
 ## 构建
 
-逐项目构建（**不要用 `AutoUnlockMyPc.sln` 整体构建**——C++ 项目经 dotnet CLI 会报 MSB4278，需用 VS 2022 的 MSBuild）：
+逐项目构建（**不要用 `BleUnlockMyPc.sln` 整体构建**——C++ 项目经 dotnet CLI 会报 MSB4278，需用 VS 2022 的 MSBuild）：
 
 ```powershell
-dotnet build src\AutoUnlockService\AutoUnlockService.csproj -c Release
-dotnet build src\AutoUnlockHelper\AutoUnlockHelper.csproj -c Release
-msbuild src\AutoUnlockCredentialProvider\AutoUnlockCredentialProvider.vcxproj /p:Configuration=Release /p:Platform=x64
+dotnet build src\BleUnlockService\BleUnlockService.csproj -c Release
+dotnet build src\BleUnlockHelper\BleUnlockHelper.csproj -c Release
+msbuild src\BleUnlockCredentialProvider\BleUnlockCredentialProvider.vcxproj /p:Configuration=Release /p:Platform=x64
 ```
 
 `msbuild` 指 Visual Studio 2022 自带的 MSBuild。
@@ -36,16 +36,16 @@ msbuild src\AutoUnlockCredentialProvider\AutoUnlockCredentialProvider.vcxproj /p
 管理端为自包含发布（**发布前先退出正在运行的管理端**，否则文件被占用）：
 
 ```powershell
-dotnet publish src\AutoUnlockManager\AutoUnlockManager.csproj -c Release -r win-x64 --self-contained true
+dotnet publish src\BleUnlockManager\BleUnlockManager.csproj -c Release -r win-x64 --self-contained true
 ```
 
-产物目录 `src\AutoUnlockManager\bin\Release\net10.0-windows10.0.19041.0\win-x64\publish`；安装脚本会自动探测该目录（多个命中取最新）。
+产物目录 `src\BleUnlockManager\bin\Release\net10.0-windows10.0.19041.0\win-x64\publish`；安装脚本会自动探测该目录（多个命中取最新）。
 
 可选，运行单元测试：
 
 ```powershell
-dotnet test tests\AutoUnlockService.Tests\AutoUnlockService.Tests.csproj
-dotnet test tests\AutoUnlockManager.Tests\AutoUnlockManager.Tests.csproj
+dotnet test tests\BleUnlockService.Tests\BleUnlockService.Tests.csproj
+dotnet test tests\BleUnlockManager.Tests\BleUnlockManager.Tests.csproj
 ```
 
 ## 安装
@@ -60,24 +60,24 @@ dotnet test tests\AutoUnlockManager.Tests\AutoUnlockManager.Tests.csproj
 
 - `-Configuration`（默认 `Release`）：构建配置，决定从哪个产物目录部署。
 - `-SourceDir`（默认空）：手动指定服务输出目录，跳过产物自动探测。
-- `-ManagerSourceDir`（默认空）：手动指定管理端发布目录（含 `AutoUnlockManager.exe`），跳过自动探测。
-- `-InstallDir`（默认 `C:\Program Files\AutoUnlock`）：程序安装目录；管理端部署在其 `Manager` 子目录。
-- `-DataDir`（默认 `%ProgramData%\AutoUnlock`）：配置与日志目录。
+- `-ManagerSourceDir`（默认空）：手动指定管理端发布目录（含 `BleUnlockManager.exe`），跳过自动探测。
+- `-InstallDir`（默认 `C:\Program Files\BleUnlock`）：程序安装目录；管理端部署在其 `Manager` 子目录。
+- `-DataDir`（默认 `%ProgramData%\BleUnlock`）：配置与日志目录。
 - `-ManagerUser`（默认空）：管理端计划任务的运行账户（`域\用户名` 或本地账户）；默认=执行本安装的账户。
 
-脚本动作概述：停止并删除旧服务 → 结束正在运行的管理端 → 部署服务、助手与凭据提供程序（服务与助手必须同目录：服务按安装目录查找 `AutoUnlockHelper.exe`）→ 生成或保留配置 → 用 `icacls` 收紧配置目录权限（仅 SYSTEM 与 Administrators；含对既有文件的修复与回读断言）→ 用 `regsvr32` 注册凭据提供程序 → 注册事件日志源 `AutoUnlock` → 创建服务（延迟自动启动、失败自动重启）→ 部署管理端到 `Manager` 子目录 → 创建开始菜单快捷方式 → 注册计划任务 `AutoUnlockManager`（登录自启、最高权限）→ 立即启动管理端。
+脚本动作概述：停止并删除旧服务 → 结束正在运行的管理端 → 部署服务、助手与凭据提供程序（服务与助手必须同目录：服务按安装目录查找 `BleUnlockHelper.exe`）→ 生成或保留配置 → 用 `icacls` 收紧配置目录权限（仅 SYSTEM 与 Administrators；含对既有文件的修复与回读断言）→ 用 `regsvr32` 注册凭据提供程序 → 注册事件日志源 `BleUnlock` → 创建服务（延迟自动启动、失败自动重启）→ 部署管理端到 `Manager` 子目录 → 创建开始菜单快捷方式 → 注册计划任务 `BleUnlockManager`（登录自启、最高权限）→ 立即启动管理端。
 
-**配置未填写完整时脚本不会启动服务**。按提示编辑 `%ProgramData%\AutoUnlock\appsettings.json`（填入 `Device.Irk`、`Credentials.UserName` 与 `Password`），然后执行：
+**配置未填写完整时脚本不会启动服务**。按提示编辑 `%ProgramData%\BleUnlock\appsettings.json`（填入 `Device.Irk`、`Credentials.UserName` 与 `Password`），然后执行：
 
 ```powershell
-Start-Service AutoUnlockService
+Start-Service BleUnlockService
 ```
 
-日志目录：`%ProgramData%\AutoUnlock\logs\`（权限收紧后普通用户读不了，需管理员）。
+日志目录：`%ProgramData%\BleUnlock\logs\`（权限收紧后普通用户读不了，需管理员）。
 
 ## 配置
 
-配置文件：`%ProgramData%\AutoUnlock\appsettings.json`（安装时若不存在则由脚本从模板生成，已存在则保留）。
+配置文件：`%ProgramData%\BleUnlock\appsettings.json`（安装时若不存在则由脚本从模板生成，已存在则保留）。
 
 | 参数 | 默认值 | 说明 |
 |------|-------|------|
@@ -104,7 +104,7 @@ Start-Service AutoUnlockService
 
 ```json
 {
-  "AutoUnlock": {
+  "BleUnlock": {
     "Device": {
       "Irk": "",
       "IrkByteOrder": "Auto",
@@ -138,7 +138,7 @@ Start-Service AutoUnlockService
 - `Irk` / `IrkByteOrder` / `IdentityAddress`：变更会重建解析缓存并清空 RSSI 历史。
 - 凭据（`UserName` / `Password`）：变更会重新预验证，通过则解除停摆；密文无法解密（如跨机器拷贝）按配置无效处理（热重载保留原配置）。
 - `Notification.Mode`：在服务启动时读取，修改后需重启服务生效。
-- 配置无效时服务拒绝启动（退出码 1，日志记 `[FTL] 配置无效，服务拒绝启动：…`，事件源 `AutoUnlock`）。
+- 配置无效时服务拒绝启动（退出码 1，日志记 `[FTL] 配置无效，服务拒绝启动：…`，事件源 `BleUnlock`）。
 
 ### 敏感字段加密（IRK / 密码）
 
@@ -163,7 +163,7 @@ Start-Service AutoUnlockService
 
 ## 管理端
 
-「AutoUnlock 管理器」（开始菜单快捷方式；托盘常驻）页面：
+「BleUnlock 管理器」（开始菜单快捷方式；托盘常驻）页面：
 
 - **概览**：实时 dBm 与分区曲线（靠近区/保持区/离开区）、锁定周期与批次进度（如「离开确认 3/5」）、服务健康、启动/停止/重启服务、样本 CSV 导出
 - **配置**：`appsettings.json` 四组字段的卡片表单（校验、原子保存、底部未保存更改栏），保存后确认服务热重载；解锁设备从「已配对 BLE 设备」下拉框选择（IRK 自动读取），可直接「配对新设备…」或「解除配对」
@@ -182,9 +182,9 @@ Start-Service AutoUnlockService
 .\scripts\uninstall.ps1
 ```
 
-默认会交互询问是否删除配置与日志（输入 `yes` 确认）；加 `-KeepData` 跳过删除、只移除服务与程序文件。管理端会被一并结束，计划任务与开始菜单快捷方式随之注销；其界面设置（`%LocalAppData%\AutoUnlockManager`）保留。卸载后建议重启一次，让 winlogon 释放凭据提供程序 DLL。
+默认会交互询问是否删除配置与日志（输入 `yes` 确认）；加 `-KeepData` 跳过删除、只移除服务与程序文件。管理端会被一并结束，计划任务与开始菜单快捷方式随之注销；其界面设置（`%LocalAppData%\BleUnlockManager`）保留。卸载后建议重启一次，让 winlogon 释放凭据提供程序 DLL。
 
 ## 排障
 
-- 服务起不来：先看 `%ProgramData%\AutoUnlock\logs\` 的日志（找 `[FTL]` 行），以及事件查看器「Windows 日志 → 应用程序」中源为 `AutoUnlock` 的事件。
+- 服务起不来：先看 `%ProgramData%\BleUnlock\logs\` 的日志（找 `[FTL]` 行），以及事件查看器「Windows 日志 → 应用程序」中源为 `BleUnlock` 的事件。
 - 配置错误：服务拒绝启动（退出码 1），日志给出具体校验错误（`[FTL] 配置无效，服务拒绝启动：…`）。

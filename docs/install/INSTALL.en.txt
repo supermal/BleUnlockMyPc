@@ -1,4 +1,4 @@
-AutoUnlock installation guide
+BleUnlock installation guide
 =============================
 
 1. Requirements on the target PC
@@ -11,7 +11,7 @@ AutoUnlock installation guide
   4. Install as an administrator.
 
 2. Installation
-  1. Put the whole folder (or the unzipped package) in a permanent location, e.g. C:\AutoUnlock-pkg.
+  1. Put the whole folder (or the unzipped package) in a permanent location, e.g. C:\BleUnlock-pkg.
   2. Open PowerShell as administrator, go to that folder and run:
 
        Get-ChildItem -Recurse | Unblock-File
@@ -24,7 +24,7 @@ AutoUnlock installation guide
      any other language uses English).
   3. When it finishes, the Manager starts automatically (blue signal-lock icon in the tray).
      The service does not start until the configuration is filled in; that is expected.
-  4. In the Services console the service is listed as "AutoUnlock Proximity Unlock".
+  4. In the Services console the service is listed as "BleUnlock Proximity Unlock".
 
 3. First-time setup
   1. Pair the phone/watch with this PC over Bluetooth first
@@ -34,14 +34,14 @@ AutoUnlock installation guide
      - enter this PC's Windows user name and password;
      - click "Save changes".
   3. Click "Start service" on the Overview page, or run in an administrator PowerShell:
-       Start-Service AutoUnlockService
+       Start-Service BleUnlockService
 
 4. Language
   Manager → Settings → Language: Use system language / 中文 / English / Español.
   The change applies right away, also to lock prompts, notifications and new log entries.
 
 5. Troubleshooting
-  - Service logs: C:\ProgramData\AutoUnlock\logs\ (also on the Manager's Logs page)
-  - Event Viewer → Windows Logs → Application, source AutoUnlock
+  - Service logs: C:\ProgramData\BleUnlock\logs\ (also on the Manager's Logs page)
+  - Event Viewer → Windows Logs → Application, source BleUnlock
   - Uninstall: run .\scripts\uninstall.ps1 in an administrator PowerShell
     (it asks whether to delete the configuration and logs)

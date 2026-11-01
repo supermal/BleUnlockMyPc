@@ -19,10 +19,10 @@ public partial class Form1 : Form
     {
         InitializeComponent();
 
-        Text         = "AutoUnlock 测试工具";
+        Text         = "BleUnlock 测试工具";
         label1.Text  = "用户名";
         label2.Text  = "密码";
-        label3.Text  = "AutoUnlock 凭据提供程序测试";
+        label3.Text  = "BleUnlock 凭据提供程序测试";
         btnLock.Text = "锁屏（触发式）";
 
         UpdateInstallButton();
@@ -58,7 +58,7 @@ public partial class Form1 : Form
             try
             {
                 pipe = new NamedPipeServerStream(
-                    "AutoUnlock",
+                    "BleUnlock",
                     PipeDirection.InOut,
                     1,
                     PipeTransmissionMode.Byte,
@@ -117,7 +117,7 @@ public partial class Form1 : Form
         {
             // 2. 先建好管道再锁屏，确保 CP 连接时服务端已就绪
             pipe = new NamedPipeServerStream(
-                "AutoUnlock",
+                "BleUnlock",
                 PipeDirection.InOut,
                 1,
                 PipeTransmissionMode.Byte,
@@ -242,15 +242,15 @@ public partial class Form1 : Form
         if (sourceDll is null)
         {
             MessageBox.Show(this,
-                "未找到 AutoUnlockCredentialProvider.dll。\n\n" +
-                "请先在 Visual Studio 中以 Release|x64 编译 AutoUnlockCredentialProvider 项目。",
+                "未找到 BleUnlockCredentialProvider.dll。\n\n" +
+                "请先在 Visual Studio 中以 Release|x64 编译 BleUnlockCredentialProvider 项目。",
                 "未找到 DLL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
         var destDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "AutoUnlock");
-        var targetDll = Path.Combine(destDir, "AutoUnlockCP.dll");
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "BleUnlock");
+        var targetDll = Path.Combine(destDir, "BleUnlockCP.dll");
 
         if (MessageBox.Show(this,
                 $"即将安装并注册凭据提供程序：\n\n来源：{sourceDll}\n目标：{targetDll}\n\n继续？",
@@ -309,7 +309,7 @@ public partial class Form1 : Form
 
     private static string? LocateProviderDll()
     {
-        var bundled = Path.Combine(AppContext.BaseDirectory, "AutoUnlockCredentialProvider.dll");
+        var bundled = Path.Combine(AppContext.BaseDirectory, "BleUnlockCredentialProvider.dll");
         if (File.Exists(bundled)) return bundled;
 
         string? dir = AppContext.BaseDirectory;
@@ -317,7 +317,7 @@ public partial class Form1 : Form
         {
             if (Directory.GetFiles(dir, "*.sln").Length > 0)
             {
-                var candidate = Path.Combine(dir, "x64", "Release", "AutoUnlockCredentialProvider.dll");
+                var candidate = Path.Combine(dir, "x64", "Release", "BleUnlockCredentialProvider.dll");
                 if (File.Exists(candidate)) return candidate;
                 break;
             }

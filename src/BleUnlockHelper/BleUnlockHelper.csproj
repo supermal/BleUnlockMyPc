@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BleUnlockHelper</RootNamespace>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Registra solo el AUMID y el acceso directo del menu Inicio, que es lo que
+         Windows exige para mostrar Toasts desde una aplicacion sin empaquetar -->
+    <PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
+    <!-- El Toolkit arrastra System.Drawing.Common 4.7.0 (NU1904, critico): se fija una version parcheada -->
+    <PackageReference Include="System.Drawing.Common" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Se comparte el fichero en lugar de duplicarlo: una sola definicion del protocolo -->
+    <Compile Include="..\BleUnlockService\Session\HelperProtocol.cs" Link="HelperProtocol.cs" />
+    <Compile Include="..\Shared\AppLanguage.cs" Link="Shared\AppLanguage.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Textos visibles: inglés neutro, zh y es como satélites. Clase tipada generada al compilar;
+         su propiedad estática Culture cambia el idioma de todo el proceso al instante -->
+    <EmbeddedResource Update="Resources\HelperStrings.resx"
+                      StronglyTypedLanguage="CSharp"
+                      StronglyTypedNamespace="BleUnlockHelper.Resources"
+                      StronglyTypedClassName="HelperStrings"
+                      StronglyTypedFileName="$(IntermediateOutputPath)HelperStrings.Designer.cs"
+                      PublicClass="true" />
+  </ItemGroup>
+
+</Project>
