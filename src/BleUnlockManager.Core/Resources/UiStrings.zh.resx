@@ -478,6 +478,8 @@
   <data name="Rules_S7_I4_V" xml:space="preserve"><value>进入已挂起并通知；正在提示就先撤回。</value></data>
   <data name="Rules_S7_I5_K" xml:space="preserve"><value>已挂起：</value></data>
   <data name="Rules_S7_I5_V" xml:space="preserve"><value>不看读数，也不响应锁屏和解锁；改成正确凭据并通过预验证后才恢复。</value></data>
+  <data name="Rules_S7_I6_K" xml:space="preserve"><value>蓝牙接收卡死：</value></data>
+  <data name="Rules_S7_I6_V" xml:space="preserve"><value>连续 30 秒收不到任何设备的广播时，静默不再算离开：正在提示就撤回，已进入监控中的要重新确认离开；同时自动重启扫描，不行再重启蓝牙适配器，并通知你。</value></data>
   <data name="Rules_S7_Title" xml:space="preserve"><value>任何时候都适用</value></data>
   <data name="Rules_S8_B1_1" xml:space="preserve"><value>人起身离开，读数降到 {trig}：这是触发，不计入。</value></data>
   <data name="Rules_S8_B1_2" xml:space="preserve"><value>接下来 {prompt} 个读数都低于 {lock} → 弹出提示。</value></data>
@@ -520,6 +522,8 @@
   <data name="Scan_noAdapter" xml:space="preserve"><value>未找到支持 BLE 的蓝牙适配器</value></data>
   <data name="Scan_radioOff" xml:space="preserve"><value>蓝牙已关闭</value></data>
   <data name="Scan_startFailed" xml:space="preserve"><value>无法启动扫描</value></data>
+  <data name="Scan_stalled" xml:space="preserve"><value>蓝牙收不到信号，正在自动恢复（自动锁屏已暂停）</value></data>
+  <data name="Scan_stalledFailed" xml:space="preserve"><value>蓝牙收不到信号且自动恢复失败：请关闭再打开蓝牙，或重启电脑（自动锁屏已暂停）</value></data>
   <data name="Scan_unknown" xml:space="preserve"><value>扫描不可用</value></data>
   <data name="Settings_AppTheme" xml:space="preserve"><value>应用主题</value></data>
   <data name="Settings_AppThemeHint" xml:space="preserve"><value>立即应用到整个窗口，下次启动时保持。</value></data>

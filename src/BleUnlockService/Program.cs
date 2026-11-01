@@ -113,6 +113,7 @@ public static class Program
 
             builder.Services.AddSingleton(sp => new ServiceLanguage(
                 sp.GetRequiredService<OptionsGate>(), CultureInfo.InstalledUICulture));
+            builder.Services.AddSingleton<IBluetoothAdapterRestarter, BluetoothAdapterRestarter>();
             builder.Services.AddSingleton<IRssiSource, BleScanner>();
             builder.Services.AddSingleton<DeviceMatcher>();
             builder.Services.AddSingleton<CredentialValidator>();

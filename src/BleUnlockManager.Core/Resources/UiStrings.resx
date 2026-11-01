@@ -478,6 +478,8 @@
   <data name="Rules_S7_I4_V" xml:space="preserve"><value>goes to Suspended with a notification; a showing prompt is withdrawn first.</value></data>
   <data name="Rules_S7_I5_K" xml:space="preserve"><value>Suspended:</value></data>
   <data name="Rules_S7_I5_V" xml:space="preserve"><value>ignores readings and lock/unlock events; it resumes only after correct credentials pass the check.</value></data>
+  <data name="Rules_S7_I6_K" xml:space="preserve"><value>Bluetooth receiver stuck:</value></data>
+  <data name="Rules_S7_I6_V" xml:space="preserve"><value>If no advertisement from any device arrives for 30 s, silence no longer counts as leaving: the prompt is withdrawn, an armed unlock must confirm departure again, and BleUnlock restarts the scan, then the adapter, and notifies you.</value></data>
   <data name="Rules_S7_Title" xml:space="preserve"><value>Applies at any time</value></data>
   <data name="Rules_S8_B1_1" xml:space="preserve"><value>You get up and leave; the reading drops to {trig}: that is the trigger and does not count.</value></data>
   <data name="Rules_S8_B1_2" xml:space="preserve"><value>The next {prompt} readings are all below {lock} → the prompt appears.</value></data>
@@ -520,6 +522,8 @@
   <data name="Scan_noAdapter" xml:space="preserve"><value>No Bluetooth adapter with BLE support</value></data>
   <data name="Scan_radioOff" xml:space="preserve"><value>Bluetooth is off</value></data>
   <data name="Scan_startFailed" xml:space="preserve"><value>Could not start scanning</value></data>
+  <data name="Scan_stalled" xml:space="preserve"><value>Bluetooth stopped receiving signals; recovering automatically (auto-lock paused)</value></data>
+  <data name="Scan_stalledFailed" xml:space="preserve"><value>Bluetooth stopped receiving signals and could not be recovered: turn Bluetooth off and on, or restart the PC (auto-lock paused)</value></data>
   <data name="Scan_unknown" xml:space="preserve"><value>Scanning is not available</value></data>
   <data name="Settings_AppTheme" xml:space="preserve"><value>App theme</value></data>
   <data name="Settings_AppThemeHint" xml:space="preserve"><value>Applies to the whole window right away and is kept next time.</value></data>

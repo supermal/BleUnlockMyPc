@@ -168,4 +168,14 @@
   <data name="Validation_UnlockCountRange" xml:space="preserve"><value>Proximity.UnlockSampleCount 必须在 1 到 20 之间</value></data>
   <data name="Validation_UserNameControlChars" xml:space="preserve"><value>Credentials.UserName 不能包含控制字符（换行、回车、制表符等）</value></data>
   <data name="Validation_UserNameEmpty" xml:space="preserve"><value>Credentials.UserName 不能为空</value></data>
+  <data name="Scan_Stalled" xml:space="preserve"><value>已 {0} 秒收不到任何设备的蓝牙广播：电脑的蓝牙接收似乎卡住了，正在自动恢复</value></data>
+  <data name="Scan_StalledFailed" xml:space="preserve"><value>蓝牙自动恢复失败：请关闭再打开蓝牙，或重启电脑</value></data>
+  <data name="Log_ScanStillStalledRetrying" xml:space="preserve"><value>蓝牙接收仍然卡住，重新尝试恢复</value></data>
+  <data name="Log_AdapterRestarting" xml:space="preserve"><value>重启扫描无效，正在重启蓝牙适配器 {0}</value></data>
+  <data name="Log_AdapterRestartFailed" xml:space="preserve"><value>重启蓝牙适配器失败：{0}</value></data>
+  <data name="Log_ScanRecovered" xml:space="preserve"><value>重新收到蓝牙广播，扫描已恢复</value></data>
+  <data name="Notify_ScanStalled" xml:space="preserve"><value>电脑的蓝牙收不到信号了。BleUnlock 正在自动恢复，恢复前暂停自动锁屏</value></data>
+  <data name="Notify_ScanStalledFailed" xml:space="preserve"><value>BleUnlock 无法自动恢复电脑的蓝牙。请关闭再打开蓝牙，或重启电脑。恢复前自动锁屏保持暂停</value></data>
+  <data name="Reason_ScanStalledDiscardsPrompt" xml:space="preserve"><value>蓝牙接收卡住，已撤回锁屏提示（收不到信号不代表人已离开）</value></data>
+  <data name="Reason_ScanStalledDisarms" xml:space="preserve"><value>蓝牙接收卡住，解锁前需要重新确认离开</value></data>
 </root>

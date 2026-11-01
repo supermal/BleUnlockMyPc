@@ -478,6 +478,8 @@
   <data name="Rules_S7_I4_V" xml:space="preserve"><value>pasa a Suspendido con notificación; si hay un aviso, se retira antes.</value></data>
   <data name="Rules_S7_I5_K" xml:space="preserve"><value>Suspendido:</value></data>
   <data name="Rules_S7_I5_V" xml:space="preserve"><value>ignora las lecturas y los bloqueos y desbloqueos; solo se reanuda cuando unas credenciales correctas pasan la verificación.</value></data>
+  <data name="Rules_S7_I6_K" xml:space="preserve"><value>Receptor Bluetooth bloqueado:</value></data>
+  <data name="Rules_S7_I6_V" xml:space="preserve"><value>Si durante 30 s no llega ningún anuncio de ningún dispositivo, el silencio deja de contar como salida: el aviso se retira, un desbloqueo armado debe volver a confirmar la salida y BleUnlock reinicia el escaneo, luego el adaptador, y te avisa.</value></data>
   <data name="Rules_S7_Title" xml:space="preserve"><value>Se aplica siempre</value></data>
   <data name="Rules_S8_B1_1" xml:space="preserve"><value>Te levantas y te vas; la lectura baja a {trig}: es el disparo y no cuenta.</value></data>
   <data name="Rules_S8_B1_2" xml:space="preserve"><value>Las siguientes {prompt} lecturas están por debajo de {lock} → aparece el aviso.</value></data>
@@ -520,6 +522,8 @@
   <data name="Scan_noAdapter" xml:space="preserve"><value>No hay adaptador Bluetooth compatible con BLE</value></data>
   <data name="Scan_radioOff" xml:space="preserve"><value>Bluetooth está desactivado</value></data>
   <data name="Scan_startFailed" xml:space="preserve"><value>No se pudo iniciar el escaneo</value></data>
+  <data name="Scan_stalled" xml:space="preserve"><value>El Bluetooth dejó de recibir señales; recuperando automáticamente (bloqueo automático en pausa)</value></data>
+  <data name="Scan_stalledFailed" xml:space="preserve"><value>El Bluetooth dejó de recibir señales y no se pudo recuperar: apaga y enciende el Bluetooth o reinicia el equipo (bloqueo automático en pausa)</value></data>
   <data name="Scan_unknown" xml:space="preserve"><value>El escaneo no está disponible</value></data>
   <data name="Settings_AppTheme" xml:space="preserve"><value>Tema de la aplicación</value></data>
   <data name="Settings_AppThemeHint" xml:space="preserve"><value>Se aplica al momento a toda la ventana y se mantiene la próxima vez.</value></data>

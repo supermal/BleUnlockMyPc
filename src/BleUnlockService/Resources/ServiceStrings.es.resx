@@ -168,4 +168,14 @@
   <data name="Validation_UnlockCountRange" xml:space="preserve"><value>Proximity.UnlockSampleCount debe estar entre 1 y 20</value></data>
   <data name="Validation_UserNameControlChars" xml:space="preserve"><value>Credentials.UserName no puede contener caracteres de control (saltos de línea, retornos de carro, tabulaciones, etc.)</value></data>
   <data name="Validation_UserNameEmpty" xml:space="preserve"><value>Credentials.UserName no puede estar vacío</value></data>
+  <data name="Scan_Stalled" xml:space="preserve"><value>No llega ningún anuncio Bluetooth de ningún dispositivo desde hace {0} s: el receptor Bluetooth del equipo parece bloqueado. Recuperando automáticamente</value></data>
+  <data name="Scan_StalledFailed" xml:space="preserve"><value>La recuperación automática del Bluetooth falló: apaga y vuelve a encender el Bluetooth o reinicia el equipo</value></data>
+  <data name="Log_ScanStillStalledRetrying" xml:space="preserve"><value>El receptor Bluetooth sigue bloqueado; se reintenta la recuperación</value></data>
+  <data name="Log_AdapterRestarting" xml:space="preserve"><value>Reiniciar el escaneo no bastó; reiniciando el adaptador Bluetooth {0}</value></data>
+  <data name="Log_AdapterRestartFailed" xml:space="preserve"><value>No se pudo reiniciar el adaptador Bluetooth: {0}</value></data>
+  <data name="Log_ScanRecovered" xml:space="preserve"><value>Vuelven a llegar anuncios Bluetooth; el escaneo se ha recuperado</value></data>
+  <data name="Notify_ScanStalled" xml:space="preserve"><value>El Bluetooth del equipo ha dejado de recibir señales. BleUnlock lo está recuperando automáticamente; el bloqueo automático queda en pausa hasta entonces</value></data>
+  <data name="Notify_ScanStalledFailed" xml:space="preserve"><value>BleUnlock no pudo recuperar el Bluetooth del equipo. Apaga y vuelve a encender el Bluetooth o reinicia el equipo. El bloqueo automático sigue en pausa hasta que vuelva a funcionar</value></data>
+  <data name="Reason_ScanStalledDiscardsPrompt" xml:space="preserve"><value>El receptor Bluetooth está bloqueado; se retiró el aviso de bloqueo (sin señal no significa que te hayas ido)</value></data>
+  <data name="Reason_ScanStalledDisarms" xml:space="preserve"><value>El receptor Bluetooth está bloqueado; hay que volver a confirmar la salida antes de desbloquear</value></data>
 </root>

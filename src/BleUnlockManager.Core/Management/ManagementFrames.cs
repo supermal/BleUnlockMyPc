@@ -30,7 +30,7 @@ public sealed record SnapshotFrame(
 public sealed record SnapshotState(string? Name, long? SinceMs);
 
 /// <summary>扫描健康：status 沿用服务端原文（取值钉死见 ManagementProtocol 注释）；detail 预留。</summary>
-/// <summary>Code: running | noAdapter | radioOff | startFailed (independiente del idioma). Status: texto del servicio.</summary>
+/// <summary>Code: running | noAdapter | radioOff | startFailed | stalled | stalledFailed (independiente del idioma). Status: texto del servicio.</summary>
 public sealed record SnapshotScan(string? Status, string? Detail, string? Code);
 
 /// <summary>管道连接态（助手/凭据）。</summary>

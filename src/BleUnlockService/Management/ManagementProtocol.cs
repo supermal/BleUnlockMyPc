@@ -47,7 +47,7 @@ public sealed record SnapshotFrame(
 // sinceMs = 进入当前状态的服务端 UTC 毫秒时间戳；服务刚启动尚未播种时为 null
 public sealed record SnapshotState(string? Name, long? SinceMs);
 
-// code: running | noAdapter | radioOff | startFailed (ScanStatus), estable e independiente del idioma:
+// code: running | noAdapter | radioOff | startFailed | stalled | stalledFailed (ScanStatus), estable e independiente del idioma:
 // es lo único que el gestor interpreta. status: texto en el idioma del servicio (solo informativo).
 // detail: mensaje original del error al arrancar, si lo hubo
 public sealed record SnapshotScan(string? Status, string? Detail, string? Code);

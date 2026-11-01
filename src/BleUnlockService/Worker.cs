@@ -38,6 +38,7 @@ public sealed class Worker(
     private ProximityStateMachine _machine = null!;
     private DateTimeOffset _lastSummary;
     private long _lastMatchTicks;
+    private bool _scanStalled;
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -141,6 +142,34 @@ public sealed class Worker(
     {
         log.LogInformation(ServiceStrings.Log_BleStatus, status.Text);
         telemetry.OnScanStatus(status);
+
+        // Solo stalled/stalledFailed y running cambian el estado del receptor; noAdapter o radioOff
+        // durante un reinicio del adaptador forman parte de la recuperación y no la terminan
+        switch (status.Code)
+        {
+            case ScanStatus.Stalled:
+                Volatile.Write(ref _scanStalled, true);
+                Transition(() => _machine.OnScanHealthChanged(stalled: true));
+                _ = NotifyScanAsync(ServiceStrings.Notify_ScanStalled);
+                break;
+
+            case ScanStatus.StalledFailed:
+                Volatile.Write(ref _scanStalled, true);
+                Transition(() => _machine.OnScanHealthChanged(stalled: true));
+                _ = NotifyScanAsync(ServiceStrings.Notify_ScanStalledFailed);
+                break;
+
+            case ScanStatus.Running when Volatile.Read(ref _scanStalled):
+                Volatile.Write(ref _scanStalled, false);
+                Transition(() => _machine.OnScanHealthChanged(stalled: false));
+                break;
+        }
+    }
+
+    private async Task NotifyScanAsync(string message)
+    {
+        try { await notifier.NotifyAsync(message, CancellationToken.None); }
+        catch (Exception ex) { log.LogError(ex, ServiceStrings.Log_ActionFailed, "NotifyScan"); }
     }
 
     // Telemetría: el progreso del lote se lee bajo el mismo candado que las transiciones
@@ -335,7 +364,8 @@ public sealed class Worker(
             _machine.State, batch.Length == 0 ? "" : string.Format(ServiceStrings.Log_SummaryBatch, batch), stats.Count,
             stats.Count == 0 ? double.NaN : stats.Average, sinceMatch);
 
-        if (sinceMatch > TimeSpan.FromMinutes(5).TotalSeconds)
+        // Con el receptor colgado no llega nada de nadie: la causa ya está en el registro y no es el IRK
+        if (sinceMatch > TimeSpan.FromMinutes(5).TotalSeconds && !Volatile.Read(ref _scanStalled))
             log.LogWarning(ServiceStrings.Log_NoMatchFiveMinutes);
 
         if (_credentialBudget.IsExhausted)

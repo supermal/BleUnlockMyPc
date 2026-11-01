@@ -66,6 +66,8 @@ public sealed class ProximityStateMachine
     // Se recuerda incluso en Suspended, para saber a que estado volver al reanudar
     private bool _screenLocked;
     private DateTimeOffset _unlockSentAt;
+    // Receptor Bluetooth colgado (ScanWatchdog): sin anuncios de nadie, el silencio no es prueba de nada
+    private bool _scanStalled;
 
     // —— 锁定侧批次（Unlocked / PendingLock / LockedWaitingDeparture） ——
     private bool _lockBatchActive;
@@ -345,6 +347,37 @@ public sealed class ProximityStateMachine
         return null;
     }
 
+    // Receptor colgado: el silencio deja de contar como salida (ni para avisar o bloquear, ni para armar
+    // el desbloqueo). Lo deducido en los segundos previos a detectarlo tampoco vale: el aviso se retira
+    // y un desbloqueo armado vuelve a exigir la salida. Al recuperarse, el silencio se cuenta desde
+    // cero, igual que tras una suspensión
+    public StateChange? OnScanHealthChanged(bool stalled)
+    {
+        if (stalled == _scanStalled) return null;
+        _scanStalled = stalled;
+
+        if (!stalled)
+        {
+            _lastRealRssi = null;
+            _lastRealAt = _time.GetUtcNow();
+            ResetSides(State);
+            return null;
+        }
+
+        switch (State)
+        {
+            case ProximityState.PendingLock:
+                return Transition(ProximityState.Unlocked, ProximityAction.CancelLockPrompt,
+                    ServiceStrings.Reason_ScanStalledDiscardsPrompt);
+            case ProximityState.LockedArmed:
+                return Transition(ProximityState.LockedWaitingDeparture, ProximityAction.None,
+                    ServiceStrings.Reason_ScanStalledDisarms);
+            default:
+                ResetSides(State);
+                return null;
+        }
+    }
+
     // —— 批次判定 ——
 
     // 锁定侧：消费新读数（第一个低于阈值的只做触发、不计入）；静默超过宽限后
@@ -389,6 +422,8 @@ public sealed class ProximityStateMachine
         // 静默：没有读数，但不等于「离开」。设备（手表/手机）会周期性停播省电：
         // 信号还强时的静默不是证据，注入会把打盹误判成离开——10/18 实测误弹的根源。
         // 只有两种情况补点：信号先变弱（最后一条读数已低于阈值），或完全无读数达到兜底时长。
+        if (_scanStalled) return false;
+
         var silence = now - _lockSilenceFrom;
         if (silence <= SilenceGrace) return false;
 

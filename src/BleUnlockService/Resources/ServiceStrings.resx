@@ -168,4 +168,14 @@
   <data name="Validation_UnlockCountRange" xml:space="preserve"><value>Proximity.UnlockSampleCount must be between 1 and 20</value></data>
   <data name="Validation_UserNameControlChars" xml:space="preserve"><value>Credentials.UserName cannot contain control characters (line breaks, carriage returns, tabs, etc.)</value></data>
   <data name="Validation_UserNameEmpty" xml:space="preserve"><value>Credentials.UserName cannot be empty</value></data>
+  <data name="Scan_Stalled" xml:space="preserve"><value>No Bluetooth advertisements from any device for {0} s: the PC's Bluetooth receiver seems stuck. Recovering automatically</value></data>
+  <data name="Scan_StalledFailed" xml:space="preserve"><value>Automatic Bluetooth recovery failed: turn Bluetooth off and on again, or restart the PC</value></data>
+  <data name="Log_ScanStillStalledRetrying" xml:space="preserve"><value>The Bluetooth receiver is still stuck; retrying the recovery</value></data>
+  <data name="Log_AdapterRestarting" xml:space="preserve"><value>Restarting the scan did not help; restarting the Bluetooth adapter {0}</value></data>
+  <data name="Log_AdapterRestartFailed" xml:space="preserve"><value>Could not restart the Bluetooth adapter: {0}</value></data>
+  <data name="Log_ScanRecovered" xml:space="preserve"><value>Bluetooth advertisements are arriving again; scanning recovered</value></data>
+  <data name="Notify_ScanStalled" xml:space="preserve"><value>The PC's Bluetooth has stopped receiving signals. BleUnlock is recovering it automatically; automatic locking is paused until then</value></data>
+  <data name="Notify_ScanStalledFailed" xml:space="preserve"><value>BleUnlock could not recover the PC's Bluetooth. Turn Bluetooth off and on again, or restart the PC. Automatic locking stays paused until it works again</value></data>
+  <data name="Reason_ScanStalledDiscardsPrompt" xml:space="preserve"><value>The Bluetooth receiver is stuck; the lock prompt was withdrawn (no signal does not mean you left)</value></data>
+  <data name="Reason_ScanStalledDisarms" xml:space="preserve"><value>The Bluetooth receiver is stuck; departure must be confirmed again before unlocking</value></data>
 </root>

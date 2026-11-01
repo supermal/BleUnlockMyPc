@@ -26,7 +26,10 @@ public sealed class BleBondClientTests
             using var reader = new StreamReader(
                 server, new UTF8Encoding(false), detectEncodingFromByteOrderMarks: false,
                 bufferSize: 4096, leaveOpen: true);
-            using var writer = new StreamWriter(
+            // Sin using: Dispose vacía el búfer contra el tubo y, si el cliente ya cerró (caso normal
+            // en los tests de respuesta ilegible), lanza «Pipe is broken» de forma intermitente.
+            // AutoFlush ya ha enviado todo y el tubo lo cierra el servidor
+            var writer = new StreamWriter(
                 server, new UTF8Encoding(false), bufferSize: 4096, leaveOpen: true)
             {
                 AutoFlush = true
