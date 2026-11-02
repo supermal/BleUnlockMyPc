@@ -1,0 +1,296 @@
+<UserControl
+    x:Class="BleUnlockManager.Views.SetupWizardDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:BleUnlockManager.Localization"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Width="640"
+    AutomationProperties.Name="{loc:Loc Wizard_Title}"
+    KeyboardNavigation.TabNavigation="Cycle"
+    PreviewKeyDown="OnPreviewKeyDown">
+
+    <UserControl.Resources>
+        <!--  Fila de dispositivo emparejado; los no compatibles quedan deshabilitados y atenuados  -->
+        <Style x:Key="BondItem" TargetType="ListBoxItem">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource Ui.FocusVisual}" />
+            <!--  El estilo de tema del sistema (Aero2) fija el texto en negro: se usa el pincel del tema  -->
+            <Setter Property="Foreground" Value="{DynamicResource Ui.Text.Primary}" />
+            <Setter Property="IsEnabled" Value="{Binding IsSupported}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border
+                            x:Name="Row"
+                            MinHeight="48"
+                            Padding="12,6"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource Ui.Stroke.Divider}"
+                            BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse
+                                    x:Name="Dot"
+                                    Width="16"
+                                    Height="16"
+                                    HorizontalAlignment="Left"
+                                    Stroke="{DynamicResource Ui.Stroke.Control.Strong}"
+                                    StrokeThickness="1" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock
+                                        x:Name="Note"
+                                        Foreground="{DynamicResource Ui.Status.Warning.Fg}"
+                                        Style="{StaticResource Ui.TextStyle.Caption}"
+                                        Text="{Binding Note}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <TextBlock
+                                    Grid.Column="2"
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource Ui.Font.Mono}"
+                                    Style="{StaticResource Ui.TextStyle.Caption}"
+                                    Text="{Binding Address}" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSupported}" Value="True">
+                                <Setter TargetName="Note" Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Row" Property="Opacity" Value="0.6" />
+                                <Setter TargetName="Dot" Property="Visibility" Value="Hidden" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Hover}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource Ui.Bg.Subtle.Selected}" />
+                                <Setter TargetName="Dot" Property="Stroke" Value="{DynamicResource Ui.Primary}" />
+                                <Setter TargetName="Dot" Property="StrokeThickness" Value="5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HelpItem" TargetType="TextBlock" BasedOn="{StaticResource Ui.TextStyle.Secondary}">
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Resources>
+
+    <Border
+        Background="{DynamicResource Ui.Bg.Island}"
+        BorderBrush="{DynamicResource Ui.Stroke.Card}"
+        BorderThickness="1"
+        CornerRadius="{StaticResource Ui.Radius.Card}">
+        <Border.Effect>
+            <DropShadowEffect
+                BlurRadius="48"
+                Opacity="0.25"
+                ShadowDepth="16" />
+        </Border.Effect>
+        <DockPanel>
+            <!--  Pie: «omitir» a la izquierda, navegación a la derecha (principal al final)  -->
+            <Border
+                Padding="24,16"
+                Background="{DynamicResource Ui.Bg.Layer}"
+                BorderBrush="{DynamicResource Ui.Stroke.Divider}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="0,0,8,8"
+                DockPanel.Dock="Bottom">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="BackButton" Margin="8,0,0,0" Click="OnBackClicked" Content="{loc:Loc Wizard_Back}" Style="{StaticResource Ui.Button.Secondary}" />
+                        <Button x:Name="SkipPasswordButton" Margin="8,0,0,0" Click="OnSkipPasswordClicked" Content="{loc:Loc Wizard_SkipPassword}" Style="{StaticResource Ui.Button.Secondary}" />
+                        <Button x:Name="BackToFixButton" Margin="8,0,0,0" Click="OnBackToFixClicked" Content="{loc:Loc Wizard_BackToFix}" Style="{StaticResource Ui.Button.Secondary}" />
+                        <Button x:Name="NextButton" Margin="8,0,0,0" Click="OnNextClicked" Content="{loc:Loc Wizard_Next}" Style="{StaticResource Ui.Button.Primary}" />
+                        <Button x:Name="SaveButton" Margin="8,0,0,0" Click="OnSaveClicked" Content="{loc:Loc Wizard_SaveFinish}" Style="{StaticResource Ui.Button.Primary}" />
+                        <Button x:Name="FinishButton" Margin="8,0,0,0" Click="OnFinishClicked" Content="{loc:Loc Wizard_Finish}" Style="{StaticResource Ui.Button.Primary}" />
+                    </StackPanel>
+                    <Button
+                        x:Name="SkipButton"
+                        HorizontalAlignment="Left"
+                        Click="OnSkipClicked"
+                        Content="{loc:Loc Wizard_Skip}"
+                        Style="{StaticResource Ui.Button.Subtle}" />
+                </DockPanel>
+            </Border>
+
+            <StackPanel Margin="24,24,24,20">
+                <DockPanel Margin="0,0,0,4">
+                    <Button
+                        x:Name="CloseButton"
+                        Width="32"
+                        Height="32"
+                        AutomationProperties.Name="{loc:Loc Wizard_Skip}"
+                        Click="OnSkipClicked"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource Ui.Button.Icon}"
+                        ToolTip="{loc:Loc Wizard_Skip}">
+                        <ui:SymbolIcon Symbol="Dismiss16" />
+                    </Button>
+                    <TextBlock Style="{StaticResource Ui.TextStyle.Subtitle}" Text="{loc:Loc Wizard_Title}" />
+                </DockPanel>
+                <TextBlock x:Name="StepText" Margin="0,0,0,16" Style="{StaticResource Ui.TextStyle.Secondary}" />
+
+                <!--  La barra de desplazamiento ocupa el margen derecho del diálogo, no el contenido  -->
+                <ScrollViewer
+                    MaxHeight="440"
+                    Margin="0,0,-16,0"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="0,0,16,0">
+                        <!--  ===== Paso 1: dispositivo =====  -->
+                        <StackPanel x:Name="DevicePanel">
+                            <TextBlock Margin="0,0,0,12" Text="{loc:Loc Wizard_DeviceIntro}" TextWrapping="Wrap" />
+                            <Border
+                                BorderBrush="{DynamicResource Ui.Stroke.Card}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource Ui.Radius.Card}">
+                                <DockPanel>
+                                    <Border
+                                        Padding="12,8"
+                                        Background="{DynamicResource Ui.Bg.Layer}"
+                                        BorderBrush="{DynamicResource Ui.Stroke.Divider}"
+                                        BorderThickness="0,0,0,1"
+                                        CornerRadius="8,8,0,0"
+                                        DockPanel.Dock="Top">
+                                        <DockPanel>
+                                            <ui:ProgressRing
+                                                x:Name="DevicesProgress"
+                                                Width="14"
+                                                Height="14"
+                                                Margin="0,0,8,0"
+                                                IsIndeterminate="True"
+                                                Visibility="Collapsed" />
+                                            <TextBlock x:Name="DevicesStatusText" Style="{StaticResource Ui.TextStyle.Caption}" TextWrapping="Wrap" />
+                                        </DockPanel>
+                                    </Border>
+                                    <ListBox
+                                        x:Name="DeviceList"
+                                        MinHeight="96"
+                                        MaxHeight="200"
+                                        AutomationProperties.Name="{loc:Loc Wizard_DevicesHeader}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        ItemContainerStyle="{StaticResource BondItem}"
+                                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                        SelectionChanged="OnDeviceSelectionChanged" />
+                                </DockPanel>
+                            </Border>
+
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button Margin="0,0,8,8" Click="OnPairNewClicked" Style="{StaticResource Ui.Button.Secondary}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Margin="0,0,8,0" Symbol="Add16" />
+                                        <TextBlock Text="{loc:Loc Wizard_PairNew}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Margin="0,0,8,8" Click="OnOpenBluetoothSettingsClicked" Style="{StaticResource Ui.Button.Secondary}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Margin="0,0,8,0" Symbol="Bluetooth20" />
+                                        <TextBlock Text="{loc:Loc Wizard_OpenBtSettings}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Margin="0,0,8,8" Click="OnRefreshClicked" Style="{StaticResource Ui.Button.Secondary}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Margin="0,0,8,0" Symbol="ArrowClockwise16" />
+                                        <TextBlock Text="{loc:Loc Wizard_Refresh}" />
+                                    </StackPanel>
+                                </Button>
+                            </WrapPanel>
+
+                            <Button
+                                x:Name="HelpToggle"
+                                Margin="0,4,0,0"
+                                HorizontalAlignment="Left"
+                                Click="OnHelpToggleClicked"
+                                Style="{StaticResource Ui.Button.Subtle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon x:Name="HelpChevron" Margin="0,0,8,0" Symbol="ChevronRight16" />
+                                    <TextBlock Text="{loc:Loc Wizard_HelpTitle}" />
+                                </StackPanel>
+                            </Button>
+                            <Border
+                                x:Name="HelpPanel"
+                                Margin="0,8,0,0"
+                                Padding="16,12,16,4"
+                                Background="{DynamicResource Ui.Bg.Layer}"
+                                CornerRadius="{StaticResource Ui.Radius.Card}"
+                                Visibility="Collapsed">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource HelpItem}" Text="{loc:Loc Wizard_HelpAppleWatch}" />
+                                    <TextBlock Style="{StaticResource HelpItem}" Text="{loc:Loc Wizard_HelpIphone}" />
+                                    <TextBlock Style="{StaticResource HelpItem}" Text="{loc:Loc Wizard_HelpAndroid}" />
+                                    <TextBlock Style="{StaticResource HelpItem}" Text="{loc:Loc Wizard_HelpBand}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!--  ===== Paso 2: cuenta de Windows =====  -->
+                        <StackPanel x:Name="CredentialsPanel" Visibility="Collapsed">
+                            <TextBlock Margin="0,0,0,16" Text="{loc:Loc Wizard_CredIntro}" TextWrapping="Wrap" />
+
+                            <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="{loc:Loc Wizard_UserName}" />
+                            <ui:TextBox x:Name="UserNameBox" AutomationProperties.Name="{loc:Loc Wizard_UserName}" />
+                            <TextBlock Margin="0,4,0,16" Style="{StaticResource Ui.TextStyle.Caption}" Text="{loc:Loc Wizard_UserNameHint}" TextWrapping="Wrap" />
+
+                            <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="{loc:Loc Wizard_Password}" />
+                            <ui:PasswordBox x:Name="PasswordBox" AutomationProperties.Name="{loc:Loc Wizard_Password}" />
+                            <TextBlock Margin="0,4,0,0" Style="{StaticResource Ui.TextStyle.Caption}" Text="{loc:Loc Wizard_PasswordHint}" TextWrapping="Wrap" />
+
+                            <TextBlock
+                                x:Name="CredentialsError"
+                                Margin="0,12,0,0"
+                                Foreground="{DynamicResource Ui.Status.Danger.Fg}"
+                                TextWrapping="Wrap"
+                                Visibility="Collapsed" />
+                        </StackPanel>
+
+                        <!--  ===== Paso 3: guardar y resultado =====  -->
+                        <StackPanel x:Name="ResultPanel" Visibility="Collapsed">
+                            <StackPanel x:Name="SavingRow" Orientation="Horizontal">
+                                <ui:ProgressRing
+                                    Width="16"
+                                    Height="16"
+                                    Margin="0,0,8,0"
+                                    IsIndeterminate="True" />
+                                <TextBlock Text="{loc:Loc Wizard_Saving}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Border
+                                x:Name="ResultBox"
+                                Padding="16,12"
+                                CornerRadius="{StaticResource Ui.Radius.Card}"
+                                Visibility="Collapsed">
+                                <DockPanel>
+                                    <ui:SymbolIcon
+                                        x:Name="ResultIcon"
+                                        Margin="0,2,12,0"
+                                        VerticalAlignment="Top"
+                                        DockPanel.Dock="Left"
+                                        FontSize="18" />
+                                    <StackPanel>
+                                        <TextBlock x:Name="ResultTitle" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="ResultMessage" Margin="0,4,0,0" TextWrapping="Wrap" />
+                                        <TextBlock
+                                            x:Name="ResultDetail"
+                                            Margin="0,8,0,0"
+                                            Style="{StaticResource Ui.TextStyle.Secondary}"
+                                            TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</UserControl>

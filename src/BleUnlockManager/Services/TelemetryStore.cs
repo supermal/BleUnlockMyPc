@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Threading;
 using BleUnlockManager.Core;
+using BleUnlockManager.Core.Config;
 using BleUnlockManager.Core.Localization;
 using BleUnlockManager.Core.Management;
 using BleUnlockManager.Core.Telemetry;
@@ -86,6 +87,9 @@ public sealed class TelemetryStore : ObservableObject, IDisposable
     public ServiceStatusKind ServiceStatus { get; private set; }
 
     public TrayState TrayState => _model.TrayState;
+
+    /// <summary>Lo que falta por configurar según el servicio conectado (sin conexión: completa).</summary>
+    public SetupState Setup => _model.Setup;
 
     public TrayTooltip Tooltip => _model.Tooltip(_device.DeviceName);
 

@@ -94,6 +94,14 @@ public partial class OverviewPage : UserControl
         }
     }
 
+    private async void OnRunSetupWizardClicked(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow window)
+        {
+            await window.ShowSetupWizardAsync();
+        }
+    }
+
     private async void OnExportCsvClicked(object sender, RoutedEventArgs e)
     {
         var dialog = new SaveFileDialog

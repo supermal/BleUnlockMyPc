@@ -24,7 +24,8 @@ public sealed record SnapshotFrame(
     SnapshotAverages? Avg,
     long? LastMatchMs,
     long[][]? Samples,
-    SnapshotBatch? Batch = null) : ManagementFrame(T);
+    SnapshotBatch? Batch = null,
+    string? Setup = null) : ManagementFrame(T);
 
 /// <summary>状态机：sinceMs = 进入当前状态的服务端 UTC 毫秒（未播种时为空）。</summary>
 public sealed record SnapshotState(string? Name, long? SinceMs);

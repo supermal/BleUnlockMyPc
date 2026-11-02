@@ -72,6 +72,23 @@ public sealed class BleBondClientTests
     }
 
     [Fact]
+    public async Task List_conserva_los_dispositivos_sin_irk_como_no_compatibles()
+    {
+        var pipeName = NewPipeName();
+        var serverTask = RunFakeServerAsync(
+            pipeName,
+            """{"t":"res","id":1,"ok":true,"devices":[{"addr":"11:22:33:44:55:66","name":"Pulsera","irk":""},{"addr":"55:A2:DC:A6:30:DB","name":"Apple Watch","irk":"00112233445566778899aabbccddeeff"}]}""");
+
+        var result = await new BleBondClient(pipeName).ListAsync(TimeSpan.FromSeconds(5));
+
+        await serverTask.WaitAsync(TestTimeout);
+        Assert.Equal(2, result.Devices.Count);
+        Assert.False(result.Devices[0].IsSupported);
+        Assert.Equal("", result.Devices[0].Irk);
+        Assert.True(result.Devices[1].IsSupported);
+    }
+
+    [Fact]
     public async Task List_devuelve_el_error_del_servicio()
     {
         var pipeName = NewPipeName();

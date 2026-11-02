@@ -86,11 +86,13 @@
   <data name="Validation_ThresholdOrder" xml:space="preserve"><value>{0} debe ser mayor que LockThresholdDbm; si no, la zona muerta es negativa</value></data>
   <data name="Validation_UnlockCountRange" xml:space="preserve"><value>{0} debe estar entre 1 y 20</value></data>
   <data name="Validation_UserNameControlChars" xml:space="preserve"><value>{0} no puede contener caracteres de control (saltos de línea, retornos de carro, tabulaciones, etc.)</value></data>
-  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>{0} no puede estar vacío</value></data>
   <data name="Value_Empty" xml:space="preserve"><value>(vacío)</value></data>
   <data name="Value_Encrypted" xml:space="preserve"><value>(cifrado)</value></data>
   <data name="Value_NotSet" xml:space="preserve"><value>(sin definir)</value></data>
   <data name="Zone_Away" xml:space="preserve"><value>Zona lejana</value></data>
   <data name="Zone_Hold" xml:space="preserve"><value>Zona de espera</value></data>
   <data name="Zone_Near" xml:space="preserve"><value>Zona cercana</value></data>
+  <data name="Tray_NeedsSetupTitle" xml:space="preserve"><value>Falta terminar la configuración</value></data>
+  <data name="Tray_NoDeviceHint" xml:space="preserve"><value>Sin dispositivo de desbloqueo; abre el Gestor para terminar</value></data>
+  <data name="Tray_NoCredentialsHint" xml:space="preserve"><value>Sin contraseña: solo bloquea, no desbloquea</value></data>
 </root>

@@ -227,4 +227,70 @@ public class OptionsGateTests
         Assert.Equal(IrkB, gate.Current.Device.Irk);
         Assert.Contains(log.Messages, m => m.Contains("Device.Irk 以明文存储"));
     }
+
+    // —— Equipo sin configurar (2026-11-02): la configuración vacía es válida, pero no puede borrar una buena ——
+
+    private static (OptionsGate Gate, FakeTimeProvider Time, List<OptionsChange> Changes) BuildFrom(BleUnlockOptions initial)
+    {
+        var time = new FakeTimeProvider();
+        var gate = new OptionsGate(initial, NullLogger<OptionsGate>.Instance, time, Debounce);
+        var changes = new List<OptionsChange>();
+        gate.Changed += changes.Add;
+        return (gate, time, changes);
+    }
+
+    [Fact]
+    public void Quitar_el_dispositivo_con_el_irk_de_relleno_se_acepta()
+    {
+        var (gate, time, changes) = Build();
+
+        gate.Submit(Options(irk: ConfigCompleteness.PlaceholderIrk));
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        var change = Assert.Single(changes);
+        Assert.True(change.DeviceChanged);
+        Assert.False(ConfigCompleteness.HasDevice(gate.Current.Device));
+    }
+
+    [Fact]
+    public void Un_irk_vaciado_con_dispositivo_configurado_se_rechaza()
+    {
+        var (gate, time, changes) = Build();
+
+        gate.Submit(Options(irk: ""));
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Empty(changes);
+        Assert.Equal(IrkA, gate.Current.Device.Irk);
+    }
+
+    [Fact]
+    public void Credenciales_vaciadas_del_todo_se_rechazan_pero_solo_la_clave_se_acepta()
+    {
+        var (gate, time, changes) = Build();
+
+        gate.Submit(Options(user: "", pass: ""));
+        time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Empty(changes);
+
+        gate.Submit(Options(pass: ""));
+        time.Advance(TimeSpan.FromSeconds(1));
+        var change = Assert.Single(changes);
+        Assert.True(change.CredentialsChanged);
+        Assert.False(ConfigCompleteness.HasCredentials(gate.Current.Credentials));
+    }
+
+    [Fact]
+    public void Un_equipo_sin_configurar_acepta_su_primer_dispositivo_y_credenciales()
+    {
+        var (gate, time, changes) = BuildFrom(new BleUnlockOptions());
+
+        gate.Submit(Options());
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        var change = Assert.Single(changes);
+        Assert.True(change.DeviceChanged);
+        Assert.True(change.CredentialsChanged);
+        Assert.Equal(SetupState.Complete, ConfigCompleteness.Evaluate(gate.Current));
+    }
 }

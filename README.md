@@ -67,11 +67,7 @@ dotnet test tests\BleUnlockManager.Tests\BleUnlockManager.Tests.csproj
 
 脚本动作概述：停止并删除旧服务 → 结束正在运行的管理端 → 部署服务、助手与凭据提供程序（服务与助手必须同目录：服务按安装目录查找 `BleUnlockHelper.exe`）→ 生成或保留配置 → 用 `icacls` 收紧配置目录权限（仅 SYSTEM 与 Administrators；含对既有文件的修复与回读断言）→ 用 `regsvr32` 注册凭据提供程序 → 注册事件日志源 `BleUnlock` → 创建服务（延迟自动启动、失败自动重启）→ 部署管理端到 `Manager` 子目录 → 创建开始菜单快捷方式 → 注册计划任务 `BleUnlockManager`（登录自启、最高权限）→ 立即启动管理端。
 
-**配置未填写完整时脚本不会启动服务**。按提示编辑 `%ProgramData%\BleUnlock\appsettings.json`（填入 `Device.Irk`、`Credentials.UserName` 与 `Password`），然后执行：
-
-```powershell
-Start-Service BleUnlockService
-```
+**服务总是会启动**，配置没填完也一样：没有设备时服务处于「未配置」状态（不监测任何设备），并照常提供已配对设备列表；管理器启动后自动打开设置向导（选设备 → 填 Windows 账户 → 保存，立即生效）。只选了设备、没填用户名或密码时，只自动锁屏、不自动解锁。
 
 日志目录：`%ProgramData%\BleUnlock\logs\`（权限收紧后普通用户读不了，需管理员）。
 
@@ -82,7 +78,7 @@ Start-Service BleUnlockService
 | 参数 | 默认值 | 说明 |
 |------|-------|------|
 | `LockThresholdDbm` | -80 | 低于此值视为离开（触发读数不计入批次） |
-| `UnlockThresholdDbm` | -45 | 高于此值视为靠近（触发读数不计入批次） |
+| `UnlockThresholdDbm` | -65 | 高于此值视为靠近（触发读数不计入批次） |
 | `UnlockSampleCount` | 3 | 解锁确认个数：触发后再收 N 个读数，**全部**高于解锁阈值才推送凭据；锁屏提示出现时，**全部**高于**锁定**阈值即撤回提示 |
 | `LockPromptSampleCount` | 5 | 弹窗触发个数：触发后再收 N 个读数，**全部**低于锁定阈值才弹窗（静默补点仅在信号先变弱或完全无读数 60 s+ 时启用，见下） |
 | `LockConfirmSampleCount` | 10 | 锁屏确认个数：弹窗后新收 N 个读数**全部**低于锁定阈值才锁屏（静默补点规则同上） |
@@ -116,7 +112,7 @@ Start-Service BleUnlockService
     },
     "Proximity": {
       "LockThresholdDbm": -80,
-      "UnlockThresholdDbm": -45,
+      "UnlockThresholdDbm": -65,
       "UnlockSampleCount": 3,
       "LockPromptSampleCount": 5,
       "LockConfirmSampleCount": 10,
@@ -138,7 +134,7 @@ Start-Service BleUnlockService
 - `Irk` / `IrkByteOrder` / `IdentityAddress`：变更会重建解析缓存并清空 RSSI 历史。
 - 凭据（`UserName` / `Password`）：变更会重新预验证，通过则解除停摆；密文无法解密（如跨机器拷贝）按配置无效处理（热重载保留原配置）。
 - `Notification.Mode`：在服务启动时读取，修改后需重启服务生效。
-- 配置无效时服务拒绝启动（退出码 1，日志记 `[FTL] 配置无效，服务拒绝启动：…`，事件源 `BleUnlock`）。
+- 配置无效时服务拒绝启动（退出码 1，日志记 `[FTL] 配置无效，服务拒绝启动：…`，事件源 `BleUnlock`）。设备或凭据**为空**不算无效：服务以「未配置 / 只锁不解」状态运行。但原本有值、热重载时变成空值，会被当作文件损坏而拒绝这次加载（保留原配置）。
 
 ### 敏感字段加密（IRK / 密码）
 

@@ -597,4 +597,52 @@
   <data name="Zone_Away" xml:space="preserve"><value>离开区</value></data>
   <data name="Zone_Hold" xml:space="preserve"><value>保持区</value></data>
   <data name="Zone_Near" xml:space="preserve"><value>靠近区</value></data>
+  <data name="Setup_BannerNoDeviceTitle" xml:space="preserve"><value>BleUnlock 尚未设置</value></data>
+  <data name="Setup_BannerNoDeviceMessage" xml:space="preserve"><value>还没有选择解锁设备，目前不会自动锁屏或解锁。</value></data>
+  <data name="Setup_BannerNoCredentialsTitle" xml:space="preserve"><value>还没有填写 Windows 密码</value></data>
+  <data name="Setup_BannerNoCredentialsMessage" xml:space="preserve"><value>离开时会自动锁屏，但回来不会自动解锁。</value></data>
+  <data name="Setup_RunWizard" xml:space="preserve"><value>运行设置向导</value></data>
+  <data name="Wizard_Title" xml:space="preserve"><value>设置 BleUnlock</value></data>
+  <data name="Wizard_StepOf" xml:space="preserve"><value>第 {0} 步，共 3 步：{1}</value></data>
+  <data name="Wizard_Step1Name" xml:space="preserve"><value>选择解锁设备</value></data>
+  <data name="Wizard_Step2Name" xml:space="preserve"><value>填写 Windows 登录账户</value></data>
+  <data name="Wizard_Step3Name" xml:space="preserve"><value>完成</value></data>
+  <data name="Wizard_DeviceIntro" xml:space="preserve"><value>选择你随身携带的手机或手表。它必须先与这台电脑配对；还没配对的话，点「配对新设备…」。</value></data>
+  <data name="Wizard_PairNew" xml:space="preserve"><value>配对新设备…</value></data>
+  <data name="Wizard_OpenBtSettings" xml:space="preserve"><value>打开 Windows 蓝牙设置</value></data>
+  <data name="Wizard_Refresh" xml:space="preserve"><value>刷新列表</value></data>
+  <data name="Wizard_DevicesHeader" xml:space="preserve"><value>已与这台电脑配对的设备</value></data>
+  <data name="Wizard_Unsupported" xml:space="preserve"><value>不支持：该设备没有身份密钥</value></data>
+  <data name="Wizard_ReadingDevices" xml:space="preserve"><value>正在读取已配对的设备…</value></data>
+  <data name="Wizard_NoDevices" xml:space="preserve"><value>还没有可用的已配对设备。请先配对你的手机或手表。</value></data>
+  <data name="Wizard_DevicesFound" xml:space="preserve"><value>找到 {0} 台可用设备，请选择一台。</value></data>
+  <data name="Wizard_DevicesReadFailed" xml:space="preserve"><value>读取已配对设备失败：{0}</value></data>
+  <data name="Wizard_HelpTitle" xml:space="preserve"><value>不知道怎么配对？</value></data>
+  <data name="Wizard_HelpAppleWatch" xml:space="preserve"><value>Apple Watch：点「配对新设备…」，选「手机 / 手表」并开始广播；然后在手表上打开 设置 › 蓝牙，在「健康设备」里点这台电脑。</value></data>
+  <data name="Wizard_HelpIphone" xml:space="preserve"><value>iPhone：系统的蓝牙设置里看不到电脑。点「配对新设备…」开始广播后，用 nRF Connect 等蓝牙工具 App 连接这台电脑并确认配对。</value></data>
+  <data name="Wizard_HelpAndroid" xml:space="preserve"><value>安卓手机：点「打开 Windows 蓝牙设置」→ 添加设备 → 蓝牙，同时在手机上打开蓝牙设置页并保持可被发现。配对后如果列表里显示「不支持」，改用「配对新设备…」的广播方式，用 nRF Connect 连接。</value></data>
+  <data name="Wizard_HelpBand" xml:space="preserve"><value>手环和其他手表：先让它进入配对模式，点「配对新设备…」，选「耳机 / 鼠标 / 键盘」扫描并配对。很多手环只能和自己的 App 配对，这类设备无法用于解锁。</value></data>
+  <data name="Wizard_Skip" xml:space="preserve"><value>跳过，稍后设置</value></data>
+  <data name="Wizard_Next" xml:space="preserve"><value>下一步</value></data>
+  <data name="Wizard_Back" xml:space="preserve"><value>上一步</value></data>
+  <data name="Wizard_CredIntro" xml:space="preserve"><value>填写这台电脑的 Windows 登录账户。BleUnlock 只在你回到电脑前时用它解锁，密码在本机加密保存。</value></data>
+  <data name="Wizard_UserName" xml:space="preserve"><value>用户名</value></data>
+  <data name="Wizard_UserNameHint" xml:space="preserve"><value>本地账户填用户名；用微软账户登录的，填账户邮箱（例如 name@outlook.com）。</value></data>
+  <data name="Wizard_Password" xml:space="preserve"><value>密码</value></data>
+  <data name="Wizard_PasswordHint" xml:space="preserve"><value>填 Windows 登录密码，不是 PIN。</value></data>
+  <data name="Wizard_SkipPassword" xml:space="preserve"><value>暂不填写（只自动锁屏）</value></data>
+  <data name="Wizard_SaveFinish" xml:space="preserve"><value>保存并完成</value></data>
+  <data name="Wizard_UserNameRequired" xml:space="preserve"><value>请填写用户名，或点「暂不填写」。</value></data>
+  <data name="Wizard_PasswordRequired" xml:space="preserve"><value>请填写密码，或点「暂不填写」。</value></data>
+  <data name="Wizard_Saving" xml:space="preserve"><value>正在保存并等待服务应用新配置…</value></data>
+  <data name="Wizard_DoneTitle" xml:space="preserve"><value>设置完成</value></data>
+  <data name="Wizard_DoneFull" xml:space="preserve"><value>解锁设备：{0}。带着它离开电脑时会自动锁屏，回来时自动解锁。如果安装后还没有重启过电脑，锁屏界面的自动解锁要重启后才可用。</value></data>
+  <data name="Wizard_DoneLockOnly" xml:space="preserve"><value>解锁设备：{0}。离开时会自动锁屏；因为没有填写密码，回来不会自动解锁。之后可以在「配置」页或再次运行设置向导补填。</value></data>
+  <data name="Wizard_FailedTitle" xml:space="preserve"><value>没有完成设置</value></data>
+  <data name="Wizard_Finish" xml:space="preserve"><value>完成</value></data>
+  <data name="Wizard_BackToFix" xml:space="preserve"><value>返回修改</value></data>
+  <data name="Wizard_ServiceStartFailed" xml:space="preserve"><value>配置已保存，但服务没能启动：{0}</value></data>
+  <data name="Pair_PairedButUnsupported" xml:space="preserve"><value>已配对「{0}」，但它没有身份密钥，无法用于解锁。请换一台设备，或换一种配对方式。</value></data>
+  <data name="Rules_S7_I7_K" xml:space="preserve"><value>未设置完成：</value></data>
+  <data name="Rules_S7_I7_V" xml:space="preserve"><value>还没有选择设备时不监测任何设备，既不锁屏也不解锁；选了设备但没有填写 Windows 用户名或密码时，离开照常自动锁屏，回来不自动解锁。补全后立即生效，不用重启服务。</value></data>
 </root>

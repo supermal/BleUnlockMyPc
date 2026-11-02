@@ -42,7 +42,9 @@ public sealed record SnapshotFrame(
     SnapshotAverages Avg,
     long? LastMatchMs,
     IReadOnlyList<long[]> Samples,
-    SnapshotBatch? Batch = null);
+    SnapshotBatch? Batch = null,
+    // v1, campo añadido: qué falta por configurar (noDevice | noCredentials); null = configuración completa
+    string? Setup = null);
 
 // sinceMs = 进入当前状态的服务端 UTC 毫秒时间戳；服务刚启动尚未播种时为 null
 public sealed record SnapshotState(string? Name, long? SinceMs);

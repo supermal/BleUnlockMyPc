@@ -12,6 +12,12 @@ public sealed record BleBondDevice(string Address, string? Name, string Irk)
     public string DisplayName => string.IsNullOrWhiteSpace(Name)
         ? Address
         : string.Format(CoreStrings.Bond_NameWithAddress, Name, Address);
+
+    /// <summary>
+    /// 能否用于解锁：只有配对时交换了身份密钥（IRK）的设备才能在随机地址下被认出。
+    /// 没有 IRK 的设备服务也会列出（IRK 为空），管理端显示为「不支持」。
+    /// </summary>
+    public bool IsSupported => Irk.Length > 0;
 }
 
 /// <summary>读取结果；<c>Error</c> 非空表示本次读取失败（可直接呈现给用户）。</summary>
@@ -105,8 +111,9 @@ public sealed class BleBondClient
             }
 
             var devices = (response.Devices ?? [])
-                .Where(d => !string.IsNullOrWhiteSpace(d.Addr) && !string.IsNullOrWhiteSpace(d.Irk))
-                .Select(d => new BleBondDevice(d.Addr.Trim(), d.Name, d.Irk.Trim().ToUpperInvariant()))
+                // IRK 为空 = 设备没有身份密钥（不支持），仍保留以便向导说明原因
+                .Where(d => !string.IsNullOrWhiteSpace(d.Addr))
+                .Select(d => new BleBondDevice(d.Addr.Trim(), d.Name, (d.Irk ?? "").Trim().ToUpperInvariant()))
                 .ToList();
 
             return new BleBondListResult(devices, null);
@@ -138,5 +145,5 @@ public sealed class BleBondClient
         IReadOnlyList<BondDeviceFrame>? Devices,
         string? Error);
 
-    private sealed record BondDeviceFrame(string Addr, string? Name, string Irk);
+    private sealed record BondDeviceFrame(string Addr, string? Name, string? Irk);
 }

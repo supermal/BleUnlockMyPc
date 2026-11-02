@@ -15,7 +15,10 @@ public sealed class DeviceMatcher
 
     public void Configure(DeviceOptions device)
     {
-        var normalized = OptionsValidator.NormalizeIrk(device.Irk);
+        // El IRK de relleno (todo ceros) no es un dispositivo: no se busca a nadie con él
+        var normalized = OptionsValidator.NormalizeIrk(device.Irk) is { } irk && irk != ConfigCompleteness.PlaceholderIrk
+            ? irk
+            : null;
         lock (_lock)
         {
             _identityAddress = OptionsValidator.NormalizeAddress(device.IdentityAddress);

@@ -64,6 +64,9 @@ public partial class App : Application
         _services.GetRequiredService<LogsViewModel>().Initialize();
 
         TryInitializeTray();
+
+        // Equipo recién instalado (sin dispositivo): se abre directamente el asistente de configuración
+        window.OfferSetupWizardIfNeeded();
     }
 
     protected override void OnExit(ExitEventArgs e)

@@ -37,7 +37,7 @@ public sealed class CredentialOptions
 public sealed class ProximityOptions
 {
     public double LockThresholdDbm { get; set; } = -80;
-    public double UnlockThresholdDbm { get; set; } = -45;
+    public double UnlockThresholdDbm { get; set; } = -65;
 
     // 判定改为批次全数达标（2026-10-18 改版）：触发读数不计入，之后每条读数都需达标；任一条不达标整批作废
     public int UnlockSampleCount { get; set; } = 3;          // 靠近确认：解锁

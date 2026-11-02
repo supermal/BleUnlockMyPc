@@ -167,7 +167,6 @@
   <data name="Validation_ThresholdOrder" xml:space="preserve"><value>Proximity.UnlockThresholdDbm 必须大于 LockThresholdDbm，否则死区为负</value></data>
   <data name="Validation_UnlockCountRange" xml:space="preserve"><value>Proximity.UnlockSampleCount 必须在 1 到 20 之间</value></data>
   <data name="Validation_UserNameControlChars" xml:space="preserve"><value>Credentials.UserName 不能包含控制字符（换行、回车、制表符等）</value></data>
-  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>Credentials.UserName 不能为空</value></data>
   <data name="Scan_Stalled" xml:space="preserve"><value>已 {0} 秒收不到任何设备的蓝牙广播：电脑的蓝牙接收似乎卡住了，正在自动恢复</value></data>
   <data name="Scan_StalledFailed" xml:space="preserve"><value>蓝牙自动恢复失败：请关闭再打开蓝牙，或重启电脑</value></data>
   <data name="Log_ScanStillStalledRetrying" xml:space="preserve"><value>蓝牙接收仍然卡住，重新尝试恢复</value></data>
@@ -178,4 +177,10 @@
   <data name="Notify_ScanStalledFailed" xml:space="preserve"><value>BleUnlock 无法自动恢复电脑的蓝牙。请关闭再打开蓝牙，或重启电脑。恢复前自动锁屏保持暂停</value></data>
   <data name="Reason_ScanStalledDiscardsPrompt" xml:space="preserve"><value>蓝牙接收卡住，已撤回锁屏提示（收不到信号不代表人已离开）</value></data>
   <data name="Reason_ScanStalledDisarms" xml:space="preserve"><value>蓝牙接收卡住，解锁前需要重新确认离开</value></data>
+  <data name="Reason_CredentialsMissingLockOnly" xml:space="preserve"><value>未配置 Windows 用户名或密码：只自动锁屏，不自动解锁</value></data>
+  <data name="Log_SetupNoDevice" xml:space="preserve"><value>尚未选择解锁设备：当前不监测任何设备。请打开 BleUnlock 管理器完成设置</value></data>
+  <data name="Log_SetupNoCredentials" xml:space="preserve"><value>未配置 Windows 用户名或密码：离开时会自动锁屏，但回来不会自动解锁</value></data>
+  <data name="Notify_SetupNoDevice" xml:space="preserve"><value>BleUnlock 尚未设置：还没有选择解锁设备。请打开 BleUnlock 管理器完成设置</value></data>
+  <data name="Notify_SetupNoCredentials" xml:space="preserve"><value>BleUnlock 还没有 Windows 密码：离开时会自动锁屏，但回来不会自动解锁。请在 BleUnlock 管理器中填写</value></data>
+  <data name="Validation_ReloadDropsSetup" xml:space="preserve"><value>配置中的设备或凭据变成了空值，文件可能还没写完或已损坏，因此保留了原配置。如需移除设备，请在管理器中解除配对</value></data>
 </root>

@@ -86,11 +86,12 @@ public sealed class Worker(
 
         try
         {
+            // Se escanea aunque aún no haya dispositivo: sin IRK nada coincide y la máquina no hace nada,
+            // y así elegirlo en el gestor surte efecto en caliente, sin reiniciar el servicio
             await source.StartAsync(ct);
 
-            // La prevalidacion es la primera mitad del doble seguro
-            bool credentialsOk = validator.Validate(current.Credentials.UserName, current.Credentials.Password);
-            Transition(() => _machine.OnCredentialsChanged(credentialsOk));
+            LogSetupState(current);
+            ApplyCredentials(current.Credentials);
 
             while (!ct.IsCancellationRequested)
             {
@@ -168,6 +169,9 @@ public sealed class Worker(
 
     private async Task NotifyScanAsync(string message)
     {
+        // Sin dispositivo elegido el receptor no vigila a nadie: el aviso solo confundiría (queda en el registro)
+        if (!ConfigCompleteness.HasDevice(options.Current.Device)) return;
+
         try { await notifier.NotifyAsync(message, CancellationToken.None); }
         catch (Exception ex) { log.LogError(ex, ServiceStrings.Log_ActionFailed, "NotifyScan"); }
     }
@@ -180,7 +184,11 @@ public sealed class Worker(
         telemetry.OnBatchProgress(progress);
     }
 
-    private void OnHelperConnected(int sessionId) => telemetry.OnHelperConnection(true);
+    private void OnHelperConnected(int sessionId)
+    {
+        telemetry.OnHelperConnection(true);
+        _ = RemindSetupAsync();
+    }
 
     private void OnHelperDisconnected() => telemetry.OnHelperConnection(false);
 
@@ -236,12 +244,10 @@ public sealed class Worker(
             }
 
             if (change.CredentialsChanged)
-            {
-                bool ok = validator.Validate(
-                    change.Options.Credentials.UserName, change.Options.Credentials.Password);
-                if (ok) _credentialBudget.Reset();
-                Transition(() => _machine.OnCredentialsChanged(ok));
-            }
+                ApplyCredentials(change.Options.Credentials);
+
+            if (change.DeviceChanged || change.CredentialsChanged)
+                LogSetupState(change.Options);
         }
         catch (Exception ex)
         {
@@ -249,6 +255,55 @@ public sealed class Worker(
             // capturar aqui mataria el proceso
             log.LogError(ex, ServiceStrings.Log_ApplyConfigChangeFailed);
         }
+    }
+
+    // La prevalidacion es la primera mitad del doble seguro. Sin usuario o clave no hay nada que
+    // prevalidar (LogonUser fallaría y suspendería todo): se pasa a «solo bloquear»
+    private void ApplyCredentials(CredentialOptions credentials)
+    {
+        if (!ConfigCompleteness.HasCredentials(credentials))
+        {
+            Transition(() => _machine.OnCredentialsMissing());
+            return;
+        }
+
+        bool ok = validator.Validate(credentials.UserName, credentials.Password);
+        if (ok) _credentialBudget.Reset();
+        Transition(() => _machine.OnCredentialsChanged(ok));
+    }
+
+    private void LogSetupState(BleUnlockOptions current)
+    {
+        switch (ConfigCompleteness.Evaluate(current))
+        {
+            case SetupState.NoDevice:
+                log.LogWarning(ServiceStrings.Log_SetupNoDevice);
+                break;
+            case SetupState.NoCredentials:
+                log.LogWarning(ServiceStrings.Log_SetupNoCredentials);
+                break;
+        }
+    }
+
+    // Cada vez que el asistente se conecta (en la práctica, en cada inicio de sesión) se recuerda lo
+    // que falta por configurar. Así el aviso llega aunque el servicio arrancase antes que la sesión
+    private async Task RemindSetupAsync()
+    {
+        var message = ConfigCompleteness.Evaluate(options.Current) switch
+        {
+            SetupState.NoDevice => ServiceStrings.Notify_SetupNoDevice,
+            SetupState.NoCredentials => ServiceStrings.Notify_SetupNoCredentials,
+            _ => null
+        };
+        if (message is null) return;
+
+        try
+        {
+            // El asistente acaba de conectarse: se le deja un momento para que esté listo para mostrar avisos
+            await Task.Delay(TimeSpan.FromSeconds(3), time);
+            await notifier.NotifyAsync(message, CancellationToken.None);
+        }
+        catch (Exception ex) { log.LogError(ex, ServiceStrings.Log_ActionFailed, "RemindSetup"); }
     }
 
     // La maquina de estados no es thread-safe y aqui la tocan tres hilos distintos:
@@ -365,7 +420,9 @@ public sealed class Worker(
             stats.Count == 0 ? double.NaN : stats.Average, sinceMatch);
 
         // Con el receptor colgado no llega nada de nadie: la causa ya está en el registro y no es el IRK
-        if (sinceMatch > TimeSpan.FromMinutes(5).TotalSeconds && !Volatile.Read(ref _scanStalled))
+        // Sin dispositivo elegido no hay nada que encontrar: la advertencia de configuración ya se dio
+        if (sinceMatch > TimeSpan.FromMinutes(5).TotalSeconds && !Volatile.Read(ref _scanStalled)
+            && ConfigCompleteness.HasDevice(options.Current.Device))
             log.LogWarning(ServiceStrings.Log_NoMatchFiveMinutes);
 
         if (_credentialBudget.IsExhausted)

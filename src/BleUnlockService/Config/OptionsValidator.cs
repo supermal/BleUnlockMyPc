@@ -43,15 +43,16 @@ public static class OptionsValidator
     {
         var errors = new List<string>();
 
-        if (NormalizeIrk(o.Device.Irk) is null)
+        // Vacío = aún sin dispositivo (equipo recién instalado): no es un error, el servicio arranca
+        // sin vigilar a nadie (ConfigCompleteness). Solo un valor escrito y mal formado es un error
+        if (!string.IsNullOrWhiteSpace(o.Device.Irk) && NormalizeIrk(o.Device.Irk) is null)
             errors.Add(ServiceStrings.Validation_IrkFormat);
 
         if (!string.IsNullOrWhiteSpace(o.Device.IdentityAddress) &&
             NormalizeAddress(o.Device.IdentityAddress) is null)
             errors.Add(ServiceStrings.Validation_AddressFormat);
 
-        if (string.IsNullOrWhiteSpace(o.Credentials.UserName))
-            errors.Add(ServiceStrings.Validation_UserNameEmpty);
+        // Usuario o clave vacíos tampoco son un error: sin credenciales el servicio solo bloquea
 
         // Un caracter de control (salto de linea, retorno de carro, tabulador...) rompe el encuadre
         // por lineas del pipe hacia el CP.

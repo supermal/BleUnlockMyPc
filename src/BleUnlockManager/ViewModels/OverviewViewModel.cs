@@ -1,5 +1,6 @@
 using System.Text;
 using BleUnlockManager.Core;
+using BleUnlockManager.Core.Config;
 using BleUnlockManager.Core.Management;
 using BleUnlockManager.Core.Telemetry;
 using BleUnlockManager.Services;
@@ -86,6 +87,17 @@ public sealed partial class OverviewViewModel : ObservableObject
 
     // —— Avisos ——
     public bool ConnectionBannerVisible => !Telemetry.Connected;
+
+    // —— Aviso de configuración pendiente (equipo recién instalado o sin contraseña) ——
+    public bool SetupBannerVisible => Telemetry.Setup != SetupState.Complete;
+
+    public string SetupBannerTitle => Telemetry.Setup == SetupState.NoCredentials
+        ? UiStrings.Setup_BannerNoCredentialsTitle
+        : UiStrings.Setup_BannerNoDeviceTitle;
+
+    public string SetupBannerMessage => Telemetry.Setup == SetupState.NoCredentials
+        ? UiStrings.Setup_BannerNoCredentialsMessage
+        : UiStrings.Setup_BannerNoDeviceMessage;
 
     [ObservableProperty] public partial bool BannerOpen { get; set; }
     [ObservableProperty] public partial InfoBarSeverity BannerSeverity { get; set; }
@@ -204,6 +216,9 @@ public sealed partial class OverviewViewModel : ObservableObject
         OnPropertyChanged(nameof(CanStart));
         OnPropertyChanged(nameof(CanStopOrRestart));
         OnPropertyChanged(nameof(ConnectionBannerVisible));
+        OnPropertyChanged(nameof(SetupBannerVisible));
+        OnPropertyChanged(nameof(SetupBannerTitle));
+        OnPropertyChanged(nameof(SetupBannerMessage));
     }
 
     private IReadOnlyList<HealthRow> BuildHealthRows(SnapshotFrame? snapshot)

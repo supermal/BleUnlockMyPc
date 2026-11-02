@@ -86,11 +86,13 @@
   <data name="Validation_ThresholdOrder" xml:space="preserve"><value>{0} 必须大于 LockThresholdDbm，否则死区为负</value></data>
   <data name="Validation_UnlockCountRange" xml:space="preserve"><value>{0} 必须在 1 到 20 之间</value></data>
   <data name="Validation_UserNameControlChars" xml:space="preserve"><value>{0} 不能包含控制字符（换行、回车、制表符等）</value></data>
-  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>{0} 不能为空</value></data>
   <data name="Value_Empty" xml:space="preserve"><value>（空）</value></data>
   <data name="Value_Encrypted" xml:space="preserve"><value>（已加密）</value></data>
   <data name="Value_NotSet" xml:space="preserve"><value>（未设置）</value></data>
   <data name="Zone_Away" xml:space="preserve"><value>离开区</value></data>
   <data name="Zone_Hold" xml:space="preserve"><value>保持区</value></data>
   <data name="Zone_Near" xml:space="preserve"><value>靠近区</value></data>
+  <data name="Tray_NeedsSetupTitle" xml:space="preserve"><value>需要完成设置</value></data>
+  <data name="Tray_NoDeviceHint" xml:space="preserve"><value>尚未选择解锁设备，打开管理器完成设置</value></data>
+  <data name="Tray_NoCredentialsHint" xml:space="preserve"><value>没有密码：只自动锁屏，不自动解锁</value></data>
 </root>

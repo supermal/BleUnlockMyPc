@@ -68,6 +68,8 @@ public sealed class ProximityStateMachine
     private DateTimeOffset _unlockSentAt;
     // Receptor Bluetooth colgado (ScanWatchdog): sin anuncios de nadie, el silencio no es prueba de nada
     private bool _scanStalled;
+    // Sin usuario o clave en la configuración: se bloquea al irse, pero el desbloqueo nunca se arma
+    private bool _credentialsMissing;
 
     // —— 锁定侧批次（Unlocked / PendingLock / LockedWaitingDeparture） ——
     private bool _lockBatchActive;
@@ -196,6 +198,9 @@ public sealed class ProximityStateMachine
         // Win+L sentado + suspension de pantalla + despertar desbloquearia sin haberse ido
         if (now < _graceUntil) return null;
 
+        // Sin credenciales no hay nada que armar: se espera aquí hasta que el usuario entre a mano
+        if (_credentialsMissing) return null;
+
         if (LockBatchConfirmed(history, now, Proximity.LockPromptSampleCount, out var reason))
             return Transition(ProximityState.LockedArmed, ProximityAction.None, string.Format(ServiceStrings.Reason_DepartureConfirmed, reason));
 
@@ -305,6 +310,8 @@ public sealed class ProximityStateMachine
     // con el resultado de la prevalidacion LogonUser
     public StateChange? OnCredentialsChanged(bool preValidationPassed)
     {
+        _credentialsMissing = false;
+
         if (!preValidationPassed)
         {
             if (State == ProximityState.Suspended) return null;
@@ -322,6 +329,27 @@ public sealed class ProximityStateMachine
             ? ProximityState.LockedWaitingDeparture
             : ProximityState.Unlocked;
         return Transition(target, ProximityAction.None, ServiceStrings.Reason_CredentialsRestored);
+    }
+
+    // La configuración no tiene usuario o clave (equipo recién instalado, o el usuario aún no la ha
+    // escrito). No es un fallo como el de una clave incorrecta: el bloqueo al irse sigue funcionando y solo
+    // se renuncia al desbloqueo automático. Un desbloqueo armado o en curso se abandona
+    public StateChange? OnCredentialsMissing()
+    {
+        _credentialsMissing = true;
+
+        switch (State)
+        {
+            case ProximityState.Suspended:
+                return Transition(
+                    _screenLocked ? ProximityState.LockedWaitingDeparture : ProximityState.Unlocked,
+                    ProximityAction.None, ServiceStrings.Reason_CredentialsMissingLockOnly);
+            case ProximityState.LockedArmed or ProximityState.UnlockPending:
+                return Transition(ProximityState.LockedWaitingDeparture, ProximityAction.None,
+                    ServiceStrings.Reason_CredentialsMissingLockOnly);
+            default:
+                return null;
+        }
     }
 
     // Tras despertar de suspension el reloj puede haber saltado horas. El orquestador

@@ -59,7 +59,7 @@ public sealed record RuleValues(
 /// <summary>Lecturas de ejemplo para la sección 8, derivadas de los umbrales vigentes.</summary>
 public sealed record RuleExamples(int Trigger, int Back, IReadOnlyList<int> Withdraw)
 {
-    // Con los valores predeterminados (-80 / -45, separación 35) dan -70, -72, -68 y -65
+    // Con los valores predeterminados (-80 / -65, separación 15) dan -76, -77, -75 y -74
     private static readonly int[] WithdrawOffsets = [10, 8, 12, 15];
     private const double ReferenceSpan = 35;
 

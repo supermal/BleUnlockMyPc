@@ -1,4 +1,5 @@
 using System.Globalization;
+using BleUnlockManager.Core.Config;
 using BleUnlockManager.Core.Management;
 using BleUnlockManager.Core.Resources;
 
@@ -12,6 +13,8 @@ public enum TrayState
     Suspended,
     Stopped,
     Connecting,
+    /// <summary>Servicio en marcha pero sin terminar de configurar (sin dispositivo o sin credenciales).</summary>
+    NeedsSetup,
 }
 
 /// <summary>Texto emergente de la bandeja en dos líneas: estado y dispositivo.</summary>
@@ -31,7 +34,8 @@ public static class TrayStates
 {
     private static string Prefix => CoreStrings.Tray_Prefix;
 
-    public static TrayState Resolve(bool? serviceRunning, bool connected, string? stateName, SnapshotBatch? batch)
+    public static TrayState Resolve(bool? serviceRunning, bool connected, string? stateName, SnapshotBatch? batch,
+        SetupState setup = SetupState.Complete)
     {
         if (serviceRunning == false)
         {
@@ -43,6 +47,12 @@ public static class TrayStates
             return TrayState.Connecting;
         }
 
+        // Sin dispositivo no se vigila nada: no hay otro estado que mostrar
+        if (setup == SetupState.NoDevice)
+        {
+            return TrayState.NeedsSetup;
+        }
+
         if (stateName == "Suspended")
         {
             return TrayState.Suspended;
@@ -50,7 +60,13 @@ public static class TrayStates
 
         // Un lote de llegada (unlock) no es una salida: el usuario está volviendo
         var leaving = stateName == "PendingLock" || batch is { Kind: "leave" or "lockConfirm" };
-        return leaving ? TrayState.Leaving : TrayState.Running;
+        if (leaving)
+        {
+            return TrayState.Leaving;
+        }
+
+        // Sin credenciales el bloqueo funciona; lo que falta (el desbloqueo) se recuerda en reposo
+        return setup == SetupState.NoCredentials ? TrayState.NeedsSetup : TrayState.Running;
     }
 
     public static TrayTooltip Tooltip(
@@ -60,8 +76,12 @@ public static class TrayStates
         double? dbm,
         double? lockDbm,
         string? lastMatchText,
-        SnapshotBatch? batch) => state switch
+        SnapshotBatch? batch,
+        SetupState setup = SetupState.Complete) => state switch
         {
+            TrayState.NeedsSetup => new(
+                Prefix + CoreStrings.Tray_NeedsSetupTitle,
+                setup == SetupState.NoCredentials ? CoreStrings.Tray_NoCredentialsHint : CoreStrings.Tray_NoDeviceHint),
             TrayState.Stopped => new(Prefix + CoreStrings.Tray_StoppedTitle, CoreStrings.Tray_StoppedHint),
             TrayState.Connecting => new(Prefix + CoreStrings.Tray_ConnectingTitle, CoreStrings.Tray_ConnectingHint),
             TrayState.Suspended => new(Prefix + CoreStrings.Tray_SuspendedTitle, CoreStrings.Tray_SuspendedHint),

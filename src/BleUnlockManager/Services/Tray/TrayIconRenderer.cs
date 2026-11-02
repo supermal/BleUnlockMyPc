@@ -95,7 +95,7 @@ internal static class TrayIconRenderer
                 g.FillEllipse(brush, 12.5f - 3f, 12.5f - 3f, 6f, 6f);
                 break;
 
-            case TrayState.Leaving or TrayState.Suspended:
+            case TrayState.Leaving or TrayState.Suspended or TrayState.NeedsSetup:
                 g.FillPolygon(brush, [new PointF(12.5f, 9.2f), new PointF(15.7f, 14.8f), new PointF(9.3f, 14.8f)]);
                 break;
 
@@ -122,7 +122,7 @@ internal static class TrayIconRenderer
     private static Color ColorOf(TrayState state, bool light) => state switch
     {
         TrayState.Running => light ? Color.FromArgb(0x0F, 0x7B, 0x0F) : Color.FromArgb(0x6C, 0xCB, 0x5F),
-        TrayState.Leaving => light ? Color.FromArgb(0x9D, 0x5D, 0x00) : Color.FromArgb(0xFC, 0xE1, 0x00),
+        TrayState.Leaving or TrayState.NeedsSetup => light ? Color.FromArgb(0x9D, 0x5D, 0x00) : Color.FromArgb(0xFC, 0xE1, 0x00),
         TrayState.Suspended or TrayState.Stopped => light ? Color.FromArgb(0xC4, 0x2B, 0x1C) : Color.FromArgb(0xFF, 0x99, 0xA4),
         _ => light ? Color.FromArgb(0x7A, 0x7A, 0x7A) : Color.FromArgb(0x9E, 0x9E, 0xA6),
     };

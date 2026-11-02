@@ -63,17 +63,21 @@ public sealed class WindowsBondedDeviceSource : IBondedDeviceSource
                         continue;
                     }
 
-                    if (device.GetValue("IRK") is not byte[] irk || !IsUsableIrk(irk))
-                    {
-                        continue;
-                    }
+                    // Sin IRK utilizable el dispositivo se lista igualmente, con IRK vacío: el gestor lo
+                    // muestra como «no compatible» en vez de dejar al usuario buscándolo sin saber por qué
+                    var irkHex = device.GetValue("IRK") is byte[] irk && IsUsableIrk(irk)
+                        ? Convert.ToHexString(irk)
+                        : "";
 
                     var address = NormalizeAddress(deviceName);
                     var name = ReadDeviceName(address) ?? DecodeRegistryName(device.GetValue("Name"));
-                    var entry = new BondedBleDevice(address, name, Convert.ToHexString(irk));
+                    var entry = new BondedBleDevice(address, name, irkHex);
 
+                    // Entre entradas repetidas manda la que tiene IRK; a igualdad, la que tiene nombre
                     if (!devices.TryGetValue(address, out var existing) ||
-                        (string.IsNullOrWhiteSpace(existing.Name) && !string.IsNullOrWhiteSpace(name)))
+                        (existing.Irk.Length == 0 && irkHex.Length > 0) ||
+                        ((existing.Irk.Length > 0) == (irkHex.Length > 0) &&
+                         string.IsNullOrWhiteSpace(existing.Name) && !string.IsNullOrWhiteSpace(name)))
                     {
                         devices[address] = entry;
                     }

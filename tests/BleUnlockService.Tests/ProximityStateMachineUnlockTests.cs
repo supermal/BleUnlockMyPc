@@ -259,7 +259,7 @@ public class ProximityStateMachineUnlockTests
         Arm(sm, time, history);
 
         time.Advance(TimeSpan.FromSeconds(5));
-        Fill(history, time, -60, 5);   // entre -80 y -45: zona muerta
+        Fill(history, time, -70, 5);   // entre -80 y -65: zona muerta
 
         Assert.Null(sm.Evaluate(history));
         Assert.Equal(ProximityState.LockedArmed, sm.State);
@@ -337,7 +337,7 @@ public class ProximityStateMachineUnlockTests
         for (var i = 0; i < 3; i++)
         {
             time.Advance(TimeSpan.FromSeconds(1));
-            history.Add(-50, time.GetUtcNow());    // -50 ≤ umbral: 第一条即作废整批
+            history.Add(-70, time.GetUtcNow());    // -70 ≤ umbral: 第一条即作废整批
         }
         Assert.Null(sm.Evaluate(history));
 
@@ -355,8 +355,8 @@ public class ProximityStateMachineUnlockTests
     [Fact]
     public void Una_lectura_baja_dentro_del_lote_de_aproximacion_anula_la_confirmacion()
     {
-        // 回归：确认批次里一条 -50 不应把整批「平均」到可以解锁——
-        // (−40 −40 −50)/3 = −43.3 > −45：旧平均值实现会发送凭据；全数达标不会
+        // 回归：确认批次里一条 -70 不应把整批「平均」到可以解锁——
+        // (−40 −40 −70)/3 = −50 > −65：旧平均值实现会发送凭据；全数达标不会
         var (sm, time, history) = Build();
         Arm(sm, time, history);
 
@@ -367,7 +367,7 @@ public class ProximityStateMachineUnlockTests
         time.Advance(TimeSpan.FromSeconds(1));
         history.Add(-40, time.GetUtcNow());        // 计入 2
         time.Advance(TimeSpan.FromSeconds(1));
-        history.Add(-50, time.GetUtcNow());        // 掉档：整批作废
+        history.Add(-70, time.GetUtcNow());        // 掉档：整批作废
 
         Assert.Null(sm.Evaluate(history));
         Assert.Equal(ProximityState.LockedArmed, sm.State);

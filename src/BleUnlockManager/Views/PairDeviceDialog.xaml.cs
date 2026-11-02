@@ -170,7 +170,14 @@ public sealed partial class PairDeviceDialog : UserControl
                     continue;
                 }
 
-                PairedDevice = changed[0];
+                // Emparejado, pero sin clave de identidad: no sirve para desbloquear. Se avisa y se sigue esperando
+                if (changed.FirstOrDefault(d => d.IsSupported) is not { } supported)
+                {
+                    PeripheralStatusText.Text = string.Format(UiStrings.Pair_PairedButUnsupported, changed[0].DisplayName);
+                    continue;
+                }
+
+                PairedDevice = supported;
                 BlePeripheralHost.Shared.StopAdvertising();
                 SetPeripheralStep(5);
                 ResetPeripheral(keepStep: true);

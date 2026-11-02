@@ -1,3 +1,4 @@
+using BleUnlockManager.Core.Config;
 using BleUnlockManager.Core.Management;
 
 namespace BleUnlockManager.Core.Telemetry;
@@ -31,7 +32,10 @@ public sealed class TelemetryModel
 
     public string? StateName => Connected ? Snapshot?.State?.Name : null;
 
-    public TrayState TrayState => TrayStates.Resolve(ServiceRunning, Connected, StateName, Batch);
+    /// <summary>Lo que falta por configurar según el servicio (sin conexión se considera completa: no se sabe).</summary>
+    public SetupState Setup => Connected ? SetupCheck.FromWire(Snapshot?.Setup) : SetupState.Complete;
+
+    public TrayState TrayState => TrayStates.Resolve(ServiceRunning, Connected, StateName, Batch, Setup);
 
     /// <summary>Aplica una trama; devuelve true si el histórico se vació (la curva debe redibujarse entera).</summary>
     public bool Apply(ManagementFrame frame)
@@ -103,5 +107,6 @@ public sealed class TelemetryModel
         CurrentDbm,
         Snapshot?.Thr?.LockDbm,
         Snapshot is { } s ? TelemetryFormat.LastMatch(s.LastMatchMs) : null,
-        Batch);
+        Batch,
+        Setup);
 }

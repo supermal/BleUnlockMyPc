@@ -94,8 +94,8 @@ public sealed class RulesContentTests : IDisposable
         var ex = RuleExamples.From(RuleValues.Defaults);
 
         Assert.Equal(-82, ex.Trigger);
-        Assert.Equal(-40, ex.Back);
-        Assert.Equal([-70, -72, -68, -65], ex.Withdraw);
+        Assert.Equal(-60, ex.Back);
+        Assert.Equal([-76, -77, -75, -74], ex.Withdraw);
     }
 
     [Fact]

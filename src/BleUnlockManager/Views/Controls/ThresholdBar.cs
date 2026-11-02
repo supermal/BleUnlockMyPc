@@ -18,7 +18,7 @@ public sealed class ThresholdBar : FrameworkElement
     private const double BarHeight = 8;
 
     public static readonly DependencyProperty LockDbmProperty = Register(nameof(LockDbm), typeof(double), -80.0);
-    public static readonly DependencyProperty UnlockDbmProperty = Register(nameof(UnlockDbm), typeof(double), -45.0);
+    public static readonly DependencyProperty UnlockDbmProperty = Register(nameof(UnlockDbm), typeof(double), -65.0);
     public static readonly DependencyProperty AwayBrushProperty = Register(nameof(AwayBrush), typeof(Brush), Brushes.MistyRose);
     public static readonly DependencyProperty HoldBrushProperty = Register(nameof(HoldBrush), typeof(Brush), Brushes.Gainsboro);
     public static readonly DependencyProperty NearBrushProperty = Register(nameof(NearBrush), typeof(Brush), Brushes.Honeydew);

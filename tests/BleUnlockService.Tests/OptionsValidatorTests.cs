@@ -170,14 +170,27 @@ public class OptionsValidatorTests
     }
 
     [Fact]
-    public void Validate_rechaza_usuario_vacio()
+    public void Validate_acepta_usuario_vacio_porque_solo_falta_por_configurar()
     {
         var o = Valid();
         o.Credentials.UserName = "   ";
-        var r = OptionsValidator.Validate(o);
-        Assert.False(r.IsValid);
-        Assert.Contains(r.Errors, e => e.Contains("UserName"));
+        o.Credentials.Password = "";
+        Assert.True(OptionsValidator.Validate(o).IsValid);
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Validate_acepta_irk_vacio_porque_solo_falta_por_configurar(string irk)
+    {
+        var o = Valid();
+        o.Device.Irk = irk;
+        Assert.True(OptionsValidator.Validate(o).IsValid);
+    }
+
+    [Fact]
+    public void Validate_acepta_la_configuracion_de_un_equipo_recien_instalado()
+        => Assert.True(OptionsValidator.Validate(new BleUnlockOptions()).IsValid);
 
     [Theory]
     [InlineData("AA:BB:CC:DD:EE:FF", true)]
@@ -198,7 +211,7 @@ public class OptionsValidatorTests
     {
         var o = Valid();
         o.Device.Irk = "abc";
-        o.Credentials.UserName = "";
+        o.Proximity.UnlockThresholdDbm = o.Proximity.LockThresholdDbm;
         Assert.True(OptionsValidator.Validate(o).Errors.Count >= 2);
     }
 

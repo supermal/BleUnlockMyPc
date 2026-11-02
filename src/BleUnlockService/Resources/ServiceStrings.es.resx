@@ -167,7 +167,6 @@
   <data name="Validation_ThresholdOrder" xml:space="preserve"><value>Proximity.UnlockThresholdDbm debe ser mayor que LockThresholdDbm; si no, la zona muerta es negativa</value></data>
   <data name="Validation_UnlockCountRange" xml:space="preserve"><value>Proximity.UnlockSampleCount debe estar entre 1 y 20</value></data>
   <data name="Validation_UserNameControlChars" xml:space="preserve"><value>Credentials.UserName no puede contener caracteres de control (saltos de línea, retornos de carro, tabulaciones, etc.)</value></data>
-  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>Credentials.UserName no puede estar vacío</value></data>
   <data name="Scan_Stalled" xml:space="preserve"><value>No llega ningún anuncio Bluetooth de ningún dispositivo desde hace {0} s: el receptor Bluetooth del equipo parece bloqueado. Recuperando automáticamente</value></data>
   <data name="Scan_StalledFailed" xml:space="preserve"><value>La recuperación automática del Bluetooth falló: apaga y vuelve a encender el Bluetooth o reinicia el equipo</value></data>
   <data name="Log_ScanStillStalledRetrying" xml:space="preserve"><value>El receptor Bluetooth sigue bloqueado; se reintenta la recuperación</value></data>
@@ -178,4 +177,10 @@
   <data name="Notify_ScanStalledFailed" xml:space="preserve"><value>BleUnlock no pudo recuperar el Bluetooth del equipo. Apaga y vuelve a encender el Bluetooth o reinicia el equipo. El bloqueo automático sigue en pausa hasta que vuelva a funcionar</value></data>
   <data name="Reason_ScanStalledDiscardsPrompt" xml:space="preserve"><value>El receptor Bluetooth está bloqueado; se retiró el aviso de bloqueo (sin señal no significa que te hayas ido)</value></data>
   <data name="Reason_ScanStalledDisarms" xml:space="preserve"><value>El receptor Bluetooth está bloqueado; hay que volver a confirmar la salida antes de desbloquear</value></data>
+  <data name="Reason_CredentialsMissingLockOnly" xml:space="preserve"><value>No hay usuario o contraseña de Windows configurados: solo bloqueo automático, sin desbloqueo automático</value></data>
+  <data name="Log_SetupNoDevice" xml:space="preserve"><value>Aún no se ha elegido el dispositivo de desbloqueo: no se vigila ninguno. Abre el Gestor de BleUnlock para terminar la configuración</value></data>
+  <data name="Log_SetupNoCredentials" xml:space="preserve"><value>No hay usuario o contraseña de Windows configurados: la pantalla se bloquea al irte, pero no se desbloqueará sola</value></data>
+  <data name="Notify_SetupNoDevice" xml:space="preserve"><value>BleUnlock aún no está configurado: no se ha elegido el dispositivo de desbloqueo. Abre el Gestor de BleUnlock para terminar la configuración</value></data>
+  <data name="Notify_SetupNoCredentials" xml:space="preserve"><value>BleUnlock aún no tiene la contraseña de Windows: bloquea la pantalla al irte, pero no la desbloqueará al volver. Escríbela en el Gestor de BleUnlock</value></data>
+  <data name="Validation_ReloadDropsSetup" xml:space="preserve"><value>El dispositivo o las credenciales de la configuración han quedado vacíos; puede que el archivo esté a medio escribir o dañado, así que se ha conservado la configuración anterior. Para quitar el dispositivo, desemparéjalo en el Gestor</value></data>
 </root>

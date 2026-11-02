@@ -315,6 +315,35 @@ public sealed partial class ConfigViewModel : ObservableObject
     public double UnlockThresholdPreview =>
         ConfigInput.TryParseNumber(UnlockThresholdText, out var value) ? value : _loadedConfig.Proximity.UnlockThresholdDbm;
 
+    // —— Asistente de configuración: reutiliza el mismo guardado (validación, cifrado, espera de recarga) ——
+
+    /// <summary>Hay una contraseña guardada (el asistente permite dejar el campo vacío para conservarla).</summary>
+    public bool HasStoredPassword => _password.HasStored;
+
+    /// <summary>Lo que falta por configurar según la última copia leída o guardada.</summary>
+    public SetupState SavedSetupState => SetupCheck.Evaluate(_loadedConfig);
+
+    /// <summary>Usuario guardado (descifrado no hace falta: el usuario nunca se cifra).</summary>
+    public string SavedUserName => _loadedConfig.Credentials.UserName;
+
+    /// <summary>
+    /// Rellena el formulario con lo elegido en el asistente, partiendo del disco (se descartan ediciones a
+    /// medias de la página Configuración). <paramref name="password"/> null = conservar la guardada.
+    /// </summary>
+    public void ApplySetup(BleBondDevice device, string userName, string? password)
+    {
+        ReloadFromDisk();
+        IrkText = device.Irk;
+        IdentityAddressText = device.Address;
+        IrkByteOrderIndex = 0;
+        IrkHint = BuildIrkHint();
+        UserNameText = userName.Trim();
+        if (password is not null)
+        {
+            PasswordText = password;
+        }
+    }
+
     /// <summary>Descarta las ediciones y vuelve a la última copia leída o guardada (sin releer el disco).</summary>
     public void DiscardChanges()
     {
@@ -443,7 +472,8 @@ public sealed partial class ConfigViewModel : ObservableObject
 
             if (result.Error is null)
             {
-                items.AddRange(result.Devices);
+                // 没有 IRK 的设备无法用于解锁：配置页下拉框只列可选的（向导里会以灰色列出并说明原因）
+                items.AddRange(result.Devices.Where(d => d.IsSupported));
             }
 
             // 当前配置的 IRK 不在配对库里（旧设备/跨机器/手工录入）：保留一条可选中的合成项

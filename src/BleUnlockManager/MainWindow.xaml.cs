@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Controls;
+using BleUnlockManager.Core;
+using BleUnlockManager.Core.Config;
 using BleUnlockManager.Models;
 using BleUnlockManager.Services;
 using BleUnlockManager.ViewModels;
@@ -90,6 +92,9 @@ public partial class MainWindow : FluentWindow
     /// <summary>Muestra un diálogo propio sobre toda la ventana hasta que <paramref name="closed"/> se complete.</summary>
     public async Task ShowOverlayAsync(FrameworkElement dialog, Task closed)
     {
+        // Las capas se apilan: el asistente de configuración abre encima el de emparejamiento y,
+        // al cerrarse este, vuelve a verse el asistente
+        var previous = OverlayContent.Content;
         OverlayContent.Content = dialog;
         OverlayLayer.Visibility = Visibility.Visible;
         try
@@ -98,13 +103,81 @@ public partial class MainWindow : FluentWindow
         }
         finally
         {
-            OverlayLayer.Visibility = Visibility.Collapsed;
-            OverlayContent.Content = null;
+            OverlayContent.Content = previous;
+            OverlayLayer.Visibility = previous is null ? Visibility.Collapsed : Visibility.Visible;
+        }
+    }
+
+    // —— Asistente de configuración ——
+
+    private bool _setupWizardOpen;
+
+    // Tras «omitir» no se vuelve a abrir solo en esta sesión del gestor; al iniciar sesión otra vez, sí
+    private bool _setupWizardDismissed;
+
+    /// <summary>Abre el asistente (botón de la vista general o apertura automática); devuelve al cerrarse.</summary>
+    public async Task ShowSetupWizardAsync()
+    {
+        if (_setupWizardOpen)
+        {
+            return;
+        }
+
+        _setupWizardOpen = true;
+        try
+        {
+            ShowMainWindowCore();
+            Navigate(AppPage.Overview);
+            var wizard = new SetupWizardDialog(this, _services.GetRequiredService<ConfigViewModel>());
+            await ShowOverlayAsync(wizard, wizard.Completion);
+            if (!wizard.Completed)
+            {
+                _setupWizardDismissed = true;
+            }
+        }
+        finally
+        {
+            _setupWizardOpen = false;
+        }
+    }
+
+    /// <summary>
+    /// Apertura automática: solo mientras no haya dispositivo (el servicio no vigila nada). Sin contraseña
+    /// no se insiste, porque «solo bloquear» puede ser una elección; lo recuerdan la bandeja y la vista general.
+    /// Se lee la configuración del disco: funciona aunque el servicio aún no haya arrancado.
+    /// </summary>
+    public void OfferSetupWizardIfNeeded()
+    {
+        if (_setupWizardOpen || _setupWizardDismissed || OverlayContent.Content is not null)
+        {
+            return;
+        }
+
+        SetupState state;
+        try
+        {
+            state = SetupCheck.Evaluate(ConfigDocument.Load(AppPaths.ConfigFile));
+        }
+        catch
+        {
+            // Sin configuración legible no hay nada que ofrecer: la página Configuración explica el problema
+            return;
+        }
+
+        if (state == SetupState.NoDevice)
+        {
+            _ = ShowSetupWizardAsync();
         }
     }
 
     /// <summary>Restaura y trae al frente la ventana (bandeja, segunda instancia).</summary>
     public void ShowMainWindow()
+    {
+        ShowMainWindowCore();
+        OfferSetupWizardIfNeeded();
+    }
+
+    private void ShowMainWindowCore()
     {
         if (!IsVisible)
         {

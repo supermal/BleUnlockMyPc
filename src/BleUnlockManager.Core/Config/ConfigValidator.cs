@@ -96,7 +96,9 @@ public static class ConfigValidator
 
         // 已加密值（dpapi:v1:）在管理端不显示也不校验其明文：服务端解密后再校验
         // （服务端 Validate 永远运行在明文上，故此处是管理端特有的跳过分支，不参与镜像）
-        if (NormalizeIrk(config.Device.Irk) is null && !SecretProtector.IsProtected(config.Device.Irk))
+        // 空 = 尚未选择设备（新装电脑）：不是错误，服务照常启动（镜像服务端）
+        if (!string.IsNullOrWhiteSpace(config.Device.Irk) &&
+            NormalizeIrk(config.Device.Irk) is null && !SecretProtector.IsProtected(config.Device.Irk))
         {
             errors.Add(new ConfigError(ConfigFields.DeviceIrk, string.Format(CoreStrings.Validation_IrkFormat, ConfigFields.DeviceIrk)));
         }
@@ -108,11 +110,7 @@ public static class ConfigValidator
                 string.Format(CoreStrings.Validation_AddressFormat, ConfigFields.DeviceIdentityAddress)));
         }
 
-        if (string.IsNullOrWhiteSpace(config.Credentials.UserName))
-        {
-            errors.Add(new ConfigError(ConfigFields.CredentialsUserName,
-                string.Format(CoreStrings.Validation_UserNameEmpty, ConfigFields.CredentialsUserName)));
-        }
+        // 用户名/密码为空也不是错误：没有凭据时服务只自动锁屏、不自动解锁（镜像服务端）
 
         // 控制字符（换行/回车/制表符等）会破坏到 CP 的按行分帧协议；
         // 消息只点名字段、绝不包含字段值

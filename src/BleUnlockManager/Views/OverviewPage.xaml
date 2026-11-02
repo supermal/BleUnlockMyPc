@@ -87,6 +87,36 @@
                 IsOpen="{Binding ConnectionBannerVisible, Mode=OneWay}"
                 Message="{loc:Loc Overview_NoConnectionMessage}"
                 Severity="Warning" />
+
+            <!--  Configuración pendiente: el servicio funciona, pero falta el dispositivo o la contraseña  -->
+            <Border
+                Margin="0,0,0,12"
+                Padding="16,12"
+                AutomationProperties.Name="{Binding SetupBannerTitle}"
+                Background="{DynamicResource Ui.Status.Warning.Bg}"
+                CornerRadius="{StaticResource Ui.Radius.Card}"
+                Visibility="{Binding SetupBannerVisible, Converter={StaticResource BoolToVisibility}}">
+                <DockPanel>
+                    <Button
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Center"
+                        Click="OnRunSetupWizardClicked"
+                        Content="{loc:Loc Setup_RunWizard}"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource Ui.Button.Primary}" />
+                    <ui:SymbolIcon
+                        Margin="0,2,12,0"
+                        VerticalAlignment="Top"
+                        FontSize="16"
+                        Foreground="{DynamicResource Ui.Status.Warning.Fg}"
+                        Symbol="Warning16" />
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="{Binding SetupBannerTitle}" TextWrapping="Wrap" />
+                        <TextBlock Style="{StaticResource Ui.TextStyle.Secondary}" Text="{Binding SetupBannerMessage}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
             <ui:InfoBar
                 Title="{Binding BannerTitle}"
                 Margin="0,0,0,12"

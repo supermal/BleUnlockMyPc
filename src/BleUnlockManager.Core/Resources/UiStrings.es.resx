@@ -597,4 +597,52 @@ La configuración actual del servicio no cambia.</value></data>
   <data name="Zone_Away" xml:space="preserve"><value>Zona lejana</value></data>
   <data name="Zone_Hold" xml:space="preserve"><value>Zona de espera</value></data>
   <data name="Zone_Near" xml:space="preserve"><value>Zona cercana</value></data>
+  <data name="Setup_BannerNoDeviceTitle" xml:space="preserve"><value>BleUnlock aún no está configurado</value></data>
+  <data name="Setup_BannerNoDeviceMessage" xml:space="preserve"><value>No se ha elegido el dispositivo de desbloqueo, así que de momento no se bloquea ni se desbloquea nada automáticamente.</value></data>
+  <data name="Setup_BannerNoCredentialsTitle" xml:space="preserve"><value>Aún no hay contraseña de Windows</value></data>
+  <data name="Setup_BannerNoCredentialsMessage" xml:space="preserve"><value>La pantalla se bloquea al irte, pero no se desbloqueará al volver.</value></data>
+  <data name="Setup_RunWizard" xml:space="preserve"><value>Abrir el asistente de configuración</value></data>
+  <data name="Wizard_Title" xml:space="preserve"><value>Configurar BleUnlock</value></data>
+  <data name="Wizard_StepOf" xml:space="preserve"><value>Paso {0} de 3: {1}</value></data>
+  <data name="Wizard_Step1Name" xml:space="preserve"><value>Elige el dispositivo de desbloqueo</value></data>
+  <data name="Wizard_Step2Name" xml:space="preserve"><value>Escribe la cuenta de inicio de sesión de Windows</value></data>
+  <data name="Wizard_Step3Name" xml:space="preserve"><value>Terminar</value></data>
+  <data name="Wizard_DeviceIntro" xml:space="preserve"><value>Elige el teléfono o reloj que llevas contigo. Antes tiene que estar emparejado con este equipo; si no lo está, pulsa «Emparejar dispositivo nuevo…».</value></data>
+  <data name="Wizard_PairNew" xml:space="preserve"><value>Emparejar dispositivo nuevo…</value></data>
+  <data name="Wizard_OpenBtSettings" xml:space="preserve"><value>Abrir la configuración de Bluetooth de Windows</value></data>
+  <data name="Wizard_Refresh" xml:space="preserve"><value>Actualizar lista</value></data>
+  <data name="Wizard_DevicesHeader" xml:space="preserve"><value>Dispositivos emparejados con este equipo</value></data>
+  <data name="Wizard_Unsupported" xml:space="preserve"><value>No compatible: el dispositivo no tiene clave de identidad</value></data>
+  <data name="Wizard_ReadingDevices" xml:space="preserve"><value>Leyendo los dispositivos emparejados…</value></data>
+  <data name="Wizard_NoDevices" xml:space="preserve"><value>Aún no hay ningún dispositivo emparejado que se pueda usar. Empareja primero tu teléfono o reloj.</value></data>
+  <data name="Wizard_DevicesFound" xml:space="preserve"><value>Se han encontrado {0} dispositivos utilizables; elige uno.</value></data>
+  <data name="Wizard_DevicesReadFailed" xml:space="preserve"><value>No se pudieron leer los dispositivos emparejados: {0}</value></data>
+  <data name="Wizard_HelpTitle" xml:space="preserve"><value>¿No sabes cómo emparejarlo?</value></data>
+  <data name="Wizard_HelpAppleWatch" xml:space="preserve"><value>Apple Watch: pulsa «Emparejar dispositivo nuevo…», elige «Teléfono / reloj» y empieza a anunciar; después, en el reloj, abre Ajustes › Bluetooth y toca este equipo en «Dispositivos de salud».</value></data>
+  <data name="Wizard_HelpIphone" xml:space="preserve"><value>iPhone: el equipo no aparece en los ajustes de Bluetooth del iPhone. Pulsa «Emparejar dispositivo nuevo…» y empieza a anunciar; después conéctate a este equipo con una app de Bluetooth como nRF Connect y confirma el emparejamiento.</value></data>
+  <data name="Wizard_HelpAndroid" xml:space="preserve"><value>Teléfono Android: pulsa «Abrir la configuración de Bluetooth de Windows» → Agregar dispositivo → Bluetooth, y deja abierta la página de Bluetooth del teléfono para que siga visible. Si después la lista lo muestra como no compatible, usa «Emparejar dispositivo nuevo…» con el modo de anuncio y conéctate con nRF Connect.</value></data>
+  <data name="Wizard_HelpBand" xml:space="preserve"><value>Pulseras y otros relojes: pon el dispositivo en modo de emparejamiento, pulsa «Emparejar dispositivo nuevo…», elige «Auriculares / ratón / teclado», busca y empareja. Muchas pulseras solo se emparejan con su propia app y no sirven para desbloquear.</value></data>
+  <data name="Wizard_Skip" xml:space="preserve"><value>Omitir, configurar más tarde</value></data>
+  <data name="Wizard_Next" xml:space="preserve"><value>Siguiente</value></data>
+  <data name="Wizard_Back" xml:space="preserve"><value>Atrás</value></data>
+  <data name="Wizard_CredIntro" xml:space="preserve"><value>Escribe la cuenta de Windows con la que inicias sesión en este equipo. BleUnlock solo la usa para desbloquear cuando vuelves, y la contraseña se guarda cifrada en este equipo.</value></data>
+  <data name="Wizard_UserName" xml:space="preserve"><value>Nombre de usuario</value></data>
+  <data name="Wizard_UserNameHint" xml:space="preserve"><value>Con una cuenta local, escribe el nombre de usuario; si inicias sesión con una cuenta Microsoft, escribe su correo (por ejemplo nombre@outlook.com).</value></data>
+  <data name="Wizard_Password" xml:space="preserve"><value>Contraseña</value></data>
+  <data name="Wizard_PasswordHint" xml:space="preserve"><value>Escribe la contraseña de inicio de sesión de Windows, no el PIN.</value></data>
+  <data name="Wizard_SkipPassword" xml:space="preserve"><value>Ahora no (solo bloquear)</value></data>
+  <data name="Wizard_SaveFinish" xml:space="preserve"><value>Guardar y terminar</value></data>
+  <data name="Wizard_UserNameRequired" xml:space="preserve"><value>Escribe el nombre de usuario o pulsa «Ahora no».</value></data>
+  <data name="Wizard_PasswordRequired" xml:space="preserve"><value>Escribe la contraseña o pulsa «Ahora no».</value></data>
+  <data name="Wizard_Saving" xml:space="preserve"><value>Guardando y esperando a que el servicio aplique la nueva configuración…</value></data>
+  <data name="Wizard_DoneTitle" xml:space="preserve"><value>Configuración terminada</value></data>
+  <data name="Wizard_DoneFull" xml:space="preserve"><value>Dispositivo de desbloqueo: {0}. La pantalla se bloquea cuando te vas con él y se desbloquea al volver. Si no has reiniciado el equipo desde la instalación, el desbloqueo en la pantalla de bloqueo funcionará tras reiniciar.</value></data>
+  <data name="Wizard_DoneLockOnly" xml:space="preserve"><value>Dispositivo de desbloqueo: {0}. La pantalla se bloquea al irte; como no se escribió la contraseña, no se desbloqueará al volver. Puedes añadirla más tarde en la página Configuración o volviendo a abrir el asistente.</value></data>
+  <data name="Wizard_FailedTitle" xml:space="preserve"><value>La configuración no se completó</value></data>
+  <data name="Wizard_Finish" xml:space="preserve"><value>Terminar</value></data>
+  <data name="Wizard_BackToFix" xml:space="preserve"><value>Volver a corregir</value></data>
+  <data name="Wizard_ServiceStartFailed" xml:space="preserve"><value>La configuración se guardó, pero el servicio no se pudo iniciar: {0}</value></data>
+  <data name="Pair_PairedButUnsupported" xml:space="preserve"><value>«{0}» se ha emparejado, pero no tiene clave de identidad y no sirve para desbloquear. Usa otro dispositivo u otra forma de emparejarlo.</value></data>
+  <data name="Rules_S7_I7_K" xml:space="preserve"><value>Configuración sin terminar:</value></data>
+  <data name="Rules_S7_I7_V" xml:space="preserve"><value>sin dispositivo elegido no se vigila nada y la pantalla ni se bloquea ni se desbloquea; con dispositivo pero sin usuario o contraseña de Windows, al irte se sigue bloqueando, pero al volver no se desbloquea. Completar la configuración surte efecto al momento, sin reiniciar el servicio.</value></data>
 </root>

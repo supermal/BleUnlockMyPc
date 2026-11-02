@@ -86,11 +86,13 @@
   <data name="Validation_ThresholdOrder" xml:space="preserve"><value>{0} must be greater than LockThresholdDbm, otherwise the dead zone is negative</value></data>
   <data name="Validation_UnlockCountRange" xml:space="preserve"><value>{0} must be between 1 and 20</value></data>
   <data name="Validation_UserNameControlChars" xml:space="preserve"><value>{0} cannot contain control characters (line breaks, carriage returns, tabs, etc.)</value></data>
-  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>{0} cannot be empty</value></data>
   <data name="Value_Empty" xml:space="preserve"><value>(empty)</value></data>
   <data name="Value_Encrypted" xml:space="preserve"><value>(encrypted)</value></data>
   <data name="Value_NotSet" xml:space="preserve"><value>(not set)</value></data>
   <data name="Zone_Away" xml:space="preserve"><value>Away zone</value></data>
   <data name="Zone_Hold" xml:space="preserve"><value>Hold zone</value></data>
   <data name="Zone_Near" xml:space="preserve"><value>Near zone</value></data>
+  <data name="Tray_NeedsSetupTitle" xml:space="preserve"><value>Setup needed</value></data>
+  <data name="Tray_NoDeviceHint" xml:space="preserve"><value>No unlock device chosen; open the Manager to finish setup</value></data>
+  <data name="Tray_NoCredentialsHint" xml:space="preserve"><value>No password: locks only, no automatic unlock</value></data>
 </root>

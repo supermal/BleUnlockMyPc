@@ -110,13 +110,27 @@ public sealed class ConfigValidatorTests
     }
 
     [Fact]
-    public void Validate_UserNameEmpty_Message()
+    public void Validate_EmptyUserNameAndPassword_IsValid_LockOnly()
     {
         var config = Valid();
         config.Credentials.UserName = "  ";
+        config.Credentials.Password = "";
+
+        Assert.True(ConfigValidator.Validate(config).IsValid);
+    }
+
+    [Fact]
+    public void Validate_FreshInstall_EmptyDeviceAndCredentials_IsValid()
+        => Assert.True(ConfigValidator.Validate(new BleUnlockConfig()).IsValid);
+
+    [Fact]
+    public void Validate_MalformedIrk_StillAnError()
+    {
+        var config = Valid();
+        config.Device.Irk = "abc";
 
         var error = Assert.Single(ConfigValidator.Validate(config).Errors);
-        Assert.Equal("Credentials.UserName 不能为空", error.Message);
+        Assert.Equal(ConfigFields.DeviceIrk, error.Field);
     }
 
     [Fact]
@@ -268,7 +282,7 @@ public sealed class ConfigValidatorTests
     {
         var config = Valid();
         config.Device.Irk = "bad";
-        config.Credentials.UserName = "";
+        config.Credentials.UserName = "a\nb";
         config.Proximity.LockConfirmSampleCount = 0;
         config.Notification.SnoozeMinutes = 999;
 

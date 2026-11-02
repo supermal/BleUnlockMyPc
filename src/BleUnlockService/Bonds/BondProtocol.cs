@@ -40,5 +40,5 @@ public sealed record BondResponse(
     IReadOnlyList<BondDeviceFrame>? Devices,
     string? Error);
 
-/// <summary>设备条目：地址为规范化 MAC，Irk 为 32 位大写十六进制。</summary>
+/// <summary>设备条目：地址为规范化 MAC，Irk 为 32 位大写十六进制；设备没有可用 IRK 时为空串（管理端显示为不支持）。</summary>
 public sealed record BondDeviceFrame(string Addr, string? Name, string Irk);

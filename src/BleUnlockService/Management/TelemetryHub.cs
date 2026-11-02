@@ -265,7 +265,8 @@ public sealed class TelemetryHub
                     ? Math.Max(0, (long)(now - matchAt).TotalMilliseconds)
                     : null,
                 samples,
-                ToWire(_batch));
+                ToWire(_batch),
+                ConfigCompleteness.ToWire(ConfigCompleteness.Evaluate(_options.Current)));
         }
 
         return ManagementProtocol.SerializeLine(frame);

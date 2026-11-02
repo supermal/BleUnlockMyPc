@@ -300,16 +300,15 @@ try {
 } catch {
     throw (T 'ConfigReadFailed' $configPath, $_.Exception.Message)
 }
+# 配置不完整（新电脑：没有设备、没有密码）时服务照常启动：选设备要用的配对设备列表正是服务提供的。
+# 服务处于「未配置」状态，不监测任何设备；管理器启动后会自动打开设置向导
 $configReady = -not ([string]::IsNullOrWhiteSpace($config.BleUnlock.Device.Irk) -or
                      [string]::IsNullOrWhiteSpace($config.BleUnlock.Credentials.UserName))
-if ($configReady) {
-    sc.exe start $serviceName | Out-Null
-    Assert-ScOk (T 'ActStartService')
-    Write-Host (T 'ServiceStarted' (Join-Path $DataDir 'logs'))
-} else {
+sc.exe start $serviceName | Out-Null
+Assert-ScOk (T 'ActStartService')
+Write-Host (T 'ServiceStarted' (Join-Path $DataDir 'logs'))
+if (-not $configReady) {
     Write-Warning (T 'ConfigIncomplete')
-    Write-Warning (T 'ConfigFillIn' $configPath)
-    Write-Warning (T 'ConfigThenStart' $serviceName)
 }
 
 # ── 7. 管理端：开始菜单快捷方式与登录自启计划任务 ─────────────────────────

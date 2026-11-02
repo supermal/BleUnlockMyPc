@@ -42,7 +42,7 @@ public static partial class RulesContent
         (true, 3, 7, []),
         (true, 2, 0, []),
         (false, 3, 0, []),
-        (false, 6, 0, []),
+        (false, 7, 0, []),
         (false, 0, 0, [6, 2]),
     ];
 

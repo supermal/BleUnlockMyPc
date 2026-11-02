@@ -77,6 +77,16 @@ public sealed class OptionsGate : IDisposable
                 return;
             }
 
+            // Un fichero a medio escribir o corrupto llega como configuración vacía, que ahora es válida
+            // (equipo sin configurar). Si ya había dispositivo o credenciales, perderlos así no es creíble:
+            // quitar el dispositivo a propósito escribe el IRK de relleno, nunca un campo vacío
+            if (DropsSetup(Current, candidate))
+            {
+                _log.LogError(ServiceStrings.Log_ConfigRejected, ServiceStrings.Validation_ReloadDropsSetup);
+                WriteStatus(ReloadStatus.Create(ReloadStatusFile.Rejected, message: ServiceStrings.Validation_ReloadDropsSetup));
+                return;
+            }
+
             var result = OptionsValidator.Validate(candidate);
             if (!result.IsValid)
             {
@@ -119,6 +129,17 @@ public sealed class OptionsGate : IDisposable
         {
             _log.LogWarning(ServiceStrings.Log_ReloadStatusWriteFailed, ex.Message);
         }
+    }
+
+    internal static bool DropsSetup(BleUnlockOptions current, BleUnlockOptions candidate)
+    {
+        var deviceBlanked = ConfigCompleteness.HasDevice(current.Device) &&
+            string.IsNullOrWhiteSpace(candidate.Device.Irk) &&
+            string.IsNullOrWhiteSpace(candidate.Device.IdentityAddress);
+        var credentialsBlanked = ConfigCompleteness.HasCredentials(current.Credentials) &&
+            string.IsNullOrWhiteSpace(candidate.Credentials.UserName) &&
+            string.IsNullOrEmpty(candidate.Credentials.Password);
+        return deviceBlanked || credentialsBlanked;
     }
 
     private static bool DeviceDiffers(BleUnlockOptions a, BleUnlockOptions b) =>

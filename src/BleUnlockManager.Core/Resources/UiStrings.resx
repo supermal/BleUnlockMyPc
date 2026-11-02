@@ -597,4 +597,52 @@ The current service configuration is not affected.</value></data>
   <data name="Zone_Away" xml:space="preserve"><value>Away zone</value></data>
   <data name="Zone_Hold" xml:space="preserve"><value>Hold zone</value></data>
   <data name="Zone_Near" xml:space="preserve"><value>Near zone</value></data>
+  <data name="Setup_BannerNoDeviceTitle" xml:space="preserve"><value>BleUnlock is not set up yet</value></data>
+  <data name="Setup_BannerNoDeviceMessage" xml:space="preserve"><value>No unlock device has been chosen, so nothing is locked or unlocked automatically yet.</value></data>
+  <data name="Setup_BannerNoCredentialsTitle" xml:space="preserve"><value>No Windows password yet</value></data>
+  <data name="Setup_BannerNoCredentialsMessage" xml:space="preserve"><value>The screen locks when you leave, but will not unlock when you return.</value></data>
+  <data name="Setup_RunWizard" xml:space="preserve"><value>Run setup wizard</value></data>
+  <data name="Wizard_Title" xml:space="preserve"><value>Set up BleUnlock</value></data>
+  <data name="Wizard_StepOf" xml:space="preserve"><value>Step {0} of 3: {1}</value></data>
+  <data name="Wizard_Step1Name" xml:space="preserve"><value>Choose the unlock device</value></data>
+  <data name="Wizard_Step2Name" xml:space="preserve"><value>Enter the Windows sign-in account</value></data>
+  <data name="Wizard_Step3Name" xml:space="preserve"><value>Finish</value></data>
+  <data name="Wizard_DeviceIntro" xml:space="preserve"><value>Choose the phone or watch you carry with you. It must be paired with this PC first; if it isn't, click "Pair new device…".</value></data>
+  <data name="Wizard_PairNew" xml:space="preserve"><value>Pair new device…</value></data>
+  <data name="Wizard_OpenBtSettings" xml:space="preserve"><value>Open Windows Bluetooth settings</value></data>
+  <data name="Wizard_Refresh" xml:space="preserve"><value>Refresh list</value></data>
+  <data name="Wizard_DevicesHeader" xml:space="preserve"><value>Devices paired with this PC</value></data>
+  <data name="Wizard_Unsupported" xml:space="preserve"><value>Not supported: the device has no identity key</value></data>
+  <data name="Wizard_ReadingDevices" xml:space="preserve"><value>Reading paired devices…</value></data>
+  <data name="Wizard_NoDevices" xml:space="preserve"><value>There is no usable paired device yet. Pair your phone or watch first.</value></data>
+  <data name="Wizard_DevicesFound" xml:space="preserve"><value>Found {0} usable device(s); choose one.</value></data>
+  <data name="Wizard_DevicesReadFailed" xml:space="preserve"><value>Could not read the paired devices: {0}</value></data>
+  <data name="Wizard_HelpTitle" xml:space="preserve"><value>Not sure how to pair?</value></data>
+  <data name="Wizard_HelpAppleWatch" xml:space="preserve"><value>Apple Watch: click "Pair new device…", choose "Phone / watch" and start advertising; then on the watch open Settings › Bluetooth and tap this PC under "Health devices".</value></data>
+  <data name="Wizard_HelpIphone" xml:space="preserve"><value>iPhone: the PC does not show up in the iPhone's Bluetooth settings. Click "Pair new device…" and start advertising, then connect to this PC with a Bluetooth tool app such as nRF Connect and confirm the pairing.</value></data>
+  <data name="Wizard_HelpAndroid" xml:space="preserve"><value>Android phone: click "Open Windows Bluetooth settings" → Add device → Bluetooth, and keep the phone's Bluetooth settings page open so it stays discoverable. If the list then shows it as not supported, use "Pair new device…" with advertising instead and connect with nRF Connect.</value></data>
+  <data name="Wizard_HelpBand" xml:space="preserve"><value>Fitness bands and other watches: put the device in pairing mode, click "Pair new device…", choose "Headphones / mouse / keyboard", then scan and pair. Many bands only pair with their own app and cannot be used for unlocking.</value></data>
+  <data name="Wizard_Skip" xml:space="preserve"><value>Skip, set up later</value></data>
+  <data name="Wizard_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Wizard_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Wizard_CredIntro" xml:space="preserve"><value>Enter the Windows account you sign in with on this PC. BleUnlock only uses it to unlock when you come back, and the password is stored encrypted on this PC.</value></data>
+  <data name="Wizard_UserName" xml:space="preserve"><value>User name</value></data>
+  <data name="Wizard_UserNameHint" xml:space="preserve"><value>For a local account, enter the user name; if you sign in with a Microsoft account, enter its email address (for example name@outlook.com).</value></data>
+  <data name="Wizard_Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Wizard_PasswordHint" xml:space="preserve"><value>Enter the Windows sign-in password, not the PIN.</value></data>
+  <data name="Wizard_SkipPassword" xml:space="preserve"><value>Not now (lock only)</value></data>
+  <data name="Wizard_SaveFinish" xml:space="preserve"><value>Save and finish</value></data>
+  <data name="Wizard_UserNameRequired" xml:space="preserve"><value>Enter the user name, or click "Not now".</value></data>
+  <data name="Wizard_PasswordRequired" xml:space="preserve"><value>Enter the password, or click "Not now".</value></data>
+  <data name="Wizard_Saving" xml:space="preserve"><value>Saving and waiting for the service to apply the new settings…</value></data>
+  <data name="Wizard_DoneTitle" xml:space="preserve"><value>Setup complete</value></data>
+  <data name="Wizard_DoneFull" xml:space="preserve"><value>Unlock device: {0}. The screen locks when you leave with it and unlocks when you return. If you have not restarted the PC since installing, automatic unlock on the lock screen starts working after a restart.</value></data>
+  <data name="Wizard_DoneLockOnly" xml:space="preserve"><value>Unlock device: {0}. The screen locks when you leave; since no password was entered, it will not unlock when you return. You can add it later on the Configuration page or by running the setup wizard again.</value></data>
+  <data name="Wizard_FailedTitle" xml:space="preserve"><value>Setup did not complete</value></data>
+  <data name="Wizard_Finish" xml:space="preserve"><value>Finish</value></data>
+  <data name="Wizard_BackToFix" xml:space="preserve"><value>Go back and fix</value></data>
+  <data name="Wizard_ServiceStartFailed" xml:space="preserve"><value>The settings were saved, but the service could not be started: {0}</value></data>
+  <data name="Pair_PairedButUnsupported" xml:space="preserve"><value>"{0}" was paired, but it has no identity key and cannot be used for unlocking. Use another device or another pairing method.</value></data>
+  <data name="Rules_S7_I7_K" xml:space="preserve"><value>Setup not finished:</value></data>
+  <data name="Rules_S7_I7_V" xml:space="preserve"><value>with no device chosen, nothing is monitored and the screen is neither locked nor unlocked; with a device but no Windows user name or password, leaving still locks the screen, but returning does not unlock it. Completing the setup takes effect immediately, without restarting the service.</value></data>
 </root>

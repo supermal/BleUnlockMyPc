@@ -267,14 +267,14 @@ internal sealed class TrayHost : IDisposable
         _menuBadge.Symbol = state switch
         {
             TrayState.Running => SymbolRegular.CheckmarkCircle12,
-            TrayState.Leaving or TrayState.Suspended => SymbolRegular.Warning12,
+            TrayState.Leaving or TrayState.Suspended or TrayState.NeedsSetup => SymbolRegular.Warning12,
             TrayState.Stopped => SymbolRegular.DismissCircle12,
             _ => SymbolRegular.Circle12,
         };
         _menuBadge.SetResourceReference(Control.ForegroundProperty, state switch
         {
             TrayState.Running => "Ui.Status.Success.Fg",
-            TrayState.Leaving => "Ui.Status.Warning.Fg",
+            TrayState.Leaving or TrayState.NeedsSetup => "Ui.Status.Warning.Fg",
             TrayState.Suspended or TrayState.Stopped => "Ui.Status.Danger.Fg",
             _ => "Ui.Text.Secondary",
         });

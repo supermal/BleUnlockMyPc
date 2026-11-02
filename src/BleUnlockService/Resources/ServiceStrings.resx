@@ -167,7 +167,6 @@
   <data name="Validation_ThresholdOrder" xml:space="preserve"><value>Proximity.UnlockThresholdDbm must be greater than LockThresholdDbm, otherwise the dead zone is negative</value></data>
   <data name="Validation_UnlockCountRange" xml:space="preserve"><value>Proximity.UnlockSampleCount must be between 1 and 20</value></data>
   <data name="Validation_UserNameControlChars" xml:space="preserve"><value>Credentials.UserName cannot contain control characters (line breaks, carriage returns, tabs, etc.)</value></data>
-  <data name="Validation_UserNameEmpty" xml:space="preserve"><value>Credentials.UserName cannot be empty</value></data>
   <data name="Scan_Stalled" xml:space="preserve"><value>No Bluetooth advertisements from any device for {0} s: the PC's Bluetooth receiver seems stuck. Recovering automatically</value></data>
   <data name="Scan_StalledFailed" xml:space="preserve"><value>Automatic Bluetooth recovery failed: turn Bluetooth off and on again, or restart the PC</value></data>
   <data name="Log_ScanStillStalledRetrying" xml:space="preserve"><value>The Bluetooth receiver is still stuck; retrying the recovery</value></data>
@@ -178,4 +177,10 @@
   <data name="Notify_ScanStalledFailed" xml:space="preserve"><value>BleUnlock could not recover the PC's Bluetooth. Turn Bluetooth off and on again, or restart the PC. Automatic locking stays paused until it works again</value></data>
   <data name="Reason_ScanStalledDiscardsPrompt" xml:space="preserve"><value>The Bluetooth receiver is stuck; the lock prompt was withdrawn (no signal does not mean you left)</value></data>
   <data name="Reason_ScanStalledDisarms" xml:space="preserve"><value>The Bluetooth receiver is stuck; departure must be confirmed again before unlocking</value></data>
+  <data name="Reason_CredentialsMissingLockOnly" xml:space="preserve"><value>No Windows user name or password configured: automatic locking only, no automatic unlock</value></data>
+  <data name="Log_SetupNoDevice" xml:space="preserve"><value>No unlock device has been chosen yet: nothing is monitored. Open the BleUnlock Manager to finish the setup</value></data>
+  <data name="Log_SetupNoCredentials" xml:space="preserve"><value>No Windows user name or password configured: the screen locks when you leave but will not unlock automatically</value></data>
+  <data name="Notify_SetupNoDevice" xml:space="preserve"><value>BleUnlock is not set up yet: no unlock device has been chosen. Open the BleUnlock Manager to finish the setup</value></data>
+  <data name="Notify_SetupNoCredentials" xml:space="preserve"><value>BleUnlock has no Windows password yet: it locks the screen when you leave but will not unlock it when you return. Enter it in the BleUnlock Manager</value></data>
+  <data name="Validation_ReloadDropsSetup" xml:space="preserve"><value>The device or the credentials in the configuration became empty; the file may be half-written or damaged, so the previous configuration was kept. To remove the device, unpair it in the Manager</value></data>
 </root>
