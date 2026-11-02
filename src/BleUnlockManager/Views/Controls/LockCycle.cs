@@ -123,9 +123,18 @@ public sealed class LockCycle : ContentControl
         text.SetResourceReference(TextBlock.ForegroundProperty, isCurrent ? "Ui.Text.Primary" : "Ui.Text.Secondary");
         panel.Children.Add(text);
 
+        // El hueco del progreso se reserva siempre (oculto si no hay lote): así la tarjeta no cambia
+        // de alto cada vez que empieza o termina un lote y la página no salta
         if (isCurrent && Batch is { Of: > 0 } batch)
         {
             panel.Children.Add(BuildProgress(batch));
+        }
+        else
+        {
+            var placeholder = BuildProgress(LongestBatch());
+            placeholder.Visibility = Visibility.Hidden;
+            placeholder.IsHitTestVisible = false;
+            panel.Children.Add(placeholder);
         }
 
         return panel;
@@ -170,6 +179,14 @@ public sealed class LockCycle : ContentControl
         text.SetResourceReference(TextBlock.ForegroundProperty, "Ui.Status.Warning.Fg");
         block.Children.Add(text);
         return block;
+    }
+
+    // Lote de mayor tamaño posible en el idioma vigente: la etiqueta más larga con 10/10, para
+    // que el hueco reservado alcance aunque el texto pase a dos líneas
+    private static SnapshotBatch LongestBatch()
+    {
+        var kind = new[] { "leave", "lockConfirm", "unlock" }.MaxBy(k => KindLabel(k).Length)!;
+        return new SnapshotBatch(kind, MaxSegments, MaxSegments);
     }
 
     private static string KindLabel(string kind) => kind switch
