@@ -28,4 +28,10 @@ public static class AppPaths
 
     /// <summary>管理端自身设置文件：ManagerAppDataDir\settings.json（窗口位置等非敏感项）。</summary>
     public static string ManagerSettingsFile { get; } = Path.Combine(ManagerAppDataDir, "settings.json");
+
+    /// <summary>
+    /// Hasta qué entrada del registro de servicio ya se ha visto (contador «sin leer» junto a «日志»).
+    /// Fichero aparte de settings.json para no pisar los ajustes que guarda otra parte del gestor.
+    /// </summary>
+    public static string LogsSeenFile { get; } = Path.Combine(ManagerAppDataDir, "logs-seen.txt");
 }

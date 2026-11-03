@@ -34,7 +34,8 @@ public enum SessionEvent { Lock, Unlock }
 public sealed record StateChange(
     ProximityState From, ProximityState To, ProximityAction Action, string Reason);
 
-public sealed record AuthResult(bool Success, uint NtStatus);
+// Substatus: el subestado que da LogonUI (p. ej. C000006A = clave incorrecta dentro de C000006D)
+public sealed record AuthResult(bool Success, uint NtStatus, uint Substatus = 0);
 
 // Lote en curso: Leave = confirmar salida (antes del aviso o con la pantalla ya bloqueada),
 // LockConfirm = confirmar el bloqueo tras el aviso, Unlock = confirmar la llegada
@@ -300,15 +301,16 @@ public sealed class ProximityStateMachine
 
         if (NtStatusPolicy.ShouldSuspend(result.NtStatus))
             return Transition(ProximityState.Suspended, ProximityAction.NotifySuspended,
-                string.Format(ServiceStrings.Reason_BleUnlockSuspended, NtStatusPolicy.Describe(result.NtStatus)));
+                string.Format(ServiceStrings.Reason_BleUnlockSuspended, NtStatusPolicy.Describe(result.NtStatus, result.Substatus)));
 
         return Transition(ProximityState.LockedArmed, ProximityAction.None,
-            string.Format(ServiceStrings.Reason_UnlockFailedRetry, NtStatusPolicy.Describe(result.NtStatus)));
+            string.Format(ServiceStrings.Reason_UnlockFailedRetry, NtStatusPolicy.Describe(result.NtStatus, result.Substatus)));
     }
 
     // La llama el orquestador cuando cambian usuario o clave en el fichero,
-    // con el resultado de la prevalidacion LogonUser
-    public StateChange? OnCredentialsChanged(bool preValidationPassed)
+    // con el resultado de la prevalidacion LogonUser. failureReason sustituye al motivo generico
+    // cuando se sabe algo mas (p. ej. que la cuenta no existe en este equipo)
+    public StateChange? OnCredentialsChanged(bool preValidationPassed, string? failureReason = null)
     {
         _credentialsMissing = false;
 
@@ -320,7 +322,7 @@ public sealed class ProximityStateMachine
             var action = State == ProximityState.PendingLock
                 ? ProximityAction.CancelLockPromptAndNotifySuspended
                 : ProximityAction.NotifySuspended;
-            return Transition(ProximityState.Suspended, action, ServiceStrings.Reason_CredentialPrecheckFailed);
+            return Transition(ProximityState.Suspended, action, failureReason ?? ServiceStrings.Reason_CredentialPrecheckFailed);
         }
 
         if (State != ProximityState.Suspended) return null;

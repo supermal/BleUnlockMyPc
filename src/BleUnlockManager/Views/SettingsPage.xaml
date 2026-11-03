@@ -202,6 +202,19 @@
             <ContentPresenter Content="{Binding ConfigLocation, RelativeSource={RelativeSource AncestorType=UserControl}}" ContentTemplate="{StaticResource PathRow}" />
             <ContentPresenter Content="{Binding LogsLocation, RelativeSource={RelativeSource AncestorType=UserControl}}" ContentTemplate="{StaticResource PathRow}" />
             <ContentPresenter Content="{Binding InstallLocation, RelativeSource={RelativeSource AncestorType=UserControl}}" ContentTemplate="{StaticResource PathRow}" />
+
+            <!--  ===== Acerca de =====  -->
+            <TextBlock Style="{StaticResource GroupTitle}" Text="{loc:Loc Settings_About}" />
+            <controls:SettingRow
+                Description="{loc:Loc Settings_VersionHint}"
+                Header="{loc:Loc Settings_Version}"
+                Icon="Info20">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="{loc:Loc Settings_Version}"
+                    FontFamily="{StaticResource Ui.Font.Mono}"
+                    Text="{Binding Version}" />
+            </controls:SettingRow>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

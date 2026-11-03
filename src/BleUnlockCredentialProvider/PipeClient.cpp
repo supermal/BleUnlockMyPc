@@ -1,4 +1,5 @@
 #include "PipeClient.h"
+#include "CpLog.h"
 #include <string>
 
 static const WCHAR PIPE_NAME[] = L"\\\\.\\pipe\\BleUnlock";
@@ -19,6 +20,7 @@ CPipeClient::CPipeClient(CredReceivedCallback callback)
     : _hThread(nullptr)
     , _callback(std::move(callback))
     , _pendingStatus(0)
+    , _pendingSubstatus(0)
     , _awaiting(0)
 {
     InitializeCriticalSection(&_cbLock);
@@ -85,10 +87,11 @@ bool CPipeClient::Stop()
     return true;
 }
 
-void CPipeClient::ReportResult(NTSTATUS status)
+void CPipeClient::ReportResult(NTSTATUS status, NTSTATUS substatus)
 {
     // Un resultado fuera de un intento en espera (rezagado de uno ya vencido) se descarta
     if (InterlockedCompareExchange(&_awaiting, 1, 1) != 1) return;
+    InterlockedExchange(&_pendingSubstatus, static_cast<LONG>(substatus));
     InterlockedExchange(&_pendingStatus, static_cast<LONG>(status));
     if (_hResultEvent) SetEvent(_hResultEvent);
 }
@@ -173,7 +176,9 @@ void CPipeClient::Run()
             continue;
         }
 
-        if (!VerifyServer(hPipe))
+        bool verified = VerifyServer(hPipe);
+        CpLog(L"Pipe connected: serverVerified=%d", verified ? 1 : 0);
+        if (!verified)
         {
             // No se envia ni se acepta nada de un servidor no verificado
             CloseHandle(hPipe);
@@ -340,6 +345,14 @@ bool CPipeClient::HandleConnection(HANDLE hPipe)
             std::string passwordUtf8 = buffer.substr(n2 + 1, n3 - n2 - 1);
             ConsumeAndWipe(buffer, n3 + 1);
 
+            // Tolera CRLF tambien en usuario y clave: un '\r' de sobra haria fallar la clave
+            if (!usernameUtf8.empty() && usernameUtf8.back() == '\r') usernameUtf8.pop_back();
+            if (!passwordUtf8.empty() && passwordUtf8.back() == '\r')
+            {
+                passwordUtf8.back() = '\0';
+                passwordUtf8.pop_back();
+            }
+
             std::wstring username, password;
             bool valid = ToWide(usernameUtf8, username) && ToWide(passwordUtf8, password);
 
@@ -389,14 +402,17 @@ bool CPipeClient::HandleConnection(HANDLE hPipe)
             if (waited == WAIT_OBJECT_0)
             {
                 NTSTATUS status = static_cast<NTSTATUS>(InterlockedCompareExchange(&_pendingStatus, 0, 0));
+                NTSTATUS substatus = static_cast<NTSTATUS>(InterlockedCompareExchange(&_pendingSubstatus, 0, 0));
                 if (status == 0)
                 {
                     if (!WriteAll(hPipe, "RESULT OK\n")) return false;
                 }
                 else
                 {
+                    // El subestado (p. ej. C000006A = clave incorrecta) dice por que fallo un C000006D
                     char line[64] = {};
-                    sprintf_s(line, "RESULT FAIL %08X\n", static_cast<unsigned>(status));
+                    sprintf_s(line, "RESULT FAIL %08X %08X\n",
+                        static_cast<unsigned>(status), static_cast<unsigned>(substatus));
                     if (!WriteAll(hPipe, line)) return false;
                 }
             }

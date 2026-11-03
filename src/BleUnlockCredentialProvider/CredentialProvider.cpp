@@ -1,5 +1,6 @@
 #include "CredentialProvider.h"
 #include "guids.h"
+#include "CpLog.h"
 #include <new>
 
 extern LONG g_cDllRef;
@@ -18,9 +19,9 @@ CBleUnlockCredentialProvider::CBleUnlockCredentialProvider()
 
     if (_pCredential)
     {
-        _pCredential->SetAuthResultCallback([this](NTSTATUS status)
+        _pCredential->SetAuthResultCallback([this](NTSTATUS status, NTSTATUS substatus)
         {
-            if (_pPipeClient) _pPipeClient->ReportResult(status);
+            if (_pPipeClient) _pPipeClient->ReportResult(status, substatus);
         });
     }
 
@@ -85,8 +86,13 @@ HRESULT CBleUnlockCredentialProvider::QueryInterface(REFIID riid, void** ppv)
 HRESULT CBleUnlockCredentialProvider::SetUsageScenario(
     CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus, DWORD)
 {
+    CpLog(L"SetUsageScenario: cpus=%d", static_cast<int>(cpus));
     if (cpus == CPUS_UNLOCK_WORKSTATION || cpus == CPUS_LOGON)
+    {
+        // El tipo de mensaje depende del escenario: KerbWorkstationUnlockLogon solo vale al desbloquear
+        if (_pCredential) _pCredential->SetUsageScenario(cpus);
         return S_OK;
+    }
     return E_NOTIMPL;
 }
 
@@ -96,18 +102,34 @@ HRESULT CBleUnlockCredentialProvider::SetSerialization(
     return E_NOTIMPL;
 }
 
+// Bajo _cs, igual que OnCredentialsReceived (hilo del canal), que lee _pcpe y el contexto
 HRESULT CBleUnlockCredentialProvider::Advise(ICredentialProviderEvents* pcpe, UINT_PTR upAdviseContext)
 {
-    if (_pcpe) _pcpe->Release();
+    ICredentialProviderEvents* previous = nullptr;
+    if (pcpe) pcpe->AddRef();
+
+    EnterCriticalSection(&_cs);
+    previous = _pcpe;
     _pcpe = pcpe;
-    if (_pcpe) _pcpe->AddRef();
     _upAdviseContext = upAdviseContext;
+    LeaveCriticalSection(&_cs);
+
+    // Release fuera del candado: puede reentrar en LogonUI
+    if (previous) previous->Release();
+    CpLog(L"Advise");
     return S_OK;
 }
 
 HRESULT CBleUnlockCredentialProvider::UnAdvise()
 {
-    if (_pcpe) { _pcpe->Release(); _pcpe = nullptr; }
+    EnterCriticalSection(&_cs);
+    ICredentialProviderEvents* previous = _pcpe;
+    _pcpe = nullptr;
+    _upAdviseContext = 0;
+    LeaveCriticalSection(&_cs);
+
+    if (previous) previous->Release();
+    CpLog(L"UnAdvise");
     return S_OK;
 }
 
@@ -143,6 +165,7 @@ HRESULT CBleUnlockCredentialProvider::GetCredentialCount(
         *pdwDefault             = CREDENTIAL_PROVIDER_NO_DEFAULT;
         *pbAutoLogonWithDefault = FALSE;
     }
+    CpLog(L"GetCredentialCount: %u", static_cast<unsigned>(*pdwCount));
     return S_OK;
 }
 

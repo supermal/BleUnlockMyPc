@@ -111,10 +111,12 @@ begin
     MsgBox(FmtMessage(CustomMessage('InstallFailed'), [LogPath]), mbError, MB_OK);
 end;
 
-// El proveedor de credenciales solo se carga en la pantalla de bloqueo tras reiniciar
+// No hace falta reiniciar: LogonUI se arranca de nuevo en cada bloqueo y entonces carga el proveedor
+// de credenciales recién registrado. Si la DLL antigua estaba en uso, install.ps1 la renombra y la
+// nueva se usa igualmente en el siguiente bloqueo
 function NeedRestart(): Boolean;
 begin
-  Result := True;
+  Result := False;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

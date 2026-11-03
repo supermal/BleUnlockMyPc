@@ -168,6 +168,9 @@ public sealed partial class LogsViewModel : ObservableObject
     /// <summary>Recuento por nivel del fichero actual (botones de filtro y contador de la navegación).</summary>
     [ObservableProperty] public partial LogLevelCounts Counts { get; set; } = LogLevelCounts.Empty;
 
+    /// <summary>Todas las entradas cargadas del fichero seleccionado (sin filtrar); cambia junto con <see cref="Counts"/>.</summary>
+    public IReadOnlyList<LogEntry> AllEntries => _all;
+
     /// <summary>La lista está al final (lo informa la página a partir de su ScrollViewer).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsFollowing), nameof(IsBrowsing))]

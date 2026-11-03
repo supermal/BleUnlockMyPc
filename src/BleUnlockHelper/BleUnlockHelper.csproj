@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- Version desde las etiquetas git vX.Y.Z (MinVer); el script del instalador crea una etiqueta nueva en cada paquete -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <OutputType>WinExe</OutputType>
     <Nullable>enable</Nullable>
@@ -15,6 +17,10 @@
     <!-- Registra solo el AUMID y el acceso directo del menu Inicio, que es lo que
          Windows exige para mostrar Toasts desde una aplicacion sin empaquetar -->
     <PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
+    <PackageReference Include="MinVer" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <!-- El Toolkit arrastra System.Drawing.Common 4.7.0 (NU1904, critico): se fija una version parcheada -->
     <PackageReference Include="System.Drawing.Common" Version="10.0.13" />
   </ItemGroup>
@@ -28,12 +34,7 @@
   <ItemGroup>
     <!-- Textos visibles: inglés neutro, zh y es como satélites. Clase tipada generada al compilar;
          su propiedad estática Culture cambia el idioma de todo el proceso al instante -->
-    <EmbeddedResource Update="Resources\HelperStrings.resx"
-                      StronglyTypedLanguage="CSharp"
-                      StronglyTypedNamespace="BleUnlockHelper.Resources"
-                      StronglyTypedClassName="HelperStrings"
-                      StronglyTypedFileName="$(IntermediateOutputPath)HelperStrings.Designer.cs"
-                      PublicClass="true" />
+    <EmbeddedResource Update="Resources\HelperStrings.resx" StronglyTypedLanguage="CSharp" StronglyTypedNamespace="BleUnlockHelper.Resources" StronglyTypedClassName="HelperStrings" StronglyTypedFileName="$(IntermediateOutputPath)HelperStrings.Designer.cs" PublicClass="true" />
   </ItemGroup>
 
 </Project>

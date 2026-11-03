@@ -27,4 +27,11 @@ public sealed partial class NavItem : ObservableObject
 
     [ObservableProperty]
     public partial string Count { get; set; } = "";
+
+    /// <summary>Color del contador: «danger» (rojo) o «warning» (amarillo, por defecto).</summary>
+    [ObservableProperty]
+    public partial string CountTone { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string CountToolTip { get; set; } = "";
 }

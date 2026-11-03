@@ -52,7 +52,21 @@ iPhone、Apple Watch 和大多数现代手机、手表为了防跟踪，会使�
 
 锁屏界面上有一个 BleUnlock **凭据提供程序**。判定为靠近时，服务把加密保存的 Windows 用户名和密码推送给它，由它交给 Windows 完成登录，相当于替你输入了密码。
 
-> 必须是**密码**，不能是 PIN。微软账户的用户名填邮箱。
+> 必须是**密码**，不能是 PIN。
+
+### 4. 支持的账户类型
+
+| 账户 | 用户名怎么填 | 解锁时怎么提交 |
+|---|---|---|
+| 本地账户 | `Admin`、`.\Admin` 或 `电脑名\Admin` | MSV1_0（本机认证包） |
+| 域账户 | `域\用户名`（如 `TELEAPOSTUAK\hq.qiu`）或 UPN（如 `hq.qiu@kirol.es`） | Negotiate（Kerberos，必要时 NTLM 或缓存凭据） |
+| 微软（Outlook）账户 | 邮箱（如 `name@outlook.com`）或 `MicrosoftAccount\邮箱` | Negotiate |
+
+- 设置向导会**自动填好当前登录的账户**：域账户带上域名，微软账户填成 `MicrosoftAccount\邮箱`，一般不用改。
+- 服务会把填写的名字解析成 Windows 认可的规范形式（例如 `hq.qiu@kirol.es` → `KIROL\hq.qiu`，只填 `hq.qiu` 也能在域里找到），再交给凭据提供程序；解析不了（如暂时连不上域控制器）就按原样使用。
+- 密码在提交前用 `CredProtect` 保护，与 Windows 自带的密码登录方式一致。
+- 域账户：电脑暂时连不上域控制器时，服务不会因为「无法预验证」而暂停自动解锁，以锁屏时 Windows 的实际登录结果为准（离线时 Windows 会用缓存凭据）。
+- Microsoft Entra ID（工作或学校账户，`AzureAD\…`）尚未验证。
 
 ---
 
@@ -115,7 +129,7 @@ iPhone、Apple Watch 和大多数现代手机、手表为了防跟踪，会使�
 - Windows 11 x64（安装包最低要求 Windows 10 1809，但只在 Windows 11 上验证过）
 - 支持 BLE 的蓝牙适配器（大多数笔记本内置的都可以）
 - 一台会在配对时提供 IRK 的设备：Apple Watch、iPhone、多数安卓手机和手表
-- 本地账户或微软账户的 **Windows 密码**（不是 PIN）
+- 本地账户、域账户或微软（Outlook）账户的 **Windows 密码**（不是 PIN），见[支持的账户类型](#4-支持的账户类型)
 - 安装需要管理员权限
 
 使用单文件安装包时，**.NET 运行时和 Visual C++ 运行库都已包含在内**，无需单独安装。
@@ -129,12 +143,12 @@ iPhone、Apple Watch 和大多数现代手机、手表为了防跟踪，会使�
    - 安装 Visual C++ 运行库（已装过同版本或更新版本则跳过）；
    - 安装服务、提示助手、凭据提供程序和管理器到 `C:\Program Files\BleUnlock`；
    - 启动服务和管理器。
-3. 安装完成后**重启一次电脑**。凭据提供程序要重启后才会在锁屏界面加载，在此之前只有自动锁屏能用，自动解锁不能用。
+3. **不需要重启**。锁屏界面每次锁屏都会重新启动并加载凭据提供程序，装完后下一次锁屏就能自动解锁。升级时旧的凭据提供程序如果正被占用，安装脚本会把它改名让开，新版本同样在下一次锁屏生效。
 4. 管理器发现还没选择设备，会自动打开设置向导，见[第六节](#六首次设置)。
 
 **升级**：直接运行新版本的安装包，覆盖安装即可，原有配置保留。旧版（AutoUnlock 时期）的安装会被识别为升级并自动清理。
 
-**卸载**：在「设置 → 应用 → 已安装的应用」里卸载 BleUnlock。卸载时会询问是否同时删除配置和日志（默认「否」，保留以便以后重装）。卸载后建议重启一次，让登录界面释放凭据提供程序 DLL。
+**卸载**：在「设置 → 应用 → 已安装的应用」里卸载 BleUnlock。卸载时会询问是否同时删除配置和日志（默认「否」，保留以便以后重装）。不需要重启。
 
 **安装日志**：安装失败时，详细信息记录在 `C:\ProgramData\BleUnlock\setup.log`。
 
@@ -151,7 +165,7 @@ iPhone、Apple Watch 和大多数现代手机、手表为了防跟踪，会使�
    - 还没配对：点「配对新设备…」在管理器里配对，或点「打开 Windows 蓝牙设置」用系统方式配对，配好后点「刷新」。
    - 点「不知道怎么配对？」可以看到不同设备的配对方法（见下表）。
 2. **填写 Windows 账户**
-   - 用户名默认填好当前登录账户；微软账户填邮箱。
+   - 用户名已自动填好当前登录的账户（域账户带域名，微软账户为 `MicrosoftAccount\邮箱`），一般不用改。
    - 密码是 Windows 登录密码，不是 PIN。
    - 也可以点「暂不填写」：这样只自动锁屏，回来不会自动解锁。
 3. **保存**：立即生效，不用重启服务。服务如果没在运行，向导会自动启动它。
@@ -226,7 +240,7 @@ iPhone、Apple Watch 和大多数现代手机、手表为了防跟踪，会使�
 - **日志**
   - 服务日志实时跟随：停在底部时自动滚动，向上翻看时保持位置并提示「回到最新」；
   - 按级别筛选（带计数）、关键字过滤、警告 / 错误整行高亮、导出、打开日志目录；
-  - 侧栏「日志」旁显示当日警告数。
+  - 侧栏「日志」旁显示**未读**的错误 / 警告数：有未读错误时显示红色的错误数，只有警告时显示黄色的警告数，悬停可看两者各多少；打开「日志」页即清零。「已读到哪里」按日志时间记录并保存，重启管理器、日志换天都不会重新计数。
 - **判定条件**：用当前配置的数值逐条解释从弹窗、锁屏到解锁的规则，随配置变化自动更新。内容与 [`docs/lock-unlock-detailed-conditions.md`](docs/lock-unlock-detailed-conditions.md) 一致。
 - **设置**：语言（跟随系统 / 中文 / English / Español）、主题（跟随系统 / 浅色 / 深色）、登录自启状态、文件位置。
 
@@ -318,7 +332,7 @@ iPhone、Apple Watch 和大多数现代手机、手表为了防跟踪，会使�
 
 | 键 | 默认值 | 说明 |
 |---|---|---|
-| `UserName` | 空 | Windows 用户名；微软账户填邮箱 |
+| `UserName` | 空 | Windows 用户名：本地账户、`域\用户名` 或 UPN、微软账户邮箱 |
 | `Password` | 空 | Windows 密码（DPAPI 加密）；空 = 只锁不解 |
 
 ### 判定 `BleUnlock.Proximity`
@@ -451,17 +465,22 @@ dotnet test tests\BleUnlockManager.Tests\BleUnlockManager.Tests.csproj
 ### 打单文件安装包
 
 ```powershell
-.\installer\build-installer.ps1                 # 版本号默认是今天的日期，如 2026.11.2
-.\installer\build-installer.ps1 -Version 2026.11.3
+.\installer\build-installer.ps1
 ```
 
 产物：`installer\out\BleUnlock-Setup-<版本>.exe`。脚本会：
 
-1. 自包含发布服务、助手和管理器（目标电脑不需要 .NET）；
-2. 用 MSBuild 重新编译凭据提供程序（找不到 MSBuild 时使用最近一次的编译结果）；
-3. 下载并校验 Visual C++ 运行库（缓存在 `installer\cache`，校验微软签名）；
-4. **从 git 取配置模板**（默认 `HEAD`），所以本机工作区里填过测试账号的 `appsettings.json` 不会被打进安装包；`-TemplateRevision ''` 改为从暂存区取；
-5. 用 Inno Setup 编译。
+1. **确定版本号并打 git 标签**（[MinVer](https://github.com/adamralph/minver)）：
+   - 有未提交的改动时拒绝打包，先提交，保证版本号一定对应某次提交（`src/BleUnlockService/appsettings.json` 除外，它可能带着本机的测试账号，且不进安装包）；
+   - 当前提交已经有 `vX.Y.Z` 标签：沿用这个版本（同样的代码，同样的版本号）；
+   - 否则在当前提交打一个新标签，补丁号加 1（`v1.0.0` → `v1.0.1` → …；第一次是 `v1.0.0`）。标签只打在本地，需要时用 `git push origin v1.0.1` 推送；
+   - 编译时 MinVer 从标签读出版本号，写进服务、提示助手和管理器，管理器「设置 → 关于」显示「版本号（提交号）」，例如 `1.0.1（4880ccd）`；脚本最后会核对程序里的版本号与标签一致；
+   - 平时直接编译（不经过打包脚本）得到的是 MinVer 的预发布版本号，例如 `1.0.2-alpha.0.3`，「关于」里会标注「本地开发版本」；
+2. 自包含发布服务、助手和管理器（目标电脑不需要 .NET）；
+3. 用 MSBuild 重新编译凭据提供程序（找不到 MSBuild 时使用最近一次的编译结果）；
+4. 下载并校验 Visual C++ 运行库（缓存在 `installer\cache`，校验微软签名）；
+5. **从 git 取配置模板**（默认 `HEAD`），所以本机工作区里填过测试账号的 `appsettings.json` 不会被打进安装包；`-TemplateRevision ''` 改为从暂存区取；
+6. 用 Inno Setup 编译。
 
 > 在 PowerShell 里给 `-TemplateRevision` 传空字符串时，请用 `& .\installer\build-installer.ps1 -TemplateRevision ''` 直接调用；经 `powershell -File` 转发会丢掉空参数。
 
@@ -510,7 +529,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\uninstall.ps1 -KeepData  # 只移除程序，保留配置与日志
 ```
 
-管理器、计划任务和开始菜单快捷方式一并移除；管理器的界面设置（`%LocalAppData%\BleUnlockManager`）保留。卸载后建议重启一次。
+管理器、计划任务和开始菜单快捷方式一并移除；管理器的界面设置（`%LocalAppData%\BleUnlockManager`）保留。
 
 ---
 
@@ -543,12 +562,19 @@ Set-ExecutionPolicy -Scope Process Bypass
 - 「不支持」表示配对时设备没有提供 IRK，按[第六节](#各类设备怎么配对)换一种配对方式；只能和自家 App 配对的手环无法使用。
 
 **能自动锁屏，但回来不会自动解锁**
-- 安装后还没重启过电脑：凭据提供程序要重启后才会加载；
+- 安装后还没锁过屏：凭据提供程序在锁屏界面出现时才加载，锁一次屏即可；
 - 没有填写密码（「只锁不解」模式），或填的是 PIN；
 - 锁屏后你没有离开过：Win+L 后要先离开再回来；
 - 锁屏界面没有在显示：动一下鼠标或按任意键；
 - 状态是「已挂起」：密码错误或已过期，在「配置」页改正；
 - 连续 3 次推送没有结果后会暂停推送：手动登录一次即可恢复。
+- 看日志里的「收到认证结果」一行：`NTSTATUS` 是总的结果，`子状态` 说明具体原因（如 `C000006A` 密码错误、`C0000064` 找不到用户、`C0000072` 账户已停用），挂起原因也会直接写出来。
+
+**查看凭据提供程序的调试日志**（锁屏界面上发生了什么）
+1. 管理员 PowerShell：`New-Item HKLM:\SOFTWARE\BleUnlock -Force; Set-ItemProperty HKLM:\SOFTWARE\BleUnlock CpDebugLog 1 -Type DWord`；
+2. 以管理员运行 Sysinternals DebugView，勾选「Capture → Capture Global Win32」；
+3. 锁屏后靠近设备，DebugView 里会出现 `[BLECP]` 开头的记录：使用场景、收到的用户名和密码长度、走哪种认证包、提交结果和子状态（不会记录密码内容）；
+4. 用完后删除这个值：`Remove-ItemProperty HKLM:\SOFTWARE\BleUnlock CpDebugLog`。开关在登录界面进程启动时读取，修改后锁屏一次（必要时重启）才生效。
 
 **没有弹出提示就直接锁屏了 / 根本没有提示**
 - 「勿扰」或专注模式可能吞掉 Toast 通知，把「通知方式」改为「对话框」（`Mode = Dialog`，需重启服务）。

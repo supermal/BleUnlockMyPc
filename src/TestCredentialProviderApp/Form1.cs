@@ -197,7 +197,10 @@ public partial class Form1 : Form
         {
             "RESULT OK"                       => "✓ 认证成功",
             not null when result.StartsWith("RESULT FAIL ") =>
-                $"✗ 认证失败，NTSTATUS 0x{result["RESULT FAIL ".Length..]}",
+                // Desde 2026-11-03 el CP añade el subestado: «RESULT FAIL <estado> <subestado>»
+                result["RESULT FAIL ".Length..].Split(' ', StringSplitOptions.RemoveEmptyEntries) is [var status, var substatus]
+                    ? $"✗ 认证失败，NTSTATUS 0x{status}，子状态 0x{substatus}"
+                    : $"✗ 认证失败，NTSTATUS 0x{result["RESULT FAIL ".Length..]}",
             null                              => "连接已断开，未收到认证结果",
             _                                 => $"收到未知响应：{result}"
         });

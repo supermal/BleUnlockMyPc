@@ -4,11 +4,18 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Auth_AccountDisabled" xml:space="preserve"><value>The account is disabled</value></data>
+  <data name="Auth_AccountExpired" xml:space="preserve"><value>The account has expired</value></data>
   <data name="Auth_AccountLockedOut" xml:space="preserve"><value>The account is locked out</value></data>
   <data name="Auth_LogonFailedStatus" xml:space="preserve"><value>Sign-in failed (NTSTATUS 0x{0})</value></data>
   <data name="Auth_LogonFailure" xml:space="preserve"><value>Wrong user name or password</value></data>
+  <data name="Auth_LogonHours" xml:space="preserve"><value>Sign-in is not allowed at this time of day</value></data>
+  <data name="Auth_LogonTypeNotGranted" xml:space="preserve"><value>This account does not have the right to sign in on this computer</value></data>
+  <data name="Auth_NoSuchUser" xml:space="preserve"><value>The user was not found</value></data>
   <data name="Auth_PasswordExpired" xml:space="preserve"><value>The password has expired</value></data>
   <data name="Auth_PasswordMustChange" xml:space="preserve"><value>The password must be changed before signing in</value></data>
+  <data name="Auth_Workstation" xml:space="preserve"><value>This account is not allowed to sign in on this computer</value></data>
+  <data name="Auth_WrongPassword" xml:space="preserve"><value>Wrong password</value></data>
   <data name="Batch_Leave" xml:space="preserve"><value>departure confirmation {0}/{1}</value></data>
   <data name="Batch_LockConfirm" xml:space="preserve"><value>lock confirmation {0}/{1}</value></data>
   <data name="Batch_Unlock" xml:space="preserve"><value>unlock confirmation {0}/{1}</value></data>
@@ -32,9 +39,12 @@
   <data name="Helper_SendNotifyFailed" xml:space="preserve"><value>Failed to send the notification to the helper</value></data>
   <data name="Helper_SendPromptFailed" xml:space="preserve"><value>Failed to send the prompt command to the helper</value></data>
   <data name="LanguageProbe" xml:space="preserve"><value>English</value></data>
+  <data name="Log_AccountNotFound" xml:space="preserve"><value>Account {User} was not found on this computer: only the Windows account that locked the screen can unlock it; to use an Outlook account, first sign in to this computer with it under Windows Settings → Accounts</value></data>
+  <data name="Log_AccountResolved" xml:space="preserve"><value>Sign-in user name {Configured} resolved to {Resolved}</value></data>
+  <data name="Log_AccountResolveFailed" xml:space="preserve"><value>Could not resolve sign-in user name {User} ({Message}); using it as entered</value></data>
   <data name="Log_ActionFailed" xml:space="preserve"><value>Error while executing action {Action}</value></data>
   <data name="Log_ApplyConfigChangeFailed" xml:space="preserve"><value>Error while applying a configuration change</value></data>
-  <data name="Log_AuthResult" xml:space="preserve"><value>Authentication result received: success={Success} NTSTATUS=0x{Status:X8}</value></data>
+  <data name="Log_AuthResult" xml:space="preserve"><value>Authentication result received: success={Success} NTSTATUS=0x{Status:X8} substatus=0x{Substatus:X8}</value></data>
   <data name="Log_AuthResultSubscriberError" xml:space="preserve"><value>A subscriber handling the authentication result threw: {Message}</value></data>
   <data name="Log_BleStatus" xml:space="preserve"><value>BLE status: {Status}</value></data>
   <data name="Log_BleUnavailable" xml:space="preserve"><value>BLE unavailable: {Reason}</value></data>
@@ -53,6 +63,7 @@
   <data name="Log_CredPipeUnknownMessage" xml:space="preserve"><value>The credential pipe received an unrecognized message</value></data>
   <data name="Log_CredPrecheckFailed" xml:space="preserve"><value>Credential pre-check failed, user {User}, error code {Error}</value></data>
   <data name="Log_CredPrecheckPassed" xml:space="preserve"><value>Credential pre-check passed, user {User}</value></data>
+  <data name="Log_CredPrecheckUnverified" xml:space="preserve"><value>Could not pre-check user {User} for now (error code {Error}, usually the domain controller is unreachable); treated as passed, the real sign-in result decides</value></data>
   <data name="Log_CredProviderConnected" xml:space="preserve"><value>Credential provider connected</value></data>
   <data name="Log_CredProviderDisconnected" xml:space="preserve"><value>Credential provider disconnected</value></data>
   <data name="Log_CredPushFailed" xml:space="preserve"><value>Failed to push credentials: {Message}</value></data>
@@ -122,6 +133,7 @@
   <data name="Log_WtsNotifyFailed" xml:space="preserve"><value>WTSSendMessage failed (error code {Error}); the user did not receive the notification: {Message}</value></data>
   <data name="Log_WtsPromptFailed" xml:space="preserve"><value>WTSSendMessage failed (error code {Error}); the user received no prompt</value></data>
   <data name="Notify_FixConfigSuffix" xml:space="preserve"><value>. Fix the configuration and it will resume automatically</value></data>
+  <data name="Reason_AccountNotFound" xml:space="preserve"><value>There is no "{0}" account on this computer; automatic unlock paused (only the Windows account that locked the screen can unlock it)</value></data>
   <data name="Reason_AllAbove" xml:space="preserve"><value>all {0} readings &gt; {1:0} dBm</value></data>
   <data name="Reason_AllBelow" xml:space="preserve"><value>all {0} readings &lt; {1:0} dBm</value></data>
   <data name="Reason_AllBelowWithSilent" xml:space="preserve"><value>all {0} readings &lt; {1:0} dBm (including {2} silence values)</value></data>

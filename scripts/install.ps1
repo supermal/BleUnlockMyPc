@@ -218,7 +218,21 @@ Copy-Item -Path (Join-Path $serviceOut '*') -Destination $InstallDir -Recurse -F
 Copy-Item -Path (Join-Path $helperOut  '*') -Destination $InstallDir -Recurse -Force
 
 $targetDll = Join-Path $InstallDir 'BleUnlockCP.dll'
-Copy-Item -Path (Join-Path $cpOut 'BleUnlockCredentialProvider.dll') -Destination $targetDll -Force
+# Restos de una sustitución anterior (ya liberados si LogonUI se cerró desde entonces)
+Get-ChildItem -Path $InstallDir -Filter 'BleUnlockCP.dll.*.old' -ErrorAction SilentlyContinue |
+    Remove-Item -Force -ErrorAction SilentlyContinue
+try {
+    Copy-Item -Path (Join-Path $cpOut 'BleUnlockCredentialProvider.dll') -Destination $targetDll -Force -ErrorAction Stop
+}
+catch [System.IO.IOException] {
+    # La DLL está cargada (pantalla de bloqueo o una petición de credenciales abierta). Windows deja
+    # renombrar un fichero en uso: la antigua se aparta y la nueva se carga en el siguiente bloqueo,
+    # sin reiniciar. El resto se borra en la próxima instalación
+    $aside = '{0}.{1:yyyyMMddHHmmss}.old' -f $targetDll, (Get-Date)
+    Move-Item -Path $targetDll -Destination $aside -Force
+    Copy-Item -Path (Join-Path $cpOut 'BleUnlockCredentialProvider.dll') -Destination $targetDll -Force
+    Write-Host (T 'CpDllInUse' $aside)
+}
 
 # 管理端：整体替换 Manager 子目录（干净升级，避免上一版本残留文件）
 $managerDir = Join-Path $InstallDir 'Manager'

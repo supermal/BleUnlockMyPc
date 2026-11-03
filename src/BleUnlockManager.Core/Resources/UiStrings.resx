@@ -4,6 +4,10 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Account_NotFound" xml:space="preserve"><value>There is no "{0}" account on this computer, so it cannot unlock it. You are signed in as "{1}". To use an Outlook account, first sign in to this computer with it under Settings → Accounts.</value></data>
+  <data name="Account_OtherUser" xml:space="preserve"><value>"{0}" is not the account you are signed in to Windows with (currently "{1}"). After locking, only the account that locked the screen can unlock it, so it cannot unlock your current session.</value></data>
+  <data name="Account_SaveAnyway" xml:space="preserve"><value>Save anyway</value></data>
+  <data name="Account_WarningTitle" xml:space="preserve"><value>This account cannot unlock the current session</value></data>
   <data name="App_Title" xml:space="preserve"><value>BleUnlock Manager</value></data>
   <data name="Badge_Connecting" xml:space="preserve"><value>Connecting to the service</value></data>
   <data name="Badge_ServiceNotInstalled" xml:space="preserve"><value>Service not installed</value></data>
@@ -118,7 +122,7 @@
   <data name="Config_Unpair" xml:space="preserve"><value>Unpair</value></data>
   <data name="Config_UnpairTip" xml:space="preserve"><value>Remove the Bluetooth pairing between the selected device and Windows</value></data>
   <data name="Config_UserName" xml:space="preserve"><value>User name</value></data>
-  <data name="Config_UserNameHint" xml:space="preserve"><value>Local account or "domain\user name"</value></data>
+  <data name="Config_UserNameHint" xml:space="preserve"><value>Local account, "domain\user" or user@domain; for a Microsoft (Outlook) account, its email</value></data>
   <data name="Confirm_RestartInterrupts" xml:space="preserve"><value>Restarting briefly interrupts automatic locking and unlocking. Restart the BleUnlockService service?</value></data>
   <data name="Confirm_RestartService" xml:space="preserve"><value>Restart the BleUnlockService service?</value></data>
   <data name="Confirm_StartService" xml:space="preserve"><value>Start the BleUnlockService service?</value></data>
@@ -213,6 +217,7 @@
   <data name="Logs_Title" xml:space="preserve"><value>Logs</value></data>
   <data name="Logs_UnreadableMessage" xml:space="preserve"><value>{0} cannot be read right now (it may be rolling over); following resumes automatically.</value></data>
   <data name="Logs_UnreadableTitle" xml:space="preserve"><value>Log file unreadable</value></data>
+  <data name="Logs_UnreadToolTip" xml:space="preserve"><value>Unread: {0} errors, {1} warnings (cleared when you open Logs)</value></data>
   <data name="Nav_Config" xml:space="preserve"><value>Configuration</value></data>
   <data name="Nav_Logs" xml:space="preserve"><value>Logs</value></data>
   <data name="Nav_Overview" xml:space="preserve"><value>Overview</value></data>
@@ -525,6 +530,7 @@
   <data name="Scan_stalled" xml:space="preserve"><value>Bluetooth stopped receiving signals; recovering automatically (auto-lock paused)</value></data>
   <data name="Scan_stalledFailed" xml:space="preserve"><value>Bluetooth stopped receiving signals and could not be recovered: turn Bluetooth off and on, or restart the PC (auto-lock paused)</value></data>
   <data name="Scan_unknown" xml:space="preserve"><value>Scanning is not available</value></data>
+  <data name="Settings_About" xml:space="preserve"><value>About</value></data>
   <data name="Settings_AppTheme" xml:space="preserve"><value>App theme</value></data>
   <data name="Settings_AppThemeHint" xml:space="preserve"><value>Applies to the whole window right away and is kept next time.</value></data>
   <data name="Settings_Appearance" xml:space="preserve"><value>Appearance</value></data>
@@ -546,6 +552,11 @@
   <data name="Settings_Startup" xml:space="preserve"><value>Startup</value></data>
   <data name="Settings_Subtitle" xml:space="preserve"><value>The Manager's own appearance and startup. Change service parameters on the Configuration page.</value></data>
   <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Settings_VersionDev" xml:space="preserve"><value>{0} (local development build)</value></data>
+  <data name="Settings_VersionDevWithCommit" xml:space="preserve"><value>{0} ({1}, local development build)</value></data>
+  <data name="Settings_VersionHint" xml:space="preserve"><value>Matches the version in the installer file name, for example BleUnlock-Setup-1.0.1.exe; the git commit is in brackets.</value></data>
+  <data name="Settings_VersionWithCommit" xml:space="preserve"><value>{0} ({1})</value></data>
   <data name="Shell_DeviceGlance" xml:space="preserve"><value>Target device at a glance</value></data>
   <data name="Shell_FooterNav" xml:space="preserve"><value>Footer navigation</value></data>
   <data name="Shell_MainNav" xml:space="preserve"><value>Main navigation</value></data>
@@ -594,6 +605,7 @@ The current service configuration is not affected.</value></data>
   <data name="Unpair_ServiceStoppedMessage" xml:space="preserve"><value>The IRK and device address were cleared from the configuration (automatic unlock is paused). To read the pairing store with the pairing wizard, start the service first; you can also choose another paired device from the list.</value></data>
   <data name="Unpair_ServiceStoppedTitle" xml:space="preserve"><value>Unpaired, but the service is not running</value></data>
   <data name="Unpair_Succeeded" xml:space="preserve"><value>The Windows Bluetooth pairing was removed.</value></data>
+  <data name="Wizard_SaveAgainToConfirm" xml:space="preserve"><value>To use this account anyway, click "Save" again.</value></data>
   <data name="Zone_Away" xml:space="preserve"><value>Away zone</value></data>
   <data name="Zone_Hold" xml:space="preserve"><value>Hold zone</value></data>
   <data name="Zone_Near" xml:space="preserve"><value>Near zone</value></data>
@@ -627,7 +639,7 @@ The current service configuration is not affected.</value></data>
   <data name="Wizard_Back" xml:space="preserve"><value>Back</value></data>
   <data name="Wizard_CredIntro" xml:space="preserve"><value>Enter the Windows account you sign in with on this PC. BleUnlock only uses it to unlock when you come back, and the password is stored encrypted on this PC.</value></data>
   <data name="Wizard_UserName" xml:space="preserve"><value>User name</value></data>
-  <data name="Wizard_UserNameHint" xml:space="preserve"><value>For a local account, enter the user name; if you sign in with a Microsoft account, enter its email address (for example name@outlook.com).</value></data>
+  <data name="Wizard_UserNameHint" xml:space="preserve"><value>The account you are signed in with is already filled in; usually you can leave it. Local account: the user name; domain account: "domain\user" or user@domain; Microsoft (Outlook) account: its email, for example name@outlook.com.</value></data>
   <data name="Wizard_Password" xml:space="preserve"><value>Password</value></data>
   <data name="Wizard_PasswordHint" xml:space="preserve"><value>Enter the Windows sign-in password, not the PIN.</value></data>
   <data name="Wizard_SkipPassword" xml:space="preserve"><value>Not now (lock only)</value></data>

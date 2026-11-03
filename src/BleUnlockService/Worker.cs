@@ -40,6 +40,12 @@ public sealed class Worker(
     private long _lastMatchTicks;
     private bool _scanStalled;
 
+    // Nombre canonico («DOMINIO\usuario») del usuario configurado, con el texto del que salio:
+    // solo vale mientras el fichero siga diciendo lo mismo
+    private volatile ResolvedLogonName? _logonName;
+
+    private sealed record ResolvedLogonName(string Configured, string Resolved);
+
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
         var current = options.Current;
@@ -267,10 +273,44 @@ public sealed class Worker(
             return;
         }
 
-        bool ok = validator.Validate(credentials.UserName, credentials.Password);
+        var logonName = ResolveLogonName(credentials.UserName, out var accountNotFound);
+
+        // Solo una negativa explicita de Windows suspende; «no se pudo comprobar» (sin controlador
+        // de dominio al arrancar, directivas que niegan el inicio por red) deja decidir al desbloqueo real
+        bool ok = validator.Validate(logonName, credentials.Password) != CredentialCheck.Invalid;
         if (ok) _credentialBudget.Reset();
-        Transition(() => _machine.OnCredentialsChanged(ok));
+
+        // Rechazada y desconocida para Windows: no es la clave, es que la cuenta no existe en este equipo
+        // (p. ej. un correo de Outlook con el que nunca se ha iniciado sesión aquí)
+        string? reason = null;
+        if (!ok && accountNotFound)
+        {
+            reason = string.Format(ServiceStrings.Reason_AccountNotFound, credentials.UserName.Trim());
+            log.LogError(ServiceStrings.Log_AccountNotFound, credentials.UserName.Trim());
+        }
+
+        Transition(() => _machine.OnCredentialsChanged(ok, reason));
     }
+
+    private string ResolveLogonName(string configured, out bool notFound)
+    {
+        var resolved = AccountNameResolver.TryResolve(configured, out var error, out notFound);
+        if (resolved is null)
+        {
+            _logonName = null;
+            log.LogWarning(ServiceStrings.Log_AccountResolveFailed, configured, error ?? "");
+            return configured.Trim();
+        }
+
+        _logonName = new ResolvedLogonName(configured, resolved);
+        if (!string.Equals(configured.Trim(), resolved, StringComparison.OrdinalIgnoreCase))
+            log.LogInformation(ServiceStrings.Log_AccountResolved, configured, resolved);
+        return resolved;
+    }
+
+    // El nombre que se manda al CP: el canonico si corresponde al usuario actual del fichero
+    private string LogonNameFor(string configured) =>
+        _logonName is { } name && name.Configured == configured ? name.Resolved : configured.Trim();
 
     private void LogSetupState(BleUnlockOptions current)
     {
@@ -384,7 +424,7 @@ public sealed class Worker(
         }
 
         var c = options.Current.Credentials;
-        if (await credentialPipe.SendCredentialsAsync(c.UserName, c.Password, CancellationToken.None)
+        if (await credentialPipe.SendCredentialsAsync(LogonNameFor(c.UserName), c.Password, CancellationToken.None)
             && _credentialBudget.NoteAttempt())
         {
             log.LogWarning(

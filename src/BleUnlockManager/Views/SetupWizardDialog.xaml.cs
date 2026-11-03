@@ -5,6 +5,7 @@ using System.Windows.Input;
 using BleUnlockManager.Core.Bonds;
 using BleUnlockManager.Core.Config;
 using BleUnlockManager.Core.Resources;
+using BleUnlockManager.Services;
 using BleUnlockManager.ViewModels;
 using Wpf.Ui.Controls;
 
@@ -48,7 +49,8 @@ public sealed partial class SetupWizardDialog : UserControl
 
         // Se parte siempre del disco: el asistente no hereda ediciones a medias de la página Configuración
         _config.Initialize();
-        UserNameBox.Text = _config.SavedUserName.Length > 0 ? _config.SavedUserName : Environment.UserName;
+        // Con dominio incluido (o «MicrosoftAccount\correo»): el nombre suelto no basta para una cuenta de dominio
+        UserNameBox.Text = _config.SavedUserName.Length > 0 ? _config.SavedUserName : CurrentAccount.DefaultLogonName();
 
         ShowStep(1);
         Loaded += async (_, _) =>
@@ -269,9 +271,25 @@ public sealed partial class SetupWizardDialog : UserControl
             return;
         }
 
+        // Otra cuenta, o una que no existe en el equipo, nunca desbloqueará esta sesión: se avisa una
+        // vez y un segundo «保存» con el mismo usuario confirma
+        if (!string.Equals(_confirmedUserName, userName, StringComparison.OrdinalIgnoreCase))
+        {
+            var match = await Task.Run(() => CurrentAccount.Check(userName));
+            if (AccountCheck.Warning(userName, match) is { } warning)
+            {
+                _confirmedUserName = userName;
+                ShowCredentialsError(warning + " " + UiStrings.Wizard_SaveAgainToConfirm);
+                return;
+            }
+        }
+
         // Campo vacío con una contraseña guardada = conservarla
         await SaveAsync(userName, password.Length > 0 ? password : null);
     }
+
+    // Usuario cuyo aviso de cuenta ya se mostró: el siguiente «保存» con él guarda sin volver a avisar
+    private string? _confirmedUserName;
 
     private async void OnSkipPasswordClicked(object sender, RoutedEventArgs e)
         => await SaveAsync(UserNameBox.Text.Trim(), null);

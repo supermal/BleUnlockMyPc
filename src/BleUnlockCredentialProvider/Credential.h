@@ -46,10 +46,15 @@ public:
     CBleUnlockCredential();
     virtual ~CBleUnlockCredential();
 
+    // La llama el hilo del canal; HasCredentials y GetSerialization, el de LogonUI: todo bajo _credLock
     void SetCredentials(const std::wstring& username, const std::wstring& password);
-    bool HasCredentials() const { return _hasCredentials; }
+    bool HasCredentials();
 
-    using AuthResultCallback = std::function<void(NTSTATUS)>;
+    // Inicio de sesion o desbloqueo: decide el tipo de mensaje al empaquetar
+    void SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus);
+
+    // Estado y subestado tal como los da LogonUI
+    using AuthResultCallback = std::function<void(NTSTATUS, NTSTATUS)>;
     void SetAuthResultCallback(AuthResultCallback cb);
 
 private:
@@ -57,6 +62,8 @@ private:
     std::wstring _username;
     std::wstring _password;
     bool        _hasCredentials;
+    CREDENTIAL_PROVIDER_USAGE_SCENARIO _cpus;
+    CRITICAL_SECTION _credLock;
     ICredentialProviderCredentialEvents* _pcpce;
     AuthResultCallback _authResultCb;   // protegido por _cbLock
     CRITICAL_SECTION   _cbLock;

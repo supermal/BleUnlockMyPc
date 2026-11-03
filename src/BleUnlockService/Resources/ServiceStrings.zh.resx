@@ -4,11 +4,18 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Auth_AccountDisabled" xml:space="preserve"><value>账户已停用</value></data>
+  <data name="Auth_AccountExpired" xml:space="preserve"><value>账户已过期</value></data>
   <data name="Auth_AccountLockedOut" xml:space="preserve"><value>账户已被锁定</value></data>
   <data name="Auth_LogonFailedStatus" xml:space="preserve"><value>登录失败（NTSTATUS 0x{0}）</value></data>
   <data name="Auth_LogonFailure" xml:space="preserve"><value>用户名或密码错误</value></data>
+  <data name="Auth_LogonHours" xml:space="preserve"><value>现在不在允许登录的时间段内</value></data>
+  <data name="Auth_LogonTypeNotGranted" xml:space="preserve"><value>这个账户没有在这台电脑上登录的权限</value></data>
+  <data name="Auth_NoSuchUser" xml:space="preserve"><value>找不到这个用户</value></data>
   <data name="Auth_PasswordExpired" xml:space="preserve"><value>密码已过期</value></data>
   <data name="Auth_PasswordMustChange" xml:space="preserve"><value>密码必须修改后才能登录</value></data>
+  <data name="Auth_Workstation" xml:space="preserve"><value>这个账户不允许在这台电脑上登录</value></data>
+  <data name="Auth_WrongPassword" xml:space="preserve"><value>密码错误</value></data>
   <data name="Batch_Leave" xml:space="preserve"><value>离开确认 {0}/{1}</value></data>
   <data name="Batch_LockConfirm" xml:space="preserve"><value>锁屏确认 {0}/{1}</value></data>
   <data name="Batch_Unlock" xml:space="preserve"><value>解锁确认 {0}/{1}</value></data>
@@ -32,9 +39,12 @@
   <data name="Helper_SendNotifyFailed" xml:space="preserve"><value>向助手发送通知失败</value></data>
   <data name="Helper_SendPromptFailed" xml:space="preserve"><value>向助手发送提示指令失败</value></data>
   <data name="LanguageProbe" xml:space="preserve"><value>中文</value></data>
+  <data name="Log_AccountNotFound" xml:space="preserve"><value>这台电脑上找不到账户 {User}：只能用锁屏前登录的那个 Windows 账户解锁；Outlook 账户要先在 Windows「设置 → 账户」里用它登录这台电脑</value></data>
+  <data name="Log_AccountResolved" xml:space="preserve"><value>登录用户名 {Configured} 解析为 {Resolved}</value></data>
+  <data name="Log_AccountResolveFailed" xml:space="preserve"><value>无法解析登录用户名 {User}（{Message}），按原样使用</value></data>
   <data name="Log_ActionFailed" xml:space="preserve"><value>执行动作 {Action} 时出错</value></data>
   <data name="Log_ApplyConfigChangeFailed" xml:space="preserve"><value>应用配置变更时出错</value></data>
-  <data name="Log_AuthResult" xml:space="preserve"><value>收到认证结果：成功={Success} NTSTATUS=0x{Status:X8}</value></data>
+  <data name="Log_AuthResult" xml:space="preserve"><value>收到认证结果：成功={Success} NTSTATUS=0x{Status:X8} 子状态=0x{Substatus:X8}</value></data>
   <data name="Log_AuthResultSubscriberError" xml:space="preserve"><value>处理认证结果的订阅者抛出异常：{Message}</value></data>
   <data name="Log_BleStatus" xml:space="preserve"><value>BLE 状态：{Status}</value></data>
   <data name="Log_BleUnavailable" xml:space="preserve"><value>BLE 不可用：{Reason}</value></data>
@@ -53,6 +63,7 @@
   <data name="Log_CredPipeUnknownMessage" xml:space="preserve"><value>凭据管道收到无法识别的消息</value></data>
   <data name="Log_CredPrecheckFailed" xml:space="preserve"><value>凭据预验证失败，用户 {User}，错误码 {Error}</value></data>
   <data name="Log_CredPrecheckPassed" xml:space="preserve"><value>凭据预验证通过，用户 {User}</value></data>
+  <data name="Log_CredPrecheckUnverified" xml:space="preserve"><value>暂时无法预验证用户 {User}（错误码 {Error}，多半是连不上域控制器）；先按通过处理，解锁时以实际登录结果为准</value></data>
   <data name="Log_CredProviderConnected" xml:space="preserve"><value>凭据提供程序已连接</value></data>
   <data name="Log_CredProviderDisconnected" xml:space="preserve"><value>凭据提供程序已断开</value></data>
   <data name="Log_CredPushFailed" xml:space="preserve"><value>推送凭据失败：{Message}</value></data>
@@ -122,6 +133,7 @@
   <data name="Log_WtsNotifyFailed" xml:space="preserve"><value>WTSSendMessage 调用失败（错误码 {Error}），用户未收到通知：{Message}</value></data>
   <data name="Log_WtsPromptFailed" xml:space="preserve"><value>WTSSendMessage 调用失败（错误码 {Error}），用户未收到任何提示</value></data>
   <data name="Notify_FixConfigSuffix" xml:space="preserve"><value>，请修改 appsettings.json 后自动恢复</value></data>
+  <data name="Reason_AccountNotFound" xml:space="preserve"><value>这台电脑上没有账户「{0}」，自动解锁已暂停（只能用锁屏前登录的 Windows 账户解锁）</value></data>
   <data name="Reason_AllAbove" xml:space="preserve"><value>{0} 个读数全部 &gt; {1:0} dBm</value></data>
   <data name="Reason_AllBelow" xml:space="preserve"><value>{0} 个读数全部 &lt; {1:0} dBm</value></data>
   <data name="Reason_AllBelowWithSilent" xml:space="preserve"><value>{0} 个读数全部 &lt; {1:0} dBm（含 {2} 个静默值）</value></data>

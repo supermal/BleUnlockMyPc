@@ -114,7 +114,7 @@ public sealed class CredentialPipeServer(ILogger<CredentialPipeServer> log, Time
             if (CredentialProtocol.TryParseResult(line, out var result))
             {
                 log.LogInformation(ServiceStrings.Log_AuthResult,
-                    result.Success, result.NtStatus);
+                    result.Success, result.NtStatus, result.Substatus);
                 try { AuthResultReceived?.Invoke(result); }
                 catch (Exception ex)
                 {

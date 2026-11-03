@@ -4,11 +4,18 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Auth_AccountDisabled" xml:space="preserve"><value>La cuenta está deshabilitada</value></data>
+  <data name="Auth_AccountExpired" xml:space="preserve"><value>La cuenta ha caducado</value></data>
   <data name="Auth_AccountLockedOut" xml:space="preserve"><value>La cuenta está bloqueada</value></data>
   <data name="Auth_LogonFailedStatus" xml:space="preserve"><value>Error al iniciar sesión (NTSTATUS 0x{0})</value></data>
   <data name="Auth_LogonFailure" xml:space="preserve"><value>Usuario o contraseña incorrectos</value></data>
+  <data name="Auth_LogonHours" xml:space="preserve"><value>No se permite iniciar sesión a esta hora</value></data>
+  <data name="Auth_LogonTypeNotGranted" xml:space="preserve"><value>Esta cuenta no tiene permiso para iniciar sesión en este equipo</value></data>
+  <data name="Auth_NoSuchUser" xml:space="preserve"><value>No se encontró el usuario</value></data>
   <data name="Auth_PasswordExpired" xml:space="preserve"><value>La contraseña ha caducado</value></data>
   <data name="Auth_PasswordMustChange" xml:space="preserve"><value>Hay que cambiar la contraseña antes de iniciar sesión</value></data>
+  <data name="Auth_Workstation" xml:space="preserve"><value>Esta cuenta no puede iniciar sesión en este equipo</value></data>
+  <data name="Auth_WrongPassword" xml:space="preserve"><value>Contraseña incorrecta</value></data>
   <data name="Batch_Leave" xml:space="preserve"><value>confirmación de salida {0}/{1}</value></data>
   <data name="Batch_LockConfirm" xml:space="preserve"><value>confirmación de bloqueo {0}/{1}</value></data>
   <data name="Batch_Unlock" xml:space="preserve"><value>confirmación de desbloqueo {0}/{1}</value></data>
@@ -32,9 +39,12 @@
   <data name="Helper_SendNotifyFailed" xml:space="preserve"><value>No se pudo enviar la notificación al asistente</value></data>
   <data name="Helper_SendPromptFailed" xml:space="preserve"><value>No se pudo enviar la orden de aviso al asistente</value></data>
   <data name="LanguageProbe" xml:space="preserve"><value>Español</value></data>
+  <data name="Log_AccountNotFound" xml:space="preserve"><value>No se encontró la cuenta {User} en este equipo: solo la cuenta de Windows que bloqueó la pantalla puede desbloquearla; para usar una cuenta de Outlook, primero inicia sesión con ella en este equipo desde Configuración de Windows → Cuentas</value></data>
+  <data name="Log_AccountResolved" xml:space="preserve"><value>El usuario de inicio de sesión {Configured} se resolvió como {Resolved}</value></data>
+  <data name="Log_AccountResolveFailed" xml:space="preserve"><value>No se pudo resolver el usuario de inicio de sesión {User} ({Message}); se usa tal cual</value></data>
   <data name="Log_ActionFailed" xml:space="preserve"><value>Error al ejecutar la acción {Action}</value></data>
   <data name="Log_ApplyConfigChangeFailed" xml:space="preserve"><value>Error al aplicar un cambio de configuración</value></data>
-  <data name="Log_AuthResult" xml:space="preserve"><value>Resultado de autenticación recibido: correcto={Success} NTSTATUS=0x{Status:X8}</value></data>
+  <data name="Log_AuthResult" xml:space="preserve"><value>Resultado de autenticación recibido: correcto={Success} NTSTATUS=0x{Status:X8} subestado=0x{Substatus:X8}</value></data>
   <data name="Log_AuthResultSubscriberError" xml:space="preserve"><value>Un suscriptor del resultado de autenticación lanzó una excepción: {Message}</value></data>
   <data name="Log_BleStatus" xml:space="preserve"><value>Estado de BLE: {Status}</value></data>
   <data name="Log_BleUnavailable" xml:space="preserve"><value>BLE no disponible: {Reason}</value></data>
@@ -53,6 +63,7 @@
   <data name="Log_CredPipeUnknownMessage" xml:space="preserve"><value>La canalización de credenciales recibió un mensaje no reconocido</value></data>
   <data name="Log_CredPrecheckFailed" xml:space="preserve"><value>La verificación previa de credenciales falló, usuario {User}, código de error {Error}</value></data>
   <data name="Log_CredPrecheckPassed" xml:space="preserve"><value>Verificación previa de credenciales correcta, usuario {User}</value></data>
+  <data name="Log_CredPrecheckUnverified" xml:space="preserve"><value>Por ahora no se pudo verificar el usuario {User} (código de error {Error}, normalmente el controlador de dominio no responde); se da por bueno y decide el resultado real del inicio de sesión</value></data>
   <data name="Log_CredProviderConnected" xml:space="preserve"><value>Proveedor de credenciales conectado</value></data>
   <data name="Log_CredProviderDisconnected" xml:space="preserve"><value>Proveedor de credenciales desconectado</value></data>
   <data name="Log_CredPushFailed" xml:space="preserve"><value>No se pudieron enviar las credenciales: {Message}</value></data>
@@ -122,6 +133,7 @@
   <data name="Log_WtsNotifyFailed" xml:space="preserve"><value>WTSSendMessage falló (código de error {Error}); el usuario no recibió la notificación: {Message}</value></data>
   <data name="Log_WtsPromptFailed" xml:space="preserve"><value>WTSSendMessage falló (código de error {Error}); el usuario no recibió ningún aviso</value></data>
   <data name="Notify_FixConfigSuffix" xml:space="preserve"><value>. Corrige la configuración y se reanudará automáticamente</value></data>
+  <data name="Reason_AccountNotFound" xml:space="preserve"><value>En este equipo no existe la cuenta «{0}»; desbloqueo automático en pausa (solo la cuenta de Windows que bloqueó puede desbloquear)</value></data>
   <data name="Reason_AllAbove" xml:space="preserve"><value>las {0} lecturas &gt; {1:0} dBm</value></data>
   <data name="Reason_AllBelow" xml:space="preserve"><value>las {0} lecturas &lt; {1:0} dBm</value></data>
   <data name="Reason_AllBelowWithSilent" xml:space="preserve"><value>las {0} lecturas &lt; {1:0} dBm (incluidos {2} valores de silencio)</value></data>

@@ -20,7 +20,7 @@ public:
     bool Stop();
 
     // La llama la credencial desde ReportResult; despierta al hilo del canal
-    void ReportResult(NTSTATUS status);
+    void ReportResult(NTSTATUS status, NTSTATUS substatus);
 
 private:
     static DWORD WINAPI ThreadProc(LPVOID lpParam);
@@ -37,5 +37,6 @@ private:
     CredReceivedCallback _callback;       // protegido por _cbLock
     CRITICAL_SECTION     _cbLock;
     volatile LONG        _pendingStatus;  // NTSTATUS publicado antes de senalizar el evento
+    volatile LONG        _pendingSubstatus;
     volatile LONG        _awaiting;       // 1 mientras se espera el resultado de un intento
 };

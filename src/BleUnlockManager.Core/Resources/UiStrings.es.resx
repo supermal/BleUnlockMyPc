@@ -4,6 +4,10 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Account_NotFound" xml:space="preserve"><value>En este equipo no existe la cuenta «{0}», así que no puede desbloquearlo. Has iniciado sesión como «{1}». Para usar una cuenta de Outlook, primero inicia sesión con ella en este equipo desde Configuración → Cuentas.</value></data>
+  <data name="Account_OtherUser" xml:space="preserve"><value>«{0}» no es la cuenta con la que has iniciado sesión en Windows (ahora es «{1}»). Tras bloquear, solo la cuenta que bloqueó puede desbloquear, así que no puede desbloquear tu sesión actual.</value></data>
+  <data name="Account_SaveAnyway" xml:space="preserve"><value>Guardar de todos modos</value></data>
+  <data name="Account_WarningTitle" xml:space="preserve"><value>Esta cuenta no puede desbloquear la sesión actual</value></data>
   <data name="App_Title" xml:space="preserve"><value>Gestor de BleUnlock</value></data>
   <data name="Badge_Connecting" xml:space="preserve"><value>Conectando con el servicio</value></data>
   <data name="Badge_ServiceNotInstalled" xml:space="preserve"><value>Servicio no instalado</value></data>
@@ -118,7 +122,7 @@
   <data name="Config_Unpair" xml:space="preserve"><value>Desemparejar</value></data>
   <data name="Config_UnpairTip" xml:space="preserve"><value>Quitar el emparejamiento Bluetooth entre el dispositivo seleccionado y Windows</value></data>
   <data name="Config_UserName" xml:space="preserve"><value>Usuario</value></data>
-  <data name="Config_UserNameHint" xml:space="preserve"><value>Cuenta local o «dominio\usuario»</value></data>
+  <data name="Config_UserNameHint" xml:space="preserve"><value>Cuenta local, «dominio\usuario» o usuario@dominio; para una cuenta Microsoft (Outlook), su correo</value></data>
   <data name="Confirm_RestartInterrupts" xml:space="preserve"><value>Reiniciar interrumpe brevemente el bloqueo y desbloqueo automáticos. ¿Reiniciar el servicio BleUnlockService?</value></data>
   <data name="Confirm_RestartService" xml:space="preserve"><value>¿Reiniciar el servicio BleUnlockService?</value></data>
   <data name="Confirm_StartService" xml:space="preserve"><value>¿Iniciar el servicio BleUnlockService?</value></data>
@@ -213,6 +217,7 @@
   <data name="Logs_Title" xml:space="preserve"><value>Registros</value></data>
   <data name="Logs_UnreadableMessage" xml:space="preserve"><value>{0} no se puede leer ahora (puede que se esté renovando); el seguimiento se reanudará solo.</value></data>
   <data name="Logs_UnreadableTitle" xml:space="preserve"><value>Archivo de registro ilegible</value></data>
+  <data name="Logs_UnreadToolTip" xml:space="preserve"><value>Sin leer: {0} errores, {1} advertencias (se borra al abrir Registros)</value></data>
   <data name="Nav_Config" xml:space="preserve"><value>Configuración</value></data>
   <data name="Nav_Logs" xml:space="preserve"><value>Registros</value></data>
   <data name="Nav_Overview" xml:space="preserve"><value>Resumen</value></data>
@@ -525,6 +530,7 @@
   <data name="Scan_stalled" xml:space="preserve"><value>El Bluetooth dejó de recibir señales; recuperando automáticamente (bloqueo automático en pausa)</value></data>
   <data name="Scan_stalledFailed" xml:space="preserve"><value>El Bluetooth dejó de recibir señales y no se pudo recuperar: apaga y enciende el Bluetooth o reinicia el equipo (bloqueo automático en pausa)</value></data>
   <data name="Scan_unknown" xml:space="preserve"><value>El escaneo no está disponible</value></data>
+  <data name="Settings_About" xml:space="preserve"><value>Acerca de</value></data>
   <data name="Settings_AppTheme" xml:space="preserve"><value>Tema de la aplicación</value></data>
   <data name="Settings_AppThemeHint" xml:space="preserve"><value>Se aplica al momento a toda la ventana y se mantiene la próxima vez.</value></data>
   <data name="Settings_Appearance" xml:space="preserve"><value>Apariencia</value></data>
@@ -546,6 +552,11 @@
   <data name="Settings_Startup" xml:space="preserve"><value>Inicio</value></data>
   <data name="Settings_Subtitle" xml:space="preserve"><value>Apariencia e inicio del propio Gestor. Los parámetros del servicio se cambian en la página Configuración.</value></data>
   <data name="Settings_Title" xml:space="preserve"><value>Ajustes</value></data>
+  <data name="Settings_Version" xml:space="preserve"><value>Versión</value></data>
+  <data name="Settings_VersionDev" xml:space="preserve"><value>{0} (compilación local de desarrollo)</value></data>
+  <data name="Settings_VersionDevWithCommit" xml:space="preserve"><value>{0} ({1}, compilación local de desarrollo)</value></data>
+  <data name="Settings_VersionHint" xml:space="preserve"><value>Coincide con la versión del nombre del instalador, por ejemplo BleUnlock-Setup-1.0.1.exe; entre paréntesis va el commit de git.</value></data>
+  <data name="Settings_VersionWithCommit" xml:space="preserve"><value>{0} ({1})</value></data>
   <data name="Shell_DeviceGlance" xml:space="preserve"><value>Resumen del dispositivo de destino</value></data>
   <data name="Shell_FooterNav" xml:space="preserve"><value>Navegación inferior</value></data>
   <data name="Shell_MainNav" xml:space="preserve"><value>Navegación principal</value></data>
@@ -594,6 +605,7 @@ La configuración actual del servicio no cambia.</value></data>
   <data name="Unpair_ServiceStoppedMessage" xml:space="preserve"><value>Se vaciaron el IRK y la dirección de la configuración (desbloqueo automático en pausa). Para leer el almacén con el asistente de emparejamiento, inicia primero el servicio; también puedes elegir otro dispositivo emparejado de la lista.</value></data>
   <data name="Unpair_ServiceStoppedTitle" xml:space="preserve"><value>Desemparejado, pero el servicio no está en ejecución</value></data>
   <data name="Unpair_Succeeded" xml:space="preserve"><value>Se quitó el emparejamiento Bluetooth de Windows.</value></data>
+  <data name="Wizard_SaveAgainToConfirm" xml:space="preserve"><value>Si quieres usar esta cuenta de todos modos, pulsa «Guardar» otra vez.</value></data>
   <data name="Zone_Away" xml:space="preserve"><value>Zona lejana</value></data>
   <data name="Zone_Hold" xml:space="preserve"><value>Zona de espera</value></data>
   <data name="Zone_Near" xml:space="preserve"><value>Zona cercana</value></data>
@@ -627,7 +639,7 @@ La configuración actual del servicio no cambia.</value></data>
   <data name="Wizard_Back" xml:space="preserve"><value>Atrás</value></data>
   <data name="Wizard_CredIntro" xml:space="preserve"><value>Escribe la cuenta de Windows con la que inicias sesión en este equipo. BleUnlock solo la usa para desbloquear cuando vuelves, y la contraseña se guarda cifrada en este equipo.</value></data>
   <data name="Wizard_UserName" xml:space="preserve"><value>Nombre de usuario</value></data>
-  <data name="Wizard_UserNameHint" xml:space="preserve"><value>Con una cuenta local, escribe el nombre de usuario; si inicias sesión con una cuenta Microsoft, escribe su correo (por ejemplo nombre@outlook.com).</value></data>
+  <data name="Wizard_UserNameHint" xml:space="preserve"><value>Ya está puesta la cuenta con la que has iniciado sesión; normalmente no hace falta cambiarla. Cuenta local: el nombre de usuario; cuenta de dominio: «dominio\usuario» o usuario@dominio; cuenta Microsoft (Outlook): su correo, por ejemplo nombre@outlook.com.</value></data>
   <data name="Wizard_Password" xml:space="preserve"><value>Contraseña</value></data>
   <data name="Wizard_PasswordHint" xml:space="preserve"><value>Escribe la contraseña de inicio de sesión de Windows, no el PIN.</value></data>
   <data name="Wizard_SkipPassword" xml:space="preserve"><value>Ahora no (solo bloquear)</value></data>

@@ -34,6 +34,7 @@ $script:Messages = @{
     DeleteStuck         = @{ zh = '服务已标记为删除但仍未消失（30 秒）。请关闭 services.msc / 事件查看器等占用窗口，或重启后重试。'; en = 'The service is marked for deletion but has not gone away (30 s). Close windows that hold it, such as services.msc or Event Viewer, or restart and try again.'; es = 'El servicio está marcado para eliminarse pero no ha desaparecido (30 s). Cierra las ventanas que lo retienen, como services.msc o el Visor de eventos, o reinicia y vuelve a intentarlo.' }
     ManagerStillRunning = @{ zh = '管理端进程仍未退出（已等待 10 秒），请手动结束后重试。'; en = 'The Manager process is still running (waited 10 s); end it manually and try again.'; es = 'El proceso del Gestor sigue en ejecución (se esperó 10 s); termínalo manualmente y vuelve a intentarlo.' }
     CopyingFiles        = @{ zh = '拷贝服务与助手…'; en = 'Copying the service and helper…'; es = 'Copiando el servicio y el asistente…' }
+    CpDllInUse          = @{ zh = '旧的凭据提供程序 DLL 正在使用，已改名为 {0}；新版本在下次锁屏时生效，无需重启。'; en = 'The old credential provider DLL is in use and was renamed to {0}; the new version takes effect at the next lock, no restart needed.'; es = 'La DLL antigua del proveedor de credenciales está en uso y se renombró a {0}; la nueva versión se aplica en el siguiente bloqueo, sin reiniciar.' }
     OldManagerDirStuck  = @{ zh = '旧管理端目录删除失败：{0}'; en = 'Could not delete the old Manager folder: {0}'; es = 'No se pudo eliminar la carpeta anterior del Gestor: {0}' }
     ManagerDeployed     = @{ zh = '管理端已部署：{0}'; en = 'Manager deployed: {0}'; es = 'Gestor instalado: {0}' }
     ConfigCreated       = @{ zh = '已生成配置模板：{0}'; en = 'Configuration template created: {0}'; es = 'Plantilla de configuración creada: {0}' }
@@ -76,7 +77,7 @@ $script:Messages = @{
     DataDeleteFailed    = @{ zh = '配置与日志删除失败：{0}'; en = 'Could not delete the configuration and logs: {0}'; es = 'No se pudieron eliminar la configuración y los registros: {0}' }
     DataDeleted         = @{ zh = '配置与日志已删除'; en = 'Configuration and logs deleted'; es = 'Configuración y registros eliminados' }
     DataKept            = @{ zh = '已保留 {0}'; en = 'Kept {0}'; es = 'Se conservó {0}' }
-    UninstallDone       = @{ zh = '卸载完成。建议重启一次，确保 winlogon 释放凭据提供程序 DLL。'; en = 'Uninstall complete. Restart once so winlogon releases the credential provider DLL.'; es = 'Desinstalación completa. Reinicia una vez para que winlogon libere la DLL del proveedor de credenciales.' }
+    UninstallDone       = @{ zh = '卸载完成。'; en = 'Uninstall complete.'; es = 'Desinstalación completa.' }
     ManagerSettingsKept = @{ zh = '（管理端界面设置已保留：{0}）'; en = '(Manager interface settings were kept: {0})'; es = '(Se conservaron los ajustes de la interfaz del Gestor: {0})' }
 }
 

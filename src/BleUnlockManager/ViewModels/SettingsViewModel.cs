@@ -34,11 +34,17 @@ public sealed partial class SettingsViewModel : ObservableObject
         // Los textos calculados aquí también cambian de idioma
         ManagerLanguage.Changed += () =>
         {
+            OnPropertyChanged(nameof(Version));
             OnPropertyChanged(nameof(LanguageNote));
             OnPropertyChanged(nameof(HasLanguageNote));
             _ = RefreshAutoStartAsync();
         };
     }
+
+    // —— Acerca de ——
+
+    /// <summary>Versión del paquete instalado (la misma del nombre del instalador).</summary>
+    public string Version => AppVersion.Display(typeof(SettingsViewModel).Assembly);
 
     // —— Idioma (se guarda en la configuración del servicio: uno por equipo) ——
 

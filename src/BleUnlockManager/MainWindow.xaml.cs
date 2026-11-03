@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using BleUnlockManager.Core;
 using BleUnlockManager.Core.Config;
+using BleUnlockManager.Core.Localization;
+using BleUnlockManager.Core.Logs;
 using BleUnlockManager.Models;
 using BleUnlockManager.Services;
 using BleUnlockManager.ViewModels;
@@ -37,18 +39,32 @@ public partial class MainWindow : FluentWindow
         InitializeComponent();
         dialogs.SetDialogHost(RootContentDialog);
 
-        // Contador de advertencias del día junto a «日志» (oculto si no hay)
-        var logsItem = MenuItems.First(i => i.Page == AppPage.Logs);
+        // Contador junto a «日志»: errores y advertencias escritos desde la última vez que se abrió
+        // la página (errores en rojo por encima de advertencias); al abrirla desaparece
+        _logs = logs;
+        _logsItem = MenuItems.First(i => i.Page == AppPage.Logs);
+        _logsSeenUntil = LogSeenStore.Load(AppPaths.LogsSeenFile);
         logs.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(LogsViewModel.Counts))
             {
-                logsItem.Count = logs.Counts.Warning > 0 ? logs.Counts.Warning.ToString("N0") : "";
+                RefreshLogsBadge();
             }
         };
+        ManagerLanguage.Changed += () => Dispatcher.BeginInvoke(RefreshLogsBadge);
 
         // Oculta en la bandeja o minimizada no se sigue el registro; al volver se pone al día
-        void UpdateLogsActive() => logs.SetWindowActive(IsVisible && WindowState != WindowState.Minimized);
+        void UpdateLogsActive()
+        {
+            logs.SetWindowActive(IsVisible && WindowState != WindowState.Minimized);
+            if (CurrentPage == AppPage.Logs)
+            {
+                // Volver a la ventana con «日志» abierto cuenta como verlo; ocultarla guarda la marca
+                MarkLogsSeen(persist: !LogsVisibleToUser);
+                RefreshLogsBadge();
+            }
+        }
+
         IsVisibleChanged += (_, _) => UpdateLogsActive();
         StateChanged += (_, _) => UpdateLogsActive();
 
@@ -57,6 +73,45 @@ public partial class MainWindow : FluentWindow
 
     /// <summary>Telemetría compartida (barra de título y vista rápida del dispositivo).</summary>
     public TelemetryStore Telemetry { get; }
+
+    // —— Contador «sin leer» de la navegación ——
+
+    private readonly LogsViewModel _logs;
+    private readonly NavItem _logsItem;
+    private DateTimeOffset? _logsSeenUntil;
+
+    // Solo cuenta como leído lo que de verdad está en pantalla
+    private bool LogsVisibleToUser =>
+        CurrentPage == AppPage.Logs && IsVisible && WindowState != WindowState.Minimized;
+
+    private void RefreshLogsBadge()
+    {
+        if (LogsVisibleToUser)
+        {
+            // Lo que llega con la página abierta se ve en el momento: no se acumula
+            MarkLogsSeen(persist: false);
+        }
+
+        var badge = LogUnread.Badge(LogUnread.Count(_logs.AllEntries, _logsSeenUntil));
+        _logsItem.Count = badge.Text;
+        _logsItem.CountTone = badge.Tone;
+        _logsItem.CountToolTip = badge.ToolTip;
+    }
+
+    // La marca solo avanza (nunca retrocede, p. ej. al elegir un fichero de otro día)
+    private void MarkLogsSeen(bool persist)
+    {
+        var seen = LogUnread.SeenUntil(_logs.AllEntries, DateTimeOffset.Now);
+        if (_logsSeenUntil is null || seen > _logsSeenUntil)
+        {
+            _logsSeenUntil = seen;
+        }
+
+        if (persist && _logsSeenUntil is { } value)
+        {
+            LogSeenStore.Save(AppPaths.LogsSeenFile, value);
+        }
+    }
 
     public ObservableCollection<NavItem> MenuItems { get; }
 
@@ -72,7 +127,14 @@ public partial class MainWindow : FluentWindow
 
     public void Navigate(AppPage page)
     {
+        // Al entrar en «日志» y al salir de ella se da por visto todo lo cargado y se guarda la marca
+        if (page == AppPage.Logs || CurrentPage == AppPage.Logs)
+        {
+            MarkLogsSeen(persist: true);
+        }
+
         CurrentPage = page;
+        RefreshLogsBadge();
         PageHost.Content = page switch
         {
             AppPage.Overview => _services.GetRequiredService<OverviewPage>(),

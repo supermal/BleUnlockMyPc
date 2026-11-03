@@ -7,10 +7,14 @@
     - El runtime de Visual C++ se descarga una vez (installer\cache) y va dentro del instalador.
     - La plantilla appsettings.json sale de git (HEAD): nunca lleva credenciales de este equipo.
       Con -TemplateRevision '' se toma del índice (lo preparado para el próximo commit).
-    Requiere Inno Setup 6 (ISCC.exe). Uso: .\installer\build-installer.ps1 [-Version 2026.11.1]
+    - Versión (MinVer): cada paquete crea la etiqueta git vX.Y.Z siguiente (parche + 1; la primera es
+      v1.0.0) en el commit actual, y MinVer la lee al compilar. Si el commit ya tiene etiqueta se
+      reutiliza: mismo código, misma versión. Con cambios sin confirmar no se empaqueta, para que la
+      versión siempre corresponda a un commit (se ignora appsettings.json, que puede llevar las
+      credenciales de prueba de este equipo y no entra en el paquete).
+    Requiere Inno Setup 6 (ISCC.exe). Uso: .\installer\build-installer.ps1
 #>
 param(
-    [string]$Version = (Get-Date).ToString('yyyy.M.d'),
     [string]$TemplateRevision = 'HEAD'
 )
 
@@ -37,11 +41,38 @@ function Find-Iscc {
 }
 
 function Publish([string]$Project, [string]$Destination) {
+    # MinVer pone la versión de la etiqueta en cada programa: el Gestor la muestra en «设置 → 关于»
     & dotnet publish (Join-Path $repo $Project) -c Release -r win-x64 --self-contained true -nologo -v q -o $Destination
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed: $Project" }
 }
 
+function Invoke-Git { & git.exe -C $repo @args; if ($LASTEXITCODE -ne 0) { throw "git $args failed" } }
+
+# Etiquetas «vX.Y.Z» (sin preliminares) como [version], de mayor a menor
+function Get-ReleaseTags([string[]]$Names) {
+    $Names | Where-Object { $_ -match '^v(\d+)\.(\d+)\.(\d+)$' } |
+        ForEach-Object { [version]$_.Substring(1) } | Sort-Object -Descending
+}
+
 $iscc = Find-Iscc
+
+Step 'Version'
+# Solo cuentan los ficheros versionados; appsettings.json puede llevar credenciales locales y su plantilla sale de git
+$dirty = @(Invoke-Git status --porcelain --untracked-files=no | Where-Object { $_ -notmatch 'src/BleUnlockService/appsettings\.json$' })
+if ($dirty.Count -gt 0) {
+    throw ("Uncommitted changes; commit them first so the version matches a commit:`n" + ($dirty -join "`n"))
+}
+
+$headTag = Get-ReleaseTags @(Invoke-Git tag --points-at HEAD --list 'v*') | Select-Object -First 1
+if ($headTag) {
+    $Version = $headTag.ToString(3)
+    Write-Host "  HEAD is already tagged v$Version; reusing it"
+} else {
+    $latest = Get-ReleaseTags @(Invoke-Git tag --list 'v*') | Select-Object -First 1
+    $Version = if ($latest) { '{0}.{1}.{2}' -f $latest.Major, $latest.Minor, ($latest.Build + 1) } else { '1.0.0' }
+    Invoke-Git tag -a "v$Version" -m "BleUnlock $Version"
+    Write-Host "  Tagged HEAD as v$Version (local tag; push it with: git push origin v$Version)"
+}
 
 Step 'Clean staging'
 if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
@@ -56,6 +87,15 @@ Publish 'src\BleUnlockHelper\BleUnlockHelper.csproj' $helperOut
 Step 'Publish Manager (self-contained)'
 $managerOut = Join-Path $payload "src\BleUnlockManager\bin\Release\$tfm\win-x64\publish"
 Publish 'src\BleUnlockManager\BleUnlockManager.csproj' $managerOut
+
+# MinVer debe haber leído la etiqueta: si no (p. ej. git no disponible al compilar) el paquete mentiría
+foreach ($exe in @((Join-Path $serviceOut 'BleUnlockService.exe'), (Join-Path $managerOut 'BleUnlockManager.exe'))) {
+    $built = (Get-Item $exe).VersionInfo.ProductVersion
+    if ($built -notmatch ('^' + [regex]::Escape($Version) + '(\+|$)')) {
+        throw "MinVer produced '$built' for $exe, expected $Version"
+    }
+}
+Write-Host "  Programs built as $Version"
 
 Step 'Configuration template from git'
 $template = & git -C $repo show "${TemplateRevision}:src/BleUnlockService/appsettings.json"

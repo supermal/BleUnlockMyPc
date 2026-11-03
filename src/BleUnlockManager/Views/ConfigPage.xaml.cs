@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using BleUnlockManager.Core;
 using BleUnlockManager.Core.Config;
+using BleUnlockManager.Services;
 using BleUnlockManager.ViewModels;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
@@ -87,7 +88,8 @@ public partial class ConfigPage : UserControl
         try
         {
             var preparation = ViewModel.PrepareSave();
-            if (!preparation.Proceed || !await ConfirmChangesAsync(preparation.Changes))
+            if (!preparation.Proceed || !await ConfirmAccountAsync(preparation.Changes) ||
+                !await ConfirmChangesAsync(preparation.Changes))
             {
                 return;
             }
@@ -98,6 +100,21 @@ public partial class ConfigPage : UserControl
         {
             ViewModel.ShowError(UiStrings.Save_FailedTitle, ex.Message);
         }
+    }
+
+    // Si el usuario o la contraseña cambian y la cuenta no es la de esta sesión, se avisa antes
+    // de guardar: tras bloquear, Windows solo deja desbloquear con la cuenta que bloqueó
+    private async Task<bool> ConfirmAccountAsync(IReadOnlyList<ConfigChange> changes)
+    {
+        var userName = ViewModel.UserNameText;
+        if (!AccountCheck.ShouldCheck(userName, changes))
+        {
+            return true;
+        }
+
+        var match = await Task.Run(() => CurrentAccount.Check(userName));
+        return AccountCheck.Warning(userName, match) is not { } warning ||
+               await ConfirmAsync(UiStrings.Account_WarningTitle, warning, UiStrings.Account_SaveAnyway);
     }
 
     private void OnDiscardClicked(object sender, RoutedEventArgs e) => ViewModel.DiscardChanges();

@@ -48,11 +48,17 @@
                     FontSize="{StaticResource Ui.Type.Caption}"
                     FontWeight="Normal"
                     Foreground="{DynamicResource Ui.Status.Warning.Fg}"
-                    Text="{Binding Count}" />
+                    Text="{Binding Count}"
+                    ToolTip="{Binding CountToolTip}" />
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Count}" Value="">
                     <Setter TargetName="CountText" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <!--  Errores sin leer: rojo y en negrita; manda sobre las advertencias  -->
+                <DataTrigger Binding="{Binding CountTone}" Value="danger">
+                    <Setter TargetName="CountText" Property="Foreground" Value="{DynamicResource Ui.Status.Danger.Fg}" />
+                    <Setter TargetName="CountText" Property="FontWeight" Value="SemiBold" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
