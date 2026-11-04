@@ -99,6 +99,7 @@
   <data name="Log_NotifierDegraded" xml:space="preserve"><value>Las notificaciones pasan al modo de cuadro de diálogo: {Reason}</value></data>
   <data name="Log_NotifierDegradedMidPrompt" xml:space="preserve"><value>Las notificaciones pasaron al modo de cuadro de diálogo durante un aviso; se vuelve a avisar con un cuadro de diálogo</value></data>
   <data name="Log_PromptResponse" xml:space="preserve"><value>Respuesta del usuario al aviso de bloqueo: {Outcome}</value></data>
+  <data name="Log_PromptSuppressed" xml:space="preserve"><value>Windows ocultó el aviso de bloqueo (probablemente No molestar, modo concentración o una aplicación a pantalla completa); no se bloquea y se vuelve a preguntar con un diálogo</value></data>
   <data name="Log_PromptWithdrawn" xml:space="preserve"><value>Se retiró el aviso de la acción {Action} (normal)</value></data>
   <data name="Log_ReloadStatusWriteFailed" xml:space="preserve"><value>No se pudo escribir el resultado de la recarga de configuración: {Message}</value></data>
   <data name="Log_ResumedFromSleep" xml:space="preserve"><value>El sistema se reanudó de la suspensión; historial de RSSI borrado y periodo de gracia reiniciado</value></data>
@@ -168,6 +169,7 @@
   <data name="Validation_IrkFormat" xml:space="preserve"><value>Device.Irk debe tener 32 caracteres hexadecimales</value></data>
   <data name="Validation_LockConfirmCountRange" xml:space="preserve"><value>Proximity.LockConfirmSampleCount debe estar entre 1 y 50</value></data>
   <data name="Validation_LockPromptCountRange" xml:space="preserve"><value>Proximity.LockPromptSampleCount debe estar entre 1 y 50</value></data>
+  <data name="Validation_NoSignalRange" xml:space="preserve"><value>Proximity.NoSignalDepartureSeconds debe ser 0 (desactivado) o estar entre 30 y 3600</value></data>
   <data name="Validation_PasswordControlChars" xml:space="preserve"><value>Credentials.Password no puede contener caracteres de control (saltos de línea, retornos de carro, tabulaciones, etc.)</value></data>
   <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>Proximity.UnlockPendingTimeoutSeconds debe ser positivo</value></data>
   <data name="Validation_PlaintextSecret" xml:space="preserve"><value>{0} está guardado en texto sin cifrar; guárdalo una vez desde el Gestor para cifrarlo</value></data>

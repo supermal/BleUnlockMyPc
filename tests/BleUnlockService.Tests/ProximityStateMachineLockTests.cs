@@ -1,4 +1,4 @@
-using BleUnlockService.Config;
+﻿using BleUnlockService.Config;
 using BleUnlockService.Core;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
@@ -64,6 +64,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());        // 信号先变弱：静默这时才是离开证据
         time.Advance(TimeSpan.FromSeconds(30));    // pasada la gracia: 27 s de silencio
 
@@ -229,6 +230,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
@@ -249,6 +251,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
@@ -266,6 +269,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
@@ -285,6 +289,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
@@ -306,6 +311,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
@@ -325,6 +331,7 @@ public class ProximityStateMachineLockTests
         // -70 sigue sin bastar para enviar credenciales
         var (sm, time, history) = Build(screenLocked: true);
         time.Advance(TimeSpan.FromSeconds(16));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(10));     // silencio tras señal débil → LockedArmed
         sm.Evaluate(history);
@@ -342,6 +349,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
@@ -361,6 +369,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
@@ -409,6 +418,7 @@ public class ProximityStateMachineLockTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         time.Advance(TimeSpan.FromSeconds(30));
         sm.Evaluate(history);
@@ -454,11 +464,11 @@ public class ProximityStateMachineLockTests
         Assert.Null(sm.Evaluate(history));         // no bloquea nada mas abrir la tapa
         Assert.Equal(ProximityState.Unlocked, sm.State);
 
-        time.Advance(TimeSpan.FromSeconds(16));    // 16 s de silencio：超过宽限，但不到 60 s 兜底
+        time.Advance(TimeSpan.FromSeconds(16));    // 16 s de silencio：超过宽限，但不到 180 s 兜底
         Assert.Null(sm.Evaluate(history));
         Assert.Equal(ProximityState.Unlocked, sm.State);
 
-        time.Advance(TimeSpan.FromSeconds(45));    // 61 s sin ninguna lectura：兜底 → PendingLock
+        time.Advance(TimeSpan.FromSeconds(165));   // 181 s sin ninguna lectura：兜底 → PendingLock
         Assert.Equal(ProximityState.PendingLock, sm.Evaluate(history)?.To);
     }
 
@@ -467,6 +477,7 @@ public class ProximityStateMachineLockTests
     {
         var b = Build();
         b.Time.Advance(TimeSpan.FromSeconds(1));
+        b.History.Add(-85, b.Time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         b.History.Add(-85, b.Time.GetUtcNow());
         b.Time.Advance(TimeSpan.FromSeconds(30));
         b.Sm.Evaluate(b.History);
@@ -555,13 +566,13 @@ public class ProximityStateMachineLockTests
     }
 
     [Fact]
-    public void El_silencio_de_un_minuto_completo_rellena_aunque_la_senal_fuera_fuerte()
+    public void El_silencio_largo_rellena_aunque_la_senal_fuera_fuerte()
     {
-        // 兜底：设备关机/被拿走时不会先变弱；完全无读数 60 s 后照样判离开
+        // 兜底：设备关机/被拿走时不会先变弱；完全无读数达到兜底时长（默认 180 s）照样判离开
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
         history.Add(-55, time.GetUtcNow());
-        time.Advance(TimeSpan.FromSeconds(61));
+        time.Advance(TimeSpan.FromSeconds(181));
 
         var change = sm.Evaluate(history);
 
@@ -570,17 +581,57 @@ public class ProximityStateMachineLockTests
     }
 
     [Fact]
-    public void Tras_una_lectura_debil_el_aviso_llega_en_ocho_segundos()
+    public void Un_minuto_sin_senal_con_el_usuario_al_lado_ya_no_avisa()
     {
-        // 真离开的节奏不变：信号先变弱（最后一条低于阈值），停播后 3 s 宽限 + 5 个注入
+        // 2026-11-04：手表放着不动会停播一两分钟（实测 49 s、约 3 分钟），人却还在电脑前
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-55, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(120));
+
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.Unlocked, sm.State);
+    }
+
+    [Fact]
+    public void Con_el_respaldo_desactivado_el_silencio_con_senal_fuerte_nunca_avisa()
+    {
+        var (sm, time, history) = Build();
+        sm.Proximity = new ProximityOptions { NoSignalDepartureSeconds = 0 };
+        time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-55, time.GetUtcNow());
+        time.Advance(TimeSpan.FromHours(1));
+
+        Assert.Null(sm.Evaluate(history));
+    }
+
+    [Fact]
+    public void Una_sola_lectura_debil_antes_del_silencio_no_avisa()
+    {
+        // 2026-11-04 08:13：信号一直很强，一个偶发 < 阈值的读数紧跟一次省电停播，曾在人坐着时弹窗
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(20));
-        history.Add(-85, time.GetUtcNow());        // 信号先变弱
+        history.Add(-30, time.GetUtcNow().AddSeconds(-2));
+        history.Add(-90, time.GetUtcNow());
+        time.Advance(TimeSpan.FromSeconds(30));
 
-        time.Advance(TimeSpan.FromSeconds(7));     // 7 s：4 个注入，还差一个
+        Assert.Null(sm.Evaluate(history));
+        Assert.Equal(ProximityState.Unlocked, sm.State);
+    }
+
+    [Fact]
+    public void Tras_dos_lecturas_debiles_el_aviso_llega_en_siete_segundos()
+    {
+        // 真离开：信号先变弱（连续 2 个低于阈值，第一个是触发、第二个计入），停播后 3 s 宽限 + 4 个注入
+        var (sm, time, history) = Build();
+        time.Advance(TimeSpan.FromSeconds(20));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500));
+        history.Add(-85, time.GetUtcNow());
+
+        time.Advance(TimeSpan.FromSeconds(6));     // 6 s：1 个读数 + 3 个注入，还差一个
         Assert.Null(sm.Evaluate(history));
 
-        time.Advance(TimeSpan.FromSeconds(1));     // 8 s：凑满 5 个 → 弹窗
+        time.Advance(TimeSpan.FromSeconds(1));     // 7 s：凑满 5 个 → 弹窗
         var change = sm.Evaluate(history);
         Assert.Equal(ProximityState.PendingLock, change?.To);
         Assert.Contains("静默", change!.Reason);
@@ -593,7 +644,7 @@ public class ProximityStateMachineLockTests
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
         history.Add(-55, time.GetUtcNow());
-        time.Advance(TimeSpan.FromSeconds(61));
+        time.Advance(TimeSpan.FromSeconds(181));
         Assert.Equal(ProximityState.PendingLock, sm.Evaluate(history)?.To);
 
         time.Advance(TimeSpan.FromSeconds(13));

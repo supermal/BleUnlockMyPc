@@ -39,7 +39,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         nameof(IrkText), nameof(IrkByteOrderIndex), nameof(IdentityAddressText), nameof(UserNameText),
         nameof(PasswordText), nameof(LockThresholdText), nameof(UnlockThresholdText), nameof(UnlockCountText),
         nameof(LockPromptCountText), nameof(LockConfirmCountText), nameof(SampleIntervalText),
-        nameof(StartupGraceText), nameof(UnlockPendingTimeoutText), nameof(NotifierModeIndex),
+        nameof(StartupGraceText), nameof(UnlockPendingTimeoutText), nameof(NoSignalDepartureText), nameof(NotifierModeIndex),
         nameof(RejectSnoozeText), nameof(SnoozeText),
     ];
 
@@ -127,6 +127,7 @@ public sealed partial class ConfigViewModel : ObservableObject
     [ObservableProperty] public partial string SampleIntervalText { get; set; }
     [ObservableProperty] public partial string StartupGraceText { get; set; }
     [ObservableProperty] public partial string UnlockPendingTimeoutText { get; set; }
+    [ObservableProperty] public partial string NoSignalDepartureText { get; set; }
     [ObservableProperty] public partial int NotifierModeIndex { get; set; }
     [ObservableProperty] public partial string RejectSnoozeText { get; set; }
     [ObservableProperty] public partial string SnoozeText { get; set; }
@@ -182,6 +183,10 @@ public sealed partial class ConfigViewModel : ObservableObject
     public partial string UnlockPendingTimeoutError { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNoSignalDepartureError))]
+    public partial string NoSignalDepartureError { get; set; }
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasRejectSnoozeError))]
     public partial string RejectSnoozeError { get; set; }
 
@@ -201,6 +206,7 @@ public sealed partial class ConfigViewModel : ObservableObject
     public bool HasSampleIntervalError => SampleIntervalError.Length > 0;
     public bool HasStartupGraceError => StartupGraceError.Length > 0;
     public bool HasUnlockPendingTimeoutError => UnlockPendingTimeoutError.Length > 0;
+    public bool HasNoSignalDepartureError => NoSignalDepartureError.Length > 0;
     public bool HasRejectSnoozeError => RejectSnoozeError.Length > 0;
     public bool HasSnoozeError => SnoozeError.Length > 0;
 
@@ -240,6 +246,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         SampleIntervalText = "";
         StartupGraceText = "";
         UnlockPendingTimeoutText = "";
+        NoSignalDepartureText = "";
         RejectSnoozeText = "";
         SnoozeText = "";
         BondStatusText = "";
@@ -255,6 +262,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         SampleIntervalError = "";
         StartupGraceError = "";
         UnlockPendingTimeoutError = "";
+        NoSignalDepartureError = "";
         RejectSnoozeError = "";
         SnoozeError = "";
         IrkHint = "";
@@ -965,6 +973,8 @@ public sealed partial class ConfigViewModel : ObservableObject
             p.StartupGraceSeconds = startupGrace;
         if (TryGetNumber(UnlockPendingTimeoutText, ConfigFields.ProximityUnlockPendingTimeoutSeconds, errors, out var unlockPending))
             p.UnlockPendingTimeoutSeconds = unlockPending;
+        if (TryGetNumber(NoSignalDepartureText, ConfigFields.ProximityNoSignalDepartureSeconds, errors, out var noSignal))
+            p.NoSignalDepartureSeconds = noSignal;
 
         var n = config.Notification;
         n.Mode = (NotifierMode)Math.Clamp(NotifierModeIndex, 0, 1);
@@ -995,6 +1005,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         SampleIntervalText = ConfigInput.FormatCount(config.Proximity.SampleIntervalMs);
         StartupGraceText = ConfigInput.FormatNumber(config.Proximity.StartupGraceSeconds);
         UnlockPendingTimeoutText = ConfigInput.FormatNumber(config.Proximity.UnlockPendingTimeoutSeconds);
+        NoSignalDepartureText = ConfigInput.FormatNumber(config.Proximity.NoSignalDepartureSeconds);
         NotifierModeIndex = Math.Clamp((int)config.Notification.Mode, 0, 1);
         RejectSnoozeText = ConfigInput.FormatNumber(config.Notification.RejectSnoozeSeconds);
         SnoozeText = ConfigInput.FormatNumber(config.Notification.SnoozeMinutes);
@@ -1075,6 +1086,9 @@ public sealed partial class ConfigViewModel : ObservableObject
             case ConfigFields.ProximityUnlockPendingTimeoutSeconds:
                 if (UnlockPendingTimeoutError.Length == 0) UnlockPendingTimeoutError = error.Message;
                 break;
+            case ConfigFields.ProximityNoSignalDepartureSeconds:
+                if (NoSignalDepartureError.Length == 0) NoSignalDepartureError = error.Message;
+                break;
             case ConfigFields.NotificationRejectSnoozeSeconds:
                 if (RejectSnoozeError.Length == 0) RejectSnoozeError = error.Message;
                 break;
@@ -1100,6 +1114,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         SampleIntervalError = "";
         StartupGraceError = "";
         UnlockPendingTimeoutError = "";
+        NoSignalDepartureError = "";
         RejectSnoozeError = "";
         SnoozeError = "";
         IrkHint = "";
@@ -1150,6 +1165,9 @@ public sealed partial class ConfigViewModel : ObservableObject
                 break;
             case nameof(UnlockPendingTimeoutText):
                 if (UnlockPendingTimeoutError is { Length: > 0 }) UnlockPendingTimeoutError = "";
+                break;
+            case nameof(NoSignalDepartureText):
+                if (NoSignalDepartureError is { Length: > 0 }) NoSignalDepartureError = "";
                 break;
             case nameof(RejectSnoozeText):
                 if (RejectSnoozeError is { Length: > 0 }) RejectSnoozeError = "";

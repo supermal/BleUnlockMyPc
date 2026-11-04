@@ -80,6 +80,9 @@ public static class OptionsValidator
         if (p.StartupGraceSeconds < 0)  errors.Add(ServiceStrings.Validation_GraceNegative);
         if (p.UnlockPendingTimeoutSeconds <= 0)
             errors.Add(ServiceStrings.Validation_PendingTimeoutPositive);
+        // 0 = 关闭；否则至少 30 s：太短会把设备的省电停播当成离开
+        if (p.NoSignalDepartureSeconds is not 0 and (< 30 or > 3600))
+            errors.Add(ServiceStrings.Validation_NoSignalRange);
 
         var n = o.Notification;
         // El maximo vive en HelperProtocol: el ayudante rechaza lo que lo supere,

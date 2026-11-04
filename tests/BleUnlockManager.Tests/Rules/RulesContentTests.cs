@@ -128,4 +128,17 @@ public sealed class RulesContentTests : IDisposable
         Assert.False(fromConfig);
         Assert.Equal(RuleValues.Defaults, values);
     }
+
+    [Fact]
+    public void El_respaldo_sin_senal_se_muestra_con_su_valor_o_como_desactivado()
+    {
+        ManagerLanguage.Set(AppLanguage.Chinese);
+
+        var on = RulesContent.Fill("Rules_S2_I6_V", RuleValues.Defaults);
+        var off = RulesContent.Fill("Rules_S2_I6_V", RuleValues.Defaults with { NoSignalSeconds = 0 });
+
+        Assert.Contains("连续 180 秒完全没有读数", on);
+        Assert.DoesNotContain("180", off);
+        Assert.Contains("已关闭", off);
+    }
 }

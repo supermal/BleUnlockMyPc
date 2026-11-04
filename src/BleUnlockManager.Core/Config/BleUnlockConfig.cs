@@ -35,6 +35,7 @@ public sealed class BleUnlockConfig
             SampleIntervalMs = Proximity.SampleIntervalMs,
             StartupGraceSeconds = Proximity.StartupGraceSeconds,
             UnlockPendingTimeoutSeconds = Proximity.UnlockPendingTimeoutSeconds,
+            NoSignalDepartureSeconds = Proximity.NoSignalDepartureSeconds,
         },
         Notification = new NotificationConfig
         {
@@ -88,6 +89,9 @@ public sealed class ProximityConfig
 
     public double StartupGraceSeconds { get; set; } = 15;
     public double UnlockPendingTimeoutSeconds { get; set; } = 20;
+
+    /// <summary>完全收不到设备多少秒算离开（设备关机/被拿走）；0 = 关闭。范围 0 或 30–3600（与服务端一致）。</summary>
+    public double NoSignalDepartureSeconds { get; set; } = 180;
 }
 
 public sealed class NotificationConfig

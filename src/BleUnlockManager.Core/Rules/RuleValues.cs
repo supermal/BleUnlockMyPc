@@ -5,7 +5,7 @@ using BleUnlockManager.Core.Config;
 namespace BleUnlockManager.Core.Rules;
 
 /// <summary>
-/// Los diez valores configurables que aparecen en la página de reglas, tal como los usa el servicio.
+/// Los valores configurables que aparecen en la página de reglas, tal como los usa el servicio.
 /// </summary>
 public sealed record RuleValues(
     double LockDbm,
@@ -17,7 +17,8 @@ public sealed record RuleValues(
     double GraceSeconds,
     double UnlockTimeoutSeconds,
     double RejectSnoozeSeconds,
-    double SnoozeMinutes)
+    double SnoozeMinutes,
+    double NoSignalSeconds = 180)
 {
     /// <summary>Los mismos valores que una configuración recién creada (y que el servicio).</summary>
     public static RuleValues Defaults { get; } = FromConfig(new BleUnlockConfig());
@@ -32,7 +33,8 @@ public sealed record RuleValues(
         config.Proximity.StartupGraceSeconds,
         config.Proximity.UnlockPendingTimeoutSeconds,
         config.Notification.RejectSnoozeSeconds,
-        config.Notification.SnoozeMinutes);
+        config.Notification.SnoozeMinutes,
+        config.Proximity.NoSignalDepartureSeconds);
 
     /// <summary>
     /// Lee la configuración del servicio. Si no existe o no se puede leer, devuelve los valores

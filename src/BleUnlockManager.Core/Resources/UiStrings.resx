@@ -78,6 +78,8 @@
   <data name="Config_LockThreshold" xml:space="preserve"><value>Lock threshold</value></data>
   <data name="Config_NoConfigFile" xml:space="preserve"><value>The configuration file appsettings.json was not found (the service may not be installed or initialized yet).</value></data>
   <data name="Config_NoDataDir" xml:space="preserve"><value>The service data folder was not found (the service may not be installed).</value></data>
+  <data name="Config_NoSignalDeparture" xml:space="preserve"><value>No signal counts as leaving</value></data>
+  <data name="Config_NoSignalDepartureHint" xml:space="preserve"><value>If the device is not heard at all for this long, you are treated as gone (device off or taken away). A watch lying still stops advertising for a minute or two, so a short value causes false locks. 0 = off; otherwise 30–3600 seconds.</value></data>
   <data name="Config_OpenFolder" xml:space="preserve"><value>Open configuration folder</value></data>
   <data name="Config_PairNew" xml:space="preserve"><value>Pair a new device…</value></data>
   <data name="Config_PairNewTip" xml:space="preserve"><value>Phones/watches start pairing from the device; headphones/mice are found by a scan from the PC</value></data>
@@ -371,6 +373,8 @@
   <data name="Rules_LiveOff" xml:space="preserve"><value>Not connected to the service</value></data>
   <data name="Rules_LiveOn" xml:space="preserve"><value>Service now: {state}</value></data>
   <data name="Rules_Nav" xml:space="preserve"><value>Rules</value></data>
+  <data name="Rules_NoSignalOff" xml:space="preserve"><value> ("No signal counts as leaving" is off)</value></data>
+  <data name="Rules_NoSignalSeconds" xml:space="preserve"><value>, or nothing at all arrived for {0} s</value></data>
   <data name="Rules_Now" xml:space="preserve"><value>Now</value></data>
   <data name="Rules_P_confirm_Effect" xml:space="preserve"><value>After the prompt appears, {confirm} readings in a row below {lock} lock the screen</value></data>
   <data name="Rules_P_confirm_Name" xml:space="preserve"><value>Readings to confirm lock</value></data>
@@ -422,9 +426,9 @@
   <data name="Rules_S2_I4_K" xml:space="preserve"><value>Away:</value></data>
   <data name="Rules_S2_I4_V" xml:space="preserve"><value>strictly below {lock} ({lock} itself does not count).</value></data>
   <data name="Rules_S2_I5_K" xml:space="preserve"><value>Near:</value></data>
-  <data name="Rules_S2_I5_V" xml:space="preserve"><value>strictly above the threshold, at most 3 s between readings. Withdrawing the prompt uses {lock}; automatic unlock uses {unlock}.</value></data>
+  <data name="Rules_S2_I5_V" xml:space="preserve"><value>strictly above the threshold. Withdrawing the prompt uses {lock}, with no limit on the gap between readings; automatic unlock uses {unlock}, at most 3 s between readings.</value></data>
   <data name="Rules_S2_I6_K" xml:space="preserve"><value>Silence:</value></data>
-  <data name="Rules_S2_I6_V" xml:space="preserve"><value>gaps up to 3 s are not evidence. After that, one -127 silence value per second joins the departure batch only if the last reading was already below {lock}, or nothing at all arrived for 60 s.</value></data>
+  <data name="Rules_S2_I6_V" xml:space="preserve"><value>gaps up to 3 s are not evidence. After that, one -127 silence value per second joins the departure batch only if the last 2 readings in a row were already below {lock}{nosignal}. A single stray low reading does not count.</value></data>
   <data name="Rules_S2_I7_V" xml:space="preserve"><value>Every state change clears the batch in progress.</value></data>
   <data name="Rules_S2_Title" xml:space="preserve"><value>Core rule: the whole batch must pass</value></data>
   <data name="Rules_S3_I1_V" xml:space="preserve"><value>more than {grace} s since the service started or the PC woke;</value></data>
@@ -442,13 +446,13 @@
   <data name="Rules_S4_Lead" xml:space="preserve"><value>The prompt never times out. In evaluation order, any of these ends it:</value></data>
   <data name="Rules_S4_R1_K" xml:space="preserve"><value>You came back:</value></data>
   <data name="Rules_S4_R1_Res" xml:space="preserve"><value>Prompt withdrawn → Unlocked</value></data>
-  <data name="Rules_S4_R1_V" xml:space="preserve"><value>a trigger above {lock}, then {ucount} readings in a row above {lock}, at most 3 s apart.</value></data>
+  <data name="Rules_S4_R1_V" xml:space="preserve"><value>a trigger above {lock}, then {ucount} readings in a row above {lock}. Any gap between readings is fine: a watch may advertise only every ten seconds or so.</value></data>
   <data name="Rules_S4_R2_K" xml:space="preserve"><value>Departure confirmed:</value></data>
   <data name="Rules_S4_R2_Res" xml:space="preserve"><value>Prompt withdrawn, screen locked → Locked · waiting</value></data>
   <data name="Rules_S4_R2_V" xml:space="preserve"><value>after the prompt appears, {confirm} new readings in a row below {lock} (silence values count); no trigger needed.</value></data>
   <data name="Rules_S4_R3_K" xml:space="preserve"><value>User choice:</value></data>
   <data name="Rules_S4_R3_Res" xml:space="preserve"><value>Snoozed, or locked</value></data>
-  <data name="Rules_S4_R3_V" xml:space="preserve"><value>"Reject" pauses {reject} s; "Don't lock for {snooze} min" pauses {snooze} min; closing with × locks right away.</value></data>
+  <data name="Rules_S4_R3_V" xml:space="preserve"><value>"Reject" pauses {reject} s; "Don't lock for {snooze} min" pauses {snooze} min; closing with × locks right away. A notification hidden by Windows (Do not disturb, full-screen app) is not a ×: it does not lock and asks again with a dialog.</value></data>
   <data name="Rules_S4_R4_K" xml:space="preserve"><value>Manual lock:</value></data>
   <data name="Rules_S4_R4_Res" xml:space="preserve"><value>Prompt withdrawn → Locked · waiting</value></data>
   <data name="Rules_S4_R4_V" xml:space="preserve"><value>Win+L and similar.</value></data>

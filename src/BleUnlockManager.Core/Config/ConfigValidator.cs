@@ -165,6 +165,12 @@ public static class ConfigValidator
             errors.Add(new ConfigError(ConfigFields.ProximityUnlockPendingTimeoutSeconds,
                 string.Format(CoreStrings.Validation_PendingTimeoutPositive, ConfigFields.ProximityUnlockPendingTimeoutSeconds)));
         }
+        // 0 = 关闭；否则至少 30 s：太短会把设备的省电停播当成离开（与服务端 OptionsValidator 一致）
+        if (p.NoSignalDepartureSeconds is not 0 and (< 30 or > 3600))
+        {
+            errors.Add(new ConfigError(ConfigFields.ProximityNoSignalDepartureSeconds,
+                string.Format(CoreStrings.Validation_NoSignalRange, ConfigFields.ProximityNoSignalDepartureSeconds)));
+        }
 
         var n = config.Notification;
         // 上限与服务端 HelperProtocol 一致：辅助进程会拒绝超限值，静默拒绝会导致锁屏而无提示

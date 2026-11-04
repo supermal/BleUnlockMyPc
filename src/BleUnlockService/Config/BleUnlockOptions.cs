@@ -51,6 +51,10 @@ public sealed class ProximityOptions
 
     public double StartupGraceSeconds { get; set; } = 15;
     public double UnlockPendingTimeoutSeconds { get; set; } = 20;
+
+    // 完全收不到目标设备这么多秒，就把静默当作离开（设备关机/被拿走）。0 = 关闭这条兜底。
+    // 2026-11-04 由固定 60 s 改为可配、默认 180 s：手表放着不动会停播一两分钟，人却还在
+    public double NoSignalDepartureSeconds { get; set; } = 180;
 }
 
 public sealed class NotificationOptions

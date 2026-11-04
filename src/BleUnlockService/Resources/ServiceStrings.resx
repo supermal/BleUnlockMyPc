@@ -99,6 +99,7 @@
   <data name="Log_NotifierDegraded" xml:space="preserve"><value>Notifications switched to dialog mode: {Reason}</value></data>
   <data name="Log_NotifierDegradedMidPrompt" xml:space="preserve"><value>Notifications switched to dialog mode during a prompt; prompting again with a dialog</value></data>
   <data name="Log_PromptResponse" xml:space="preserve"><value>User response to the lock prompt: {Outcome}</value></data>
+  <data name="Log_PromptSuppressed" xml:space="preserve"><value>Windows hid the lock prompt (probably Do not disturb, focus mode or a full-screen app); not locking, asking again with a dialog</value></data>
   <data name="Log_PromptWithdrawn" xml:space="preserve"><value>The prompt for action {Action} was withdrawn (normal)</value></data>
   <data name="Log_ReloadStatusWriteFailed" xml:space="preserve"><value>Failed to write the configuration reload result: {Message}</value></data>
   <data name="Log_ResumedFromSleep" xml:space="preserve"><value>The system resumed from sleep; RSSI history cleared and grace period restarted</value></data>
@@ -168,6 +169,7 @@
   <data name="Validation_IrkFormat" xml:space="preserve"><value>Device.Irk must be 32 hexadecimal characters</value></data>
   <data name="Validation_LockConfirmCountRange" xml:space="preserve"><value>Proximity.LockConfirmSampleCount must be between 1 and 50</value></data>
   <data name="Validation_LockPromptCountRange" xml:space="preserve"><value>Proximity.LockPromptSampleCount must be between 1 and 50</value></data>
+  <data name="Validation_NoSignalRange" xml:space="preserve"><value>Proximity.NoSignalDepartureSeconds must be 0 (off) or between 30 and 3600</value></data>
   <data name="Validation_PasswordControlChars" xml:space="preserve"><value>Credentials.Password cannot contain control characters (line breaks, carriage returns, tabs, etc.)</value></data>
   <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>Proximity.UnlockPendingTimeoutSeconds must be positive</value></data>
   <data name="Validation_PlaintextSecret" xml:space="preserve"><value>{0} is stored in plain text; save once in the Manager to encrypt it</value></data>

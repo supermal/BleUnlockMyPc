@@ -403,6 +403,13 @@
                         IsModified="{Binding ModifiedFields, Converter={StaticResource FieldModified}, ConverterParameter=Proximity.UnlockPendingTimeoutSeconds}">
                         <controls:UnitTextBox AutomationProperties.Name="{loc:Loc Config_PendingTimeout}" Text="{Binding UnlockPendingTimeoutText, UpdateSourceTrigger=PropertyChanged}" Unit="{loc:Loc Unit_Seconds}" />
                     </controls:SettingRow>
+                    <controls:SettingRow
+                        Description="{loc:Loc Config_NoSignalDepartureHint}"
+                        Error="{Binding NoSignalDepartureError}"
+                        Header="{loc:Loc Config_NoSignalDeparture}"
+                        IsModified="{Binding ModifiedFields, Converter={StaticResource FieldModified}, ConverterParameter=Proximity.NoSignalDepartureSeconds}">
+                        <controls:UnitTextBox AutomationProperties.Name="{loc:Loc Config_NoSignalDeparture}" Text="{Binding NoSignalDepartureText, UpdateSourceTrigger=PropertyChanged}" Unit="{loc:Loc Unit_Seconds}" />
+                    </controls:SettingRow>
 
                     <!--  ===== Aviso de bloqueo =====  -->
                     <TextBlock Style="{StaticResource GroupTitle}" Text="{loc:Loc Config_LockPrompt}" />

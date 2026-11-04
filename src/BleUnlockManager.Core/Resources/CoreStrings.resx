@@ -35,6 +35,7 @@
   <data name="Field_LockConfirmSampleCount" xml:space="preserve"><value>Readings to confirm lock</value></data>
   <data name="Field_LockPromptSampleCount" xml:space="preserve"><value>Readings to show the prompt</value></data>
   <data name="Field_LockThreshold" xml:space="preserve"><value>Lock threshold (dBm)</value></data>
+  <data name="Field_NoSignalDeparture" xml:space="preserve"><value>No signal counts as leaving (s)</value></data>
   <data name="Field_NotificationMode" xml:space="preserve"><value>Notification style</value></data>
   <data name="Field_Password" xml:space="preserve"><value>Credential password</value></data>
   <data name="Field_RejectSnooze" xml:space="preserve"><value>Pause after rejecting (s)</value></data>
@@ -77,6 +78,7 @@
   <data name="Validation_IrkFormat" xml:space="preserve"><value>{0} must be 32 hexadecimal characters</value></data>
   <data name="Validation_LockConfirmCountRange" xml:space="preserve"><value>{0} must be between 1 and 50</value></data>
   <data name="Validation_LockPromptCountRange" xml:space="preserve"><value>{0} must be between 1 and 50</value></data>
+  <data name="Validation_NoSignalRange" xml:space="preserve"><value>{0} must be 0 (off) or between 30 and 3600</value></data>
   <data name="Validation_PasswordControlChars" xml:space="preserve"><value>{0} cannot contain control characters (line breaks, carriage returns, tabs, etc.)</value></data>
   <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>{0} must be positive</value></data>
   <data name="Validation_RejectSnoozePositive" xml:space="preserve"><value>{0} must be positive</value></data>

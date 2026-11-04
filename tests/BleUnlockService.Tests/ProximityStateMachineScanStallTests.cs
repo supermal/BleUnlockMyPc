@@ -63,6 +63,7 @@ public class ProximityStateMachineScanStallTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         Assert.Equal(ProximityState.PendingLock, RunFor(sm, time, history, 30)?.To);
 
@@ -80,6 +81,7 @@ public class ProximityStateMachineScanStallTests
     {
         var (sm, time, history) = Build(screenLocked: true);
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());
         Assert.Equal(ProximityState.LockedArmed, RunFor(sm, time, history, 30)?.To);
 
@@ -98,14 +100,15 @@ public class ProximityStateMachineScanStallTests
     {
         var (sm, time, history) = Build();
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500)); // 2 lecturas débiles: la señal se va de verdad
         history.Add(-85, time.GetUtcNow());     // señal débil justo antes del cuelgue
         sm.OnScanHealthChanged(stalled: true);
         RunFor(sm, time, history, 120);
 
         Assert.Null(sm.OnScanHealthChanged(stalled: false));
 
-        // La lectura débil de antes del cuelgue ya no sirve de umbral: solo el respaldo de 60 s
-        Assert.Null(RunFor(sm, time, history, 55));
+        // La lectura débil de antes del cuelgue ya no sirve de umbral: solo el respaldo de 180 s
+        Assert.Null(RunFor(sm, time, history, 175));
         var change = RunFor(sm, time, history, 10);
         Assert.NotNull(change);
         Assert.Equal(ProximityState.PendingLock, change.To);

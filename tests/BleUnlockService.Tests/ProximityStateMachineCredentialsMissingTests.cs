@@ -34,7 +34,9 @@ public class ProximityStateMachineCredentialsMissingTests
     // El usuario se va: la señal se debilita por debajo del umbral y después desaparece
     private static void Leave(FakeTimeProvider time, RssiHistory history)
     {
+        // Dos lecturas débiles seguidas: con una sola, el silencio posterior ya no cuenta (2026-11-04)
         time.Advance(TimeSpan.FromSeconds(1));
+        history.Add(-85, time.GetUtcNow().AddMilliseconds(-500));
         history.Add(-85, time.GetUtcNow());
     }
 

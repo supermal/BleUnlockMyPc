@@ -99,6 +99,7 @@
   <data name="Log_NotifierDegraded" xml:space="preserve"><value>通知方式已降级为对话框：{Reason}</value></data>
   <data name="Log_NotifierDegradedMidPrompt" xml:space="preserve"><value>通知方式在提示进行中降级，改用对话框重新提示</value></data>
   <data name="Log_PromptResponse" xml:space="preserve"><value>用户对锁屏提示的响应：{Outcome}</value></data>
+  <data name="Log_PromptSuppressed" xml:space="preserve"><value>锁屏提示被 Windows 隐藏了（多半开着勿扰、专注模式或全屏程序），没有锁屏，改用对话框再提示一次</value></data>
   <data name="Log_PromptWithdrawn" xml:space="preserve"><value>动作 {Action} 的提示已被撤回（正常情况）</value></data>
   <data name="Log_ReloadStatusWriteFailed" xml:space="preserve"><value>写入配置重载结果失败：{Message}</value></data>
   <data name="Log_ResumedFromSleep" xml:space="preserve"><value>系统已从睡眠中恢复，清空 RSSI 历史并重新进入宽限期</value></data>
@@ -168,6 +169,7 @@
   <data name="Validation_IrkFormat" xml:space="preserve"><value>Device.Irk 必须是 32 个十六进制字符</value></data>
   <data name="Validation_LockConfirmCountRange" xml:space="preserve"><value>Proximity.LockConfirmSampleCount 必须在 1 到 50 之间</value></data>
   <data name="Validation_LockPromptCountRange" xml:space="preserve"><value>Proximity.LockPromptSampleCount 必须在 1 到 50 之间</value></data>
+  <data name="Validation_NoSignalRange" xml:space="preserve"><value>Proximity.NoSignalDepartureSeconds 必须是 0（关闭）或 30 到 3600 之间</value></data>
   <data name="Validation_PasswordControlChars" xml:space="preserve"><value>Credentials.Password 不能包含控制字符（换行、回车、制表符等）</value></data>
   <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>Proximity.UnlockPendingTimeoutSeconds 必须为正数</value></data>
   <data name="Validation_PlaintextSecret" xml:space="preserve"><value>{0} 以明文存储，建议在管理端保存一次以加密</value></data>

@@ -22,6 +22,11 @@ internal sealed class ToastPrompt : IDisposable
     private ToastNotification? _current;
     private int _currentId;
     private bool _answered = true;   // sin Toast activo no hay nada que responder
+    private long _shownAt;           // Environment.TickCount64 al mostrar el Toast actual
+
+    // Nadie lee un aviso y pulsa la X en menos de esto: un descarte tan rápido lo hizo Windows
+    // (2026-11-04: descartes a los 34–68 ms bloqueaban la pantalla con el usuario delante)
+    internal static readonly TimeSpan MinHumanReaction = TimeSpan.FromSeconds(1);
 
     public event Action<int, PromptOutcome>? Responded;
 
@@ -62,6 +67,7 @@ internal sealed class ToastPrompt : IDisposable
             _current = toast;
             _currentId = id;
             _answered = false;
+            _shownAt = Environment.TickCount64;
         }
 
         try
@@ -125,12 +131,22 @@ internal sealed class ToastPrompt : IDisposable
 
     private void OnDismissed(ToastNotification sender, ToastDismissedEventArgs args)
     {
-        // ApplicationHidden es nuestra propia retirada: no es respuesta del usuario.
-        // Cualquier otro motivo (la X del usuario o una caducidad del propio Windows)
-        // cuenta como descarte explicito: el servicio lo trata como "bloquear ya"
+        // ApplicationHidden es nuestra propia retirada: no es respuesta del usuario
         if (args.Reason == ToastDismissalReason.ApplicationHidden) return;
-        Answer(sender, PromptOutcome.Dismissed);
+
+        long shownAt;
+        lock (_lock) shownAt = _shownAt;
+        var elapsed = TimeSpan.FromMilliseconds(Environment.TickCount64 - shownAt);
+        Answer(sender, Classify(args.Reason, elapsed));
     }
+
+    // Solo la X del usuario (UserCanceled, con tiempo de haberlo leído) es «bloquear ya».
+    // TimedOut lo produce Windows al ocultar el aviso (No molestar, pantalla completa) y un
+    // descarte casi instantáneo tampoco es humano: en ambos casos el usuario no ha visto nada
+    internal static PromptOutcome Classify(ToastDismissalReason reason, TimeSpan elapsed) =>
+        reason == ToastDismissalReason.UserCanceled && elapsed >= MinHumanReaction
+            ? PromptOutcome.Dismissed
+            : PromptOutcome.Suppressed;
 
     // Unico camino hacia Responded. 'source' evita que un evento tardio de un Toast
     // ya sustituido conteste al Prompt nuevo

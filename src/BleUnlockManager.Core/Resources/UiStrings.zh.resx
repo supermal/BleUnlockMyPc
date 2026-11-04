@@ -78,6 +78,8 @@
   <data name="Config_LockThreshold" xml:space="preserve"><value>锁定阈值</value></data>
   <data name="Config_NoConfigFile" xml:space="preserve"><value>未找到配置文件 appsettings.json（服务可能未安装或尚未初始化）。</value></data>
   <data name="Config_NoDataDir" xml:space="preserve"><value>未检测到服务数据目录（服务可能未安装）。</value></data>
+  <data name="Config_NoSignalDeparture" xml:space="preserve"><value>无信号判离开</value></data>
+  <data name="Config_NoSignalDepartureHint" xml:space="preserve"><value>完全收不到设备这么久，就算你离开了（设备关机或被带走）。手表放着不动时会停止广播一两分钟，太短会误锁。0 = 关闭；否则 30–3600 秒。</value></data>
   <data name="Config_OpenFolder" xml:space="preserve"><value>打开配置文件夹</value></data>
   <data name="Config_PairNew" xml:space="preserve"><value>配对新设备…</value></data>
   <data name="Config_PairNewTip" xml:space="preserve"><value>手机/手表由设备发起配对，耳机/鼠标由电脑扫描配对</value></data>
@@ -371,6 +373,8 @@
   <data name="Rules_LiveOff" xml:space="preserve"><value>未连接服务</value></data>
   <data name="Rules_LiveOn" xml:space="preserve"><value>服务当前：{state}</value></data>
   <data name="Rules_Nav" xml:space="preserve"><value>判定条件</value></data>
+  <data name="Rules_NoSignalOff" xml:space="preserve"><value>时（「无信号判离开」已关闭）</value></data>
+  <data name="Rules_NoSignalSeconds" xml:space="preserve"><value>，或连续 {0} 秒完全没有读数时</value></data>
   <data name="Rules_Now" xml:space="preserve"><value>当前</value></data>
   <data name="Rules_P_confirm_Effect" xml:space="preserve"><value>提示出现后再连续 {confirm} 个低于 {lock}，才锁屏</value></data>
   <data name="Rules_P_confirm_Name" xml:space="preserve"><value>锁屏确认个数</value></data>
@@ -422,9 +426,9 @@
   <data name="Rules_S2_I4_K" xml:space="preserve"><value>离开：</value></data>
   <data name="Rules_S2_I4_V" xml:space="preserve"><value>读数严格小于 {lock}（等于 {lock} 不算）。</value></data>
   <data name="Rules_S2_I5_K" xml:space="preserve"><value>靠近：</value></data>
-  <data name="Rules_S2_I5_V" xml:space="preserve"><value>读数严格大于阈值，相邻两个读数间隔不超过 3 秒。撤回提示用 {lock}，自动解锁用 {unlock}。</value></data>
+  <data name="Rules_S2_I5_V" xml:space="preserve"><value>读数严格大于阈值。撤回提示用 {lock}，读数间隔不限；自动解锁用 {unlock}，相邻两个读数间隔不超过 3 秒。</value></data>
   <data name="Rules_S2_I6_K" xml:space="preserve"><value>静默：</value></data>
-  <data name="Rules_S2_I6_V" xml:space="preserve"><value>停播 3 秒以内不算证据。超过 3 秒后，只有停播前最后一条读数已低于 {lock}，或连续 60 秒完全没有读数时，才每秒补记一个 -127 的静默值，计入离开批次。</value></data>
+  <data name="Rules_S2_I6_V" xml:space="preserve"><value>停播 3 秒以内不算证据。超过 3 秒后，只有停播前已经连续 2 个读数低于 {lock}{nosignal}，才每秒补记一个 -127 的静默值，计入离开批次。一个偶发的低读数不算。</value></data>
   <data name="Rules_S2_I7_V" xml:space="preserve"><value>每次状态切换，进行中的批次都清零。</value></data>
   <data name="Rules_S2_Title" xml:space="preserve"><value>核心规则：批次全部达标</value></data>
   <data name="Rules_S3_I1_V" xml:space="preserve"><value>服务启动或睡眠恢复后已超过 {grace} 秒；</value></data>
@@ -442,13 +446,13 @@
   <data name="Rules_S4_Lead" xml:space="preserve"><value>提示不会自动超时。按判定的先后顺序，下面任一情况会结束它：</value></data>
   <data name="Rules_S4_R1_K" xml:space="preserve"><value>人回来了：</value></data>
   <data name="Rules_S4_R1_Res" xml:space="preserve"><value>撤回提示 → 已解锁</value></data>
-  <data name="Rules_S4_R1_V" xml:space="preserve"><value>一个高于 {lock} 的触发读数，之后再连续 {ucount} 个高于 {lock}，相邻间隔不超过 3 秒。</value></data>
+  <data name="Rules_S4_R1_V" xml:space="preserve"><value>一个高于 {lock} 的触发读数，之后再连续 {ucount} 个高于 {lock}。读数间隔不限：手表可能隔十几秒才广播一次。</value></data>
   <data name="Rules_S4_R2_K" xml:space="preserve"><value>确认离开：</value></data>
   <data name="Rules_S4_R2_Res" xml:space="preserve"><value>撤回提示并锁屏 → 已锁定·等待离开</value></data>
   <data name="Rules_S4_R2_V" xml:space="preserve"><value>提示出现之后新收的读数中，连续 {confirm} 个低于 {lock}（静默值也算），不需要触发读数。</value></data>
   <data name="Rules_S4_R3_K" xml:space="preserve"><value>用户点击：</value></data>
   <data name="Rules_S4_R3_Res" xml:space="preserve"><value>暂缓，或锁屏</value></data>
-  <data name="Rules_S4_R3_V" xml:space="preserve"><value>「拒绝」暂缓 {reject} 秒；「{snooze} 分钟内不锁定」暂缓 {snooze} 分钟；点 × 关闭通知立即锁屏。</value></data>
+  <data name="Rules_S4_R3_V" xml:space="preserve"><value>「拒绝」暂缓 {reject} 秒；「{snooze} 分钟内不锁定」暂缓 {snooze} 分钟；点 × 关闭通知立即锁屏。通知被 Windows 隐藏（勿扰、全屏程序）不算点 ×：不会锁屏，改用对话框再提示一次。</value></data>
   <data name="Rules_S4_R4_K" xml:space="preserve"><value>手动锁屏：</value></data>
   <data name="Rules_S4_R4_Res" xml:space="preserve"><value>撤回提示 → 已锁定·等待离开</value></data>
   <data name="Rules_S4_R4_V" xml:space="preserve"><value>Win+L 等。</value></data>

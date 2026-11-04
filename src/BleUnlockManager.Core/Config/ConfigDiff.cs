@@ -82,6 +82,8 @@ public static class ConfigDiff
             from.Proximity.StartupGraceSeconds, to.Proximity.StartupGraceSeconds);
         AddNumber(changes, ConfigFields.ProximityUnlockPendingTimeoutSeconds,
             from.Proximity.UnlockPendingTimeoutSeconds, to.Proximity.UnlockPendingTimeoutSeconds);
+        AddNumber(changes, ConfigFields.ProximityNoSignalDepartureSeconds,
+            from.Proximity.NoSignalDepartureSeconds, to.Proximity.NoSignalDepartureSeconds);
 
         if (from.Notification.Mode != to.Notification.Mode)
         {
@@ -135,6 +137,7 @@ public static class ConfigDiff
         ConfigFields.ProximitySampleIntervalMs => CoreStrings.Field_SampleInterval,
         ConfigFields.ProximityStartupGraceSeconds => CoreStrings.Field_StartupGrace,
         ConfigFields.ProximityUnlockPendingTimeoutSeconds => CoreStrings.Field_UnlockPendingTimeout,
+        ConfigFields.ProximityNoSignalDepartureSeconds => CoreStrings.Field_NoSignalDeparture,
         ConfigFields.NotificationMode => CoreStrings.Field_NotificationMode,
         ConfigFields.NotificationRejectSnoozeSeconds => CoreStrings.Field_RejectSnooze,
         ConfigFields.NotificationSnoozeMinutes => CoreStrings.Field_Snooze,

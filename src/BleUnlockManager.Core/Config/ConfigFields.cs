@@ -18,6 +18,7 @@ public static class ConfigFields
     public const string ProximitySampleIntervalMs = "Proximity.SampleIntervalMs";
     public const string ProximityStartupGraceSeconds = "Proximity.StartupGraceSeconds";
     public const string ProximityUnlockPendingTimeoutSeconds = "Proximity.UnlockPendingTimeoutSeconds";
+    public const string ProximityNoSignalDepartureSeconds = "Proximity.NoSignalDepartureSeconds";
     public const string NotificationMode = "Notification.Mode";
     public const string NotificationRejectSnoozeSeconds = "Notification.RejectSnoozeSeconds";
     public const string NotificationSnoozeMinutes = "Notification.SnoozeMinutes";

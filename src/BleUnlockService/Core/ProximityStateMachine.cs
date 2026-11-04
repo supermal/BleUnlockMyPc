@@ -50,15 +50,17 @@ public sealed record BatchProgress(BatchKind Kind, int Count, int Target);
 //   - 触发：低于锁定阈值的读数；
 //   - 触发后收满 N 个读数，且每一个都达到阈值才算成立；任一条不达标整批作废，等下一个触发重来；
 //   - 静默注入只在锁定侧，且只在两种情况下启用：停播前最后一条读数已低于阈值（信号先变弱
-//     再消失 = 真离开的形状），或完全无读数超过 60 s 兜底（设备关机/被拿走/跑出范围）。
+//     再消失 = 真离开的形状，2026-11-04 起要求连续 2 个弱读数），或完全无读数达到兜底时长
+//     （NoSignalDepartureSeconds，默认 180 s，0 = 关闭；设备关机/被拿走/跑出范围）。
 //     信号还强时的停播只是设备省电打盹，不算离开——这是 10/18 实测「坐在电脑前也弹窗」的根源；
 //   - 弹窗不再自动超时：锁定只由「弹窗后新收的一批」或用户点击决定。
 public sealed class ProximityStateMachine
 {
     // 静默 = 离开证据。宽限内不注入：BLE 偶发丢包不算离开
     internal static readonly TimeSpan SilenceGrace = TimeSpan.FromSeconds(3);
-    // 超长兜底：完全无读数这么久，不管之前信号多强，都按离开处理
-    internal static readonly TimeSpan LongSilenceFallback = TimeSpan.FromSeconds(60);
+    // 停播前至少要有这么多个连续的弱读数，停播才算「信号先变弱再消失」（2026-11-04：单个偶发
+    // 低读数紧跟一次省电停播，曾在人坐在电脑前时触发弹窗）
+    internal const int FadedReadingsBeforeSilence = 2;
     internal const double SilentValueDbm = -127;
 
     private readonly TimeProvider _time;
@@ -80,6 +82,7 @@ public sealed class ProximityStateMachine
     private DateTimeOffset _lockSilenceFrom; // 静默计时基准：最近一条读数或进入当前状态的时刻
     private int _lockSilentInjected;        // 本轮静默已注入的个数（出现新读数时清零）
     private short? _lastRealRssi;           // 最后一条真实读数（静默补点门槛的依据）
+    private int _weakStreak;                // 连续低于锁定阈值的真实读数个数（遇到不低于阈值的即清零）
     private DateTimeOffset _lastRealAt;     // 上一条真实读数的时间（超长兜底计时；状态转换不重置）
 
     // —— 解锁侧批次（PendingLock 的信号恢复判定 / LockedArmed） ——
@@ -169,7 +172,10 @@ public sealed class ProximityStateMachine
         // Primero el regreso: si el usuario vuelve, el aviso se retira y no se bloquea. Basta con
         // superar el umbral de BLOQUEO (no el de desbloqueo): con la pantalla aún abierta, salir de
         // la zona de «lejos» ya desmiente la salida (decisión del usuario, 2026-10-31)
-        if (UnlockBatchNear(history, Proximity.UnlockSampleCount, Proximity.LockThresholdDbm, out var nearReason))
+        // Sin límite de hueco entre lecturas (2026-11-04): un reloj que anuncia cada 6–15 s nunca juntaba
+        // 3 lecturas a ≤ 3 s y el aviso no se retiraba con el usuario al lado. Retirar el aviso solo
+        // retrasa el bloqueo, nunca desbloquea: aquí la evidencia antigua no es un riesgo
+        if (UnlockBatchNear(history, Proximity.UnlockSampleCount, Proximity.LockThresholdDbm, enforceGap: false, out var nearReason))
             return Transition(ProximityState.Unlocked, ProximityAction.CancelLockPrompt,
                 string.Format(ServiceStrings.Reason_SignalRecovered, nearReason));
 
@@ -210,7 +216,7 @@ public sealed class ProximityStateMachine
 
     private StateChange? EvaluateArmed(RssiHistory history, DateTimeOffset now)
     {
-        if (!UnlockBatchNear(history, Proximity.UnlockSampleCount, Proximity.UnlockThresholdDbm, out var reason)) return null;
+        if (!UnlockBatchNear(history, Proximity.UnlockSampleCount, Proximity.UnlockThresholdDbm, enforceGap: true, out var reason)) return null;
 
         _unlockSentAt = now;
         return Transition(ProximityState.UnlockPending, ProximityAction.SendCredentials,
@@ -364,6 +370,7 @@ public sealed class ProximityStateMachine
 
         // 睡眠期间的时间不算「静默」：历史已清空，信号知识归零，旧读数不能当作补点依据
         _lastRealRssi = null;
+        _weakStreak = 0;
         _lastRealAt = _time.GetUtcNow();
 
         // PendingLock no consulta la gracia: el aviso que el usuario nunca vio esta caducado
@@ -389,6 +396,7 @@ public sealed class ProximityStateMachine
         if (!stalled)
         {
             _lastRealRssi = null;
+            _weakStreak = 0;
             _lastRealAt = _time.GetUtcNow();
             ResetSides(State);
             return null;
@@ -427,6 +435,7 @@ public sealed class ProximityStateMachine
             _lockSilentInjected = 0;
             _lastRealRssi = rssi;       // 静默补点门槛与兜底都依据「最后一条真实读数」
             _lastRealAt = at;
+            _weakStreak = rssi < threshold ? _weakStreak + 1 : 0;
 
             if (!_lockBatchActive)
             {
@@ -457,8 +466,10 @@ public sealed class ProximityStateMachine
         var silence = now - _lockSilenceFrom;
         if (silence <= SilenceGrace) return false;
 
-        var signalFaded = _lastRealRssi is { } last && last < threshold;
-        var longSilence = now - _lastRealAt >= LongSilenceFallback;
+        // 变弱要有趋势（连续多个弱读数），一个偶发低值不算；兜底时长可配置，0 = 关闭兜底
+        var signalFaded = _lastRealRssi is { } last && last < threshold && _weakStreak >= FadedReadingsBeforeSilence;
+        var fallbackSeconds = Proximity.NoSignalDepartureSeconds;
+        var longSilence = fallbackSeconds > 0 && now - _lastRealAt >= TimeSpan.FromSeconds(fallbackSeconds);
         if (!signalFaded && !longSilence) return false;
 
         var due = (int)Math.Floor((silence - SilenceGrace).TotalSeconds);
@@ -481,8 +492,9 @@ public sealed class ProximityStateMachine
 
     // 解锁侧：第一个高于阈值的读数只做触发、不计入；之后每个读数都必须高于阈值，
     // 收满 size 个才算靠近。间隙超过静默宽限的旧值作废：宁可重新数，不拿陈旧证据解锁。
-    // threshold：LockedArmed 用解锁阈值；PendingLock 撤回提示用锁定阈值
-    private bool UnlockBatchNear(RssiHistory history, int target, double threshold, out string reason)
+    // threshold：LockedArmed 用解锁阈值；PendingLock 撤回提示用锁定阈值。
+    // enforceGap：只有解锁才限制相邻读数间隔；撤回提示不限制（见 EvaluatePendingLock）
+    private bool UnlockBatchNear(RssiHistory history, int target, double threshold, bool enforceGap, out string reason)
     {
         reason = "";
         var size = Math.Max(1, target);
@@ -491,7 +503,7 @@ public sealed class ProximityStateMachine
         {
             _unlockWatermark = at;
 
-            if (_unlockBatchActive && at - _unlockLastValueAt > SilenceGrace)
+            if (enforceGap && _unlockBatchActive && at - _unlockLastValueAt > SilenceGrace)
                 ResetUnlockBatch();
 
             if (!_unlockBatchActive)

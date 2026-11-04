@@ -3,7 +3,9 @@ using BleUnlock.Shared;
 
 namespace BleUnlockService.Session;
 
-public enum PromptOutcome { Reject, Snooze, Timeout, Dismissed }
+// Suppressed (2026-11-04): Windows retiró el Toast sin que el usuario lo viera (No molestar, modo
+// concentración, pantalla completa): no es una respuesta y no bloquea; el servicio pregunta por el diálogo
+public enum PromptOutcome { Reject, Snooze, Timeout, Dismissed, Suppressed }
 
 public abstract record HelperCommand
 {

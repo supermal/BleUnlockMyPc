@@ -78,6 +78,8 @@
   <data name="Config_LockThreshold" xml:space="preserve"><value>Umbral de bloqueo</value></data>
   <data name="Config_NoConfigFile" xml:space="preserve"><value>No se encontró el archivo de configuración appsettings.json (puede que el servicio no esté instalado o inicializado).</value></data>
   <data name="Config_NoDataDir" xml:space="preserve"><value>No se encontró la carpeta de datos del servicio (puede que no esté instalado).</value></data>
+  <data name="Config_NoSignalDeparture" xml:space="preserve"><value>Sin señal cuenta como salida</value></data>
+  <data name="Config_NoSignalDepartureHint" xml:space="preserve"><value>Si el dispositivo no se oye en absoluto durante este tiempo, se considera que te has ido (apagado o se lo han llevado). Un reloj quieto deja de anunciarse uno o dos minutos, así que un valor corto provoca bloqueos falsos. 0 = desactivado; si no, 30–3600 segundos.</value></data>
   <data name="Config_OpenFolder" xml:space="preserve"><value>Abrir la carpeta de configuración</value></data>
   <data name="Config_PairNew" xml:space="preserve"><value>Emparejar un dispositivo nuevo…</value></data>
   <data name="Config_PairNewTip" xml:space="preserve"><value>Los teléfonos y relojes inician el emparejamiento desde el dispositivo; los auriculares y ratones los busca el PC</value></data>
@@ -371,6 +373,8 @@
   <data name="Rules_LiveOff" xml:space="preserve"><value>Sin conexión con el servicio</value></data>
   <data name="Rules_LiveOn" xml:space="preserve"><value>Servicio ahora: {state}</value></data>
   <data name="Rules_Nav" xml:space="preserve"><value>Reglas</value></data>
+  <data name="Rules_NoSignalOff" xml:space="preserve"><value> («Sin señal cuenta como salida» está desactivado)</value></data>
+  <data name="Rules_NoSignalSeconds" xml:space="preserve"><value>, o si no llegó nada durante {0} s</value></data>
   <data name="Rules_Now" xml:space="preserve"><value>Ahora</value></data>
   <data name="Rules_P_confirm_Effect" xml:space="preserve"><value>Con el aviso en pantalla, {confirm} lecturas seguidas por debajo de {lock} bloquean</value></data>
   <data name="Rules_P_confirm_Name" xml:space="preserve"><value>Lecturas para confirmar el bloqueo</value></data>
@@ -422,9 +426,9 @@
   <data name="Rules_S2_I4_K" xml:space="preserve"><value>Lejos:</value></data>
   <data name="Rules_S2_I4_V" xml:space="preserve"><value>estrictamente por debajo de {lock} ({lock} no cuenta).</value></data>
   <data name="Rules_S2_I5_K" xml:space="preserve"><value>Cerca:</value></data>
-  <data name="Rules_S2_I5_V" xml:space="preserve"><value>estrictamente por encima del umbral, con 3 s como máximo entre lecturas. Retirar el aviso usa {lock}; el desbloqueo automático usa {unlock}.</value></data>
+  <data name="Rules_S2_I5_V" xml:space="preserve"><value>estrictamente por encima del umbral. Retirar el aviso usa {lock}, sin límite de tiempo entre lecturas; el desbloqueo automático usa {unlock}, con 3 s como máximo entre lecturas.</value></data>
   <data name="Rules_S2_I6_K" xml:space="preserve"><value>Silencio:</value></data>
-  <data name="Rules_S2_I6_V" xml:space="preserve"><value>huecos de hasta 3 s no cuentan. Después, se añade un valor de silencio de -127 por segundo al lote de salida solo si la última lectura ya estaba por debajo de {lock}, o si no llegó nada durante 60 s.</value></data>
+  <data name="Rules_S2_I6_V" xml:space="preserve"><value>huecos de hasta 3 s no cuentan. Después, se añade un valor de silencio de -127 por segundo al lote de salida solo si las 2 últimas lecturas seguidas ya estaban por debajo de {lock}{nosignal}. Una lectura baja suelta no cuenta.</value></data>
   <data name="Rules_S2_I7_V" xml:space="preserve"><value>Cada cambio de estado vacía el lote en curso.</value></data>
   <data name="Rules_S2_Title" xml:space="preserve"><value>Regla básica: todo el lote debe cumplir</value></data>
   <data name="Rules_S3_I1_V" xml:space="preserve"><value>han pasado más de {grace} s desde que se inició el servicio o se reanudó el equipo;</value></data>
@@ -442,13 +446,13 @@
   <data name="Rules_S4_Lead" xml:space="preserve"><value>El aviso no caduca solo. En orden de evaluación, cualquiera de estos casos lo termina:</value></data>
   <data name="Rules_S4_R1_K" xml:space="preserve"><value>Has vuelto:</value></data>
   <data name="Rules_S4_R1_Res" xml:space="preserve"><value>Aviso retirado → Desbloqueado</value></data>
-  <data name="Rules_S4_R1_V" xml:space="preserve"><value>un disparo por encima de {lock} y después {ucount} lecturas seguidas por encima de {lock}, con 3 s como máximo entre ellas.</value></data>
+  <data name="Rules_S4_R1_V" xml:space="preserve"><value>un disparo por encima de {lock} y después {ucount} lecturas seguidas por encima de {lock}. No importa el tiempo entre lecturas: un reloj puede anunciarse solo cada diez segundos o más.</value></data>
   <data name="Rules_S4_R2_K" xml:space="preserve"><value>Salida confirmada:</value></data>
   <data name="Rules_S4_R2_Res" xml:space="preserve"><value>Aviso retirado y bloqueo → Bloqueado · esperando</value></data>
   <data name="Rules_S4_R2_V" xml:space="preserve"><value>tras aparecer el aviso, {confirm} lecturas nuevas seguidas por debajo de {lock} (los valores de silencio cuentan); no hace falta disparo.</value></data>
   <data name="Rules_S4_R3_K" xml:space="preserve"><value>Respuesta del usuario:</value></data>
   <data name="Rules_S4_R3_Res" xml:space="preserve"><value>Aplazado, o bloqueo</value></data>
-  <data name="Rules_S4_R3_V" xml:space="preserve"><value>«Rechazar» pausa {reject} s; «No bloquear durante {snooze} min» pausa {snooze} min; cerrar con × bloquea al momento.</value></data>
+  <data name="Rules_S4_R3_V" xml:space="preserve"><value>«Rechazar» pausa {reject} s; «No bloquear durante {snooze} min» pausa {snooze} min; cerrar con × bloquea al momento. Una notificación ocultada por Windows (No molestar, aplicación a pantalla completa) no es una ×: no bloquea y se vuelve a preguntar con un diálogo.</value></data>
   <data name="Rules_S4_R4_K" xml:space="preserve"><value>Bloqueo manual:</value></data>
   <data name="Rules_S4_R4_Res" xml:space="preserve"><value>Aviso retirado → Bloqueado · esperando</value></data>
   <data name="Rules_S4_R4_V" xml:space="preserve"><value>Win+L y similares.</value></data>

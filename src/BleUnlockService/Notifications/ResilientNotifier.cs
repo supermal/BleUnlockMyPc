@@ -42,7 +42,13 @@ public sealed class ResilientNotifier(
         Volatile.Write(ref _cancelRequested, 0);
         try
         {
-            return await primary.PromptAsync(snoozeMinutes, ct);
+            var outcome = await primary.PromptAsync(snoozeMinutes, ct);
+            if (outcome != PromptOutcome.Suppressed) return outcome;
+
+            // Windows ocultó el Toast (No molestar, pantalla completa…): el usuario no ha visto nada.
+            // Solo este aviso pasa al diálogo, que no se ve afectado; el siguiente vuelve a probar el Toast
+            log.LogWarning(ServiceStrings.Log_PromptSuppressed);
+            return await fallback.PromptAsync(snoozeMinutes, ct);
         }
         catch (HelperUnavailableException ex)
         {

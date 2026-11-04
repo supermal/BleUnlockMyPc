@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using BleUnlockManager.Core.Resources;
 
@@ -105,6 +106,10 @@ public static partial class RulesContent
             ["timeout"] = RuleValues.Number(v.UnlockTimeoutSeconds),
             ["reject"] = RuleValues.Number(v.RejectSnoozeSeconds),
             ["snooze"] = RuleValues.Number(v.SnoozeMinutes),
+            // Frase entera: con el respaldo desactivado (0) la cláusula de los segundos desaparece
+            ["nosignal"] = v.NoSignalSeconds > 0
+                ? string.Format(CultureInfo.CurrentCulture, UiStrings.Rules_NoSignalSeconds, RuleValues.Number(v.NoSignalSeconds))
+                : UiStrings.Rules_NoSignalOff,
             ["trig"] = RuleValues.Number(ex.Trigger),
             ["back"] = RuleValues.Number(ex.Back),
             ["w1"] = RuleValues.Number(ex.Withdraw[0]),
