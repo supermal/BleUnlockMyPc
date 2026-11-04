@@ -82,7 +82,7 @@
   <data name="Validation_PasswordControlChars" xml:space="preserve"><value>{0} cannot contain control characters (line breaks, carriage returns, tabs, etc.)</value></data>
   <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>{0} must be positive</value></data>
   <data name="Validation_RejectSnoozePositive" xml:space="preserve"><value>{0} must be positive</value></data>
-  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs must be between 0 and 2000 (0 means no limit)</value></data>
+  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs must be 0 (count every advertisement) or between 100 and 2000</value></data>
   <data name="Validation_SnoozeMax" xml:space="preserve"><value>{0} cannot exceed {1:0} minutes</value></data>
   <data name="Validation_SnoozePositive" xml:space="preserve"><value>{0} must be positive</value></data>
   <data name="Validation_ThresholdOrder" xml:space="preserve"><value>{0} must be greater than LockThresholdDbm, otherwise the dead zone is negative</value></data>

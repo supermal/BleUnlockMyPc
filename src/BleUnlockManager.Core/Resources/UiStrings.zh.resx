@@ -103,7 +103,7 @@
   <data name="Config_RejectSnoozeHint" xml:space="preserve"><value>这段时间内不再弹出锁屏提示。</value></data>
   <data name="Config_ReloadFromDisk" xml:space="preserve"><value>从磁盘重新加载</value></data>
   <data name="Config_SampleInterval" xml:space="preserve"><value>采样间隔</value></data>
-  <data name="Config_SampleIntervalHint" xml:space="preserve"><value>同一设备两次计入判定的读数至少相隔这么久；0 表示每条广播都计入。调大更稳，但判定更慢。范围 0–2000。</value></data>
+  <data name="Config_SampleIntervalHint" xml:space="preserve"><value>每隔这么久取一个读数计入判定；这段时间里手表没有广播，就重复上一个读数。0 = 不定时取，每条广播都计入。注意：重复的读数也算数，偶发的一个读数可能被当成多个，锁屏和自动解锁都会更快、也更容易受偶发读数影响。范围 0 或 100–2000。</value></data>
   <data name="Config_Save" xml:space="preserve"><value>保存更改</value></data>
   <data name="Config_Snooze" xml:space="preserve"><value>点「稍后」后暂停提示</value></data>
   <data name="Config_SnoozeHint" xml:space="preserve"><value>上限 240 分钟。</value></data>
@@ -382,7 +382,7 @@
   <data name="Rules_P_grace_Effect" xml:space="preserve"><value>服务启动或从睡眠恢复后，这段时间内不判定离开</value></data>
   <data name="Rules_P_grace_Name" xml:space="preserve"><value>启动宽限</value></data>
   <data name="Rules_P_grace_Value" xml:space="preserve"><value>{grace} 秒</value></data>
-  <data name="Rules_P_interval_Effect" xml:space="preserve"><value>0 表示每条广播都计入</value></data>
+  <data name="Rules_P_interval_Effect" xml:space="preserve"><value>0 表示每条广播都计入；大于 0 时每隔这么久取一个读数，没有新广播就重复上一个</value></data>
   <data name="Rules_P_interval_Name" xml:space="preserve"><value>采样间隔</value></data>
   <data name="Rules_P_interval_Value" xml:space="preserve"><value>{interval} 毫秒</value></data>
   <data name="Rules_P_lock_Effect" xml:space="preserve"><value>读数低于它，算「离开」证据；锁屏提示出现时，读数高于它算「人回来了」</value></data>

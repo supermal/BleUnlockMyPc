@@ -82,7 +82,7 @@
   <data name="Validation_PasswordControlChars" xml:space="preserve"><value>{0} 不能包含控制字符（换行、回车、制表符等）</value></data>
   <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>{0} 必须为正数</value></data>
   <data name="Validation_RejectSnoozePositive" xml:space="preserve"><value>{0} 必须为正数</value></data>
-  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）</value></data>
+  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs 必须是 0（每条广播都计入）或 100 到 2000 之间</value></data>
   <data name="Validation_SnoozeMax" xml:space="preserve"><value>{0} 不能超过 {1:0} 分钟</value></data>
   <data name="Validation_SnoozePositive" xml:space="preserve"><value>{0} 必须为正数</value></data>
   <data name="Validation_ThresholdOrder" xml:space="preserve"><value>{0} 必须大于 LockThresholdDbm，否则死区为负</value></data>

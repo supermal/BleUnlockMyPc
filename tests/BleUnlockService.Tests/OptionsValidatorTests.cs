@@ -134,6 +134,8 @@ public class OptionsValidatorTests
 
     [Theory]
     [InlineData(-1)]
+    [InlineData(1)]
+    [InlineData(99)]
     [InlineData(2001)]
     public void Validate_rechaza_SampleIntervalMs_fuera_de_rango(int interval)
     {
@@ -141,11 +143,12 @@ public class OptionsValidatorTests
         o.Proximity.SampleIntervalMs = interval;
         var r = OptionsValidator.Validate(o);
         Assert.False(r.IsValid);
-        Assert.Contains("Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）", r.Errors);
+        Assert.Contains("Proximity.SampleIntervalMs 必须是 0（每条广播都计入）或 100 到 2000 之间", r.Errors);
     }
 
     [Theory]
     [InlineData(0)]
+    [InlineData(100)]
     [InlineData(2000)]
     public void Validate_acepta_los_limites_de_SampleIntervalMs(int interval)
     {

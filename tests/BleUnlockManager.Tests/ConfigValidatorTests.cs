@@ -213,13 +213,19 @@ public sealed class ConfigValidatorTests
         Assert.True(ConfigValidator.Validate(config).IsValid);
         config.Proximity.SampleIntervalMs = 2000;
         Assert.True(ConfigValidator.Validate(config).IsValid);
+        config.Proximity.SampleIntervalMs = 100;
+        Assert.True(ConfigValidator.Validate(config).IsValid);
+
+        config.Proximity.SampleIntervalMs = 99;
+        Assert.Equal("Proximity.SampleIntervalMs 必须是 0（每条广播都计入）或 100 到 2000 之间",
+            Assert.Single(ConfigValidator.Validate(config).Errors).Message);
 
         config.Proximity.SampleIntervalMs = -1;
-        Assert.Equal("Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）",
+        Assert.Equal("Proximity.SampleIntervalMs 必须是 0（每条广播都计入）或 100 到 2000 之间",
             Assert.Single(ConfigValidator.Validate(config).Errors).Message);
 
         config.Proximity.SampleIntervalMs = 2001;
-        Assert.Equal("Proximity.SampleIntervalMs 必须在 0 到 2000 之间（0 表示不限制）",
+        Assert.Equal("Proximity.SampleIntervalMs 必须是 0（每条广播都计入）或 100 到 2000 之间",
             Assert.Single(ConfigValidator.Validate(config).Errors).Message);
     }
 

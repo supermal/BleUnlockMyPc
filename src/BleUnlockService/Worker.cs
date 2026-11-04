@@ -33,7 +33,7 @@ public sealed class Worker(
 
     private readonly RssiHistory _history = new(HistoryRetention, time);
     private readonly CredentialAttemptBudget _credentialBudget = new(MaxCredentialAttempts);
-    private readonly SampleIntervalGate _sampleGate = new(time);
+    private readonly SampleResampler _resampler = new(time);
     private readonly object _gate = new();
     private ProximityStateMachine _machine = null!;
     private DateTimeOffset _lastSummary;
@@ -98,6 +98,7 @@ public sealed class Worker(
 
             LogSetupState(current);
             ApplyCredentials(current.Credentials);
+            var resampling = RunResamplerAsync(ct);
 
             while (!ct.IsCancellationRequested)
             {
@@ -108,6 +109,8 @@ public sealed class Worker(
                 PublishBatchProgress();
                 WriteSummaryIfDue();
             }
+
+            await resampling;
         }
         finally
         {
@@ -134,12 +137,49 @@ public sealed class Worker(
         // 哨兵值不是测量结果：放进来会凭空凑出「信号变弱」（实测曾疑似造成误弹窗），
         // 也不该出现在遥测曲线里
         if (!HasUsableRssi(sample.Rssi)) return;
-        // 采样间隔限流放在匹配与哨兵过滤之后：只影响计入判定的频率，
-        // 不会让非目标设备占用限流窗口
-        if (!_sampleGate.ShouldAccept(options.Current.Proximity.SampleIntervalMs)) return;
+        Volatile.Write(ref _lastMatchTicks, time.GetUtcNow().UtcTicks);
+
+        // 定时取样时读数先交给取样器，由 RunResamplerAsync 按间隔计入；0 = 每条广播直接计入
+        if (options.Current.Proximity.SampleIntervalMs > 0)
+        {
+            _resampler.Offer(sample.Rssi);
+            return;
+        }
+
         _history.Add(sample.Rssi, sample.Timestamp);
         telemetry.OnSample(sample.Timestamp.ToUnixTimeMilliseconds(), sample.Rssi);
-        Volatile.Write(ref _lastMatchTicks, time.GetUtcNow().UtcTicks);
+    }
+
+    // Cada SampleIntervalMs registra una lectura: la más reciente recibida o, si no llegó ninguna, la anterior
+    // repetida (ver SampleResampler). El intervalo se relee en cada vuelta: la recarga en caliente surte efecto
+    private async Task RunResamplerAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            var proximity = options.Current.Proximity;
+            try
+            {
+                if (proximity.SampleIntervalMs <= 0)
+                {
+                    _resampler.Reset();
+                    await Task.Delay(TimeSpan.FromMilliseconds(500), time, ct);
+                    continue;
+                }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(proximity.SampleIntervalMs), time, ct);
+            }
+            catch (OperationCanceledException) { break; }
+
+            var noSignal = options.Current.Proximity.NoSignalDepartureSeconds;
+            var value = _resampler.Take(
+                holdAllowed: !Volatile.Read(ref _scanStalled),
+                holdLimit: noSignal > 0 ? TimeSpan.FromSeconds(noSignal) : TimeSpan.Zero);
+            if (value is not { } rssi) continue;
+
+            var now = time.GetUtcNow();
+            _history.Add(rssi, now);
+            telemetry.OnSample(now.ToUnixTimeMilliseconds(), rssi);
+        }
     }
 
     // BLE 规范把 -127/+127 一带预留为「RSSI 不可用」：不能当作读数
@@ -206,7 +246,7 @@ public sealed class Worker(
     {
         // El reloj puede haber saltado horas: el historico ya no representa nada
         log.LogInformation(ServiceStrings.Log_ResumedFromSleep);
-        _sampleGate.Reset();
+        _resampler.Reset();
         _history.Clear();
         telemetry.OnHistoryReset();   // 遥测：历史作废，管理端据 gen 变化清空曲线
         Transition(() => _machine.OnResume());
@@ -242,7 +282,7 @@ public sealed class Worker(
             if (change.DeviceChanged)
             {
                 matcher.Configure(change.Options.Device);
-                _sampleGate.Reset();
+                _resampler.Reset();
                 _history.Reset();
                 telemetry.OnHistoryReset();   // 遥测：设备变更，历史作废，管理端据 gen 变化清空曲线
                 _credentialBudget.Reset();

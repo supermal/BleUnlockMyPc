@@ -174,7 +174,7 @@
   <data name="Validation_PendingTimeoutPositive" xml:space="preserve"><value>Proximity.UnlockPendingTimeoutSeconds debe ser positivo</value></data>
   <data name="Validation_PlaintextSecret" xml:space="preserve"><value>{0} está guardado en texto sin cifrar; guárdalo una vez desde el Gestor para cifrarlo</value></data>
   <data name="Validation_RejectSnoozePositive" xml:space="preserve"><value>Notification.RejectSnoozeSeconds debe ser positivo</value></data>
-  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs debe estar entre 0 y 2000 (0 significa sin límite)</value></data>
+  <data name="Validation_SampleIntervalRange" xml:space="preserve"><value>Proximity.SampleIntervalMs debe ser 0 (contar cada anuncio) o estar entre 100 y 2000</value></data>
   <data name="Validation_SecretUndecryptable" xml:space="preserve"><value>{0} no se puede descifrar (puede venir de otro equipo); vuelve a introducirlo en el Gestor y guarda</value></data>
   <data name="Validation_SnoozeMax" xml:space="preserve"><value>Notification.SnoozeMinutes no puede superar {0:0} minutos</value></data>
   <data name="Validation_SnoozePositive" xml:space="preserve"><value>Notification.SnoozeMinutes debe ser positivo</value></data>

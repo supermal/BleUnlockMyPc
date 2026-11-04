@@ -149,7 +149,7 @@ public static class ConfigValidator
                 string.Format(CoreStrings.Validation_LockConfirmCountRange, ConfigFields.ProximityLockConfirmSampleCount)));
         }
 
-        if (p.SampleIntervalMs is < 0 or > 2000)
+        if (p.SampleIntervalMs is not 0 and (< 100 or > 2000))
         {
             errors.Add(new ConfigError(ConfigFields.ProximitySampleIntervalMs,
                 CoreStrings.Validation_SampleIntervalRange));

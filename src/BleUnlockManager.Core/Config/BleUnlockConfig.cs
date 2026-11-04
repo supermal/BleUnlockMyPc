@@ -84,7 +84,7 @@ public sealed class ProximityConfig
     public int LockPromptSampleCount { get; set; } = 5;
     public int LockConfirmSampleCount { get; set; } = 10;
 
-    /// <summary>RSSI 采样间隔（毫秒）：0 = 每条广播都采样；上限 2000（见服务端注释）。</summary>
+    /// <summary>RSSI 采样间隔（毫秒）：0 = 每条广播都计入；100–2000 = 每隔这么久计入一个读数，没有新广播就重复上一个。</summary>
     public int SampleIntervalMs { get; set; } = 0;
 
     public double StartupGraceSeconds { get; set; } = 15;

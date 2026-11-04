@@ -103,7 +103,7 @@
   <data name="Config_RejectSnoozeHint" xml:space="preserve"><value>No lock prompts are shown during this time.</value></data>
   <data name="Config_ReloadFromDisk" xml:space="preserve"><value>Reload from disk</value></data>
   <data name="Config_SampleInterval" xml:space="preserve"><value>Sample interval</value></data>
-  <data name="Config_SampleIntervalHint" xml:space="preserve"><value>Minimum time between two counted readings of the same device; 0 counts every advertisement. Higher is steadier but slower. Range 0–2000.</value></data>
+  <data name="Config_SampleIntervalHint" xml:space="preserve"><value>One reading is counted every this many milliseconds; if the device sent nothing in that time, the previous reading is repeated. 0 = no fixed rate, every advertisement counts. Note: repeated readings count too, so a single stray reading may be counted several times; locking and automatic unlock both get faster and more sensitive to stray readings. 0 or 100–2000.</value></data>
   <data name="Config_Save" xml:space="preserve"><value>Save changes</value></data>
   <data name="Config_Snooze" xml:space="preserve"><value>Pause prompts after "Later"</value></data>
   <data name="Config_SnoozeHint" xml:space="preserve"><value>Up to 240 minutes.</value></data>
@@ -382,7 +382,7 @@
   <data name="Rules_P_grace_Effect" xml:space="preserve"><value>After the service starts or the PC wakes, departures are not detected for this long</value></data>
   <data name="Rules_P_grace_Name" xml:space="preserve"><value>Startup grace</value></data>
   <data name="Rules_P_grace_Value" xml:space="preserve"><value>{grace} s</value></data>
-  <data name="Rules_P_interval_Effect" xml:space="preserve"><value>0 counts every advertisement</value></data>
+  <data name="Rules_P_interval_Effect" xml:space="preserve"><value>0 counts every advertisement; above 0, one reading every this many ms, repeating the previous one if nothing new arrived</value></data>
   <data name="Rules_P_interval_Name" xml:space="preserve"><value>Sample interval</value></data>
   <data name="Rules_P_interval_Value" xml:space="preserve"><value>{interval} ms</value></data>
   <data name="Rules_P_lock_Effect" xml:space="preserve"><value>Readings below it count as "away"; while the lock prompt shows, readings above it mean "you came back"</value></data>

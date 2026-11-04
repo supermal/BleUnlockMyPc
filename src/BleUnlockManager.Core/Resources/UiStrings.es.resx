@@ -103,7 +103,7 @@
   <data name="Config_RejectSnoozeHint" xml:space="preserve"><value>Durante este tiempo no se muestran avisos de bloqueo.</value></data>
   <data name="Config_ReloadFromDisk" xml:space="preserve"><value>Volver a cargar del disco</value></data>
   <data name="Config_SampleInterval" xml:space="preserve"><value>Intervalo de muestreo</value></data>
-  <data name="Config_SampleIntervalHint" xml:space="preserve"><value>Tiempo mínimo entre dos lecturas contadas del mismo dispositivo; 0 cuenta cada anuncio. Un valor alto es más estable pero más lento. Rango 0–2000.</value></data>
+  <data name="Config_SampleIntervalHint" xml:space="preserve"><value>Se cuenta una lectura cada tantos milisegundos; si el dispositivo no anunció nada en ese tiempo, se repite la anterior. 0 = sin ritmo fijo, cuenta cada anuncio. Ojo: las lecturas repetidas también cuentan, así que una lectura suelta puede contar varias veces; el bloqueo y el desbloqueo automático son más rápidos y más sensibles a lecturas sueltas. 0 o 100–2000.</value></data>
   <data name="Config_Save" xml:space="preserve"><value>Guardar cambios</value></data>
   <data name="Config_Snooze" xml:space="preserve"><value>Pausar avisos tras «Más tarde»</value></data>
   <data name="Config_SnoozeHint" xml:space="preserve"><value>Hasta 240 minutos.</value></data>
@@ -382,7 +382,7 @@
   <data name="Rules_P_grace_Effect" xml:space="preserve"><value>Tras iniciarse el servicio o reanudarse el equipo, no se detectan salidas durante este tiempo</value></data>
   <data name="Rules_P_grace_Name" xml:space="preserve"><value>Gracia al iniciar</value></data>
   <data name="Rules_P_grace_Value" xml:space="preserve"><value>{grace} s</value></data>
-  <data name="Rules_P_interval_Effect" xml:space="preserve"><value>0 cuenta cada anuncio</value></data>
+  <data name="Rules_P_interval_Effect" xml:space="preserve"><value>0 cuenta cada anuncio; por encima de 0, una lectura cada tantos ms, repitiendo la anterior si no llegó nada nuevo</value></data>
   <data name="Rules_P_interval_Name" xml:space="preserve"><value>Intervalo de muestreo</value></data>
   <data name="Rules_P_interval_Value" xml:space="preserve"><value>{interval} ms</value></data>
   <data name="Rules_P_lock_Effect" xml:space="preserve"><value>Una lectura por debajo cuenta como «lejos»; con el aviso en pantalla, una lectura por encima significa «has vuelto»</value></data>

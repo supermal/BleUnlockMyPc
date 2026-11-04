@@ -44,9 +44,9 @@ public sealed class ProximityOptions
     public int LockPromptSampleCount { get; set; } = 5;      // 离开确认：弹窗（也是 Win+L 后的待命判定）
     public int LockConfirmSampleCount { get; set; } = 10;    // 弹窗后锁屏确认
 
-    // RSSI 采样间隔（毫秒）：0 = 每条广播都采样；大于 0 时同一设备两次计入判定的读数
-    // 至少相隔这么久。上限 2000：解锁批次规定相邻读数间隔不得超过静默宽限 3 秒，
-    // 留 1 秒余量避免限流后的采样点把批次打断。
+    // RSSI 采样间隔（毫秒）：0 = 每条广播都计入；100–2000 = 定时取样，每隔这么久计入一个读数，
+    // 期间没有新广播就重复上一个读数（见 SampleResampler，2026-11-04 改版）。上限 2000：
+    // 解锁批次规定相邻读数间隔不得超过 3 秒。
     public int SampleIntervalMs { get; set; } = 0;
 
     public double StartupGraceSeconds { get; set; } = 15;

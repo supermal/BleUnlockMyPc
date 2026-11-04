@@ -67,7 +67,8 @@ public static class OptionsValidator
             errors.Add(ServiceStrings.Validation_ThresholdOrder);
 
         // 批次个数（触发读数不计入，全数达标判定）：下限 1，上限防止收集阶段拖得过长
-        if (p.SampleIntervalMs is < 0 or > 2000)
+        // 0 = 每条广播都计入；否则定时取样，下限 100 毫秒，免得每秒上千个读数塞满历史和遥测
+        if (p.SampleIntervalMs is not 0 and (< 100 or > 2000))
             errors.Add(ServiceStrings.Validation_SampleIntervalRange);
 
         if (p.UnlockSampleCount is < 1 or > 20)
