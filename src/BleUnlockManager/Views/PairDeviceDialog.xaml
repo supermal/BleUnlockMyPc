@@ -174,6 +174,13 @@
                             <Button x:Name="StopScanButton" Margin="8,0,0,0" Click="OnStopScanClicked" Content="{loc:Loc Pair_StopScan}" Style="{StaticResource Ui.Button.Secondary}" />
                             <Button x:Name="CloseButton" Margin="8,0,0,0" Click="OnCloseClicked" Content="{loc:Loc Common_Close}" Style="{StaticResource Ui.Button.Secondary}" />
                             <Button x:Name="StartAdvertisingButton" Margin="8,0,0,0" Click="OnStartAdvertisingClicked" Content="{loc:Loc Pair_StartAdvertising}" Style="{StaticResource Ui.Button.Primary}" />
+                            <Button
+                                x:Name="TrackByAddressButton"
+                                Margin="8,0,0,0"
+                                Click="OnTrackByAddressClicked"
+                                Content="{loc:Loc Pair_TrackByAddress}"
+                                Style="{StaticResource Ui.Button.Secondary}"
+                                ToolTipService.ShowOnDisabled="True" />
                             <Button x:Name="PairSelectedButton" Margin="8,0,0,0" Click="OnPairSelectedClicked" Content="{loc:Loc Pair_PairSelected}" Style="{StaticResource Ui.Button.Primary}" />
                         </StackPanel>
                         <TextBlock

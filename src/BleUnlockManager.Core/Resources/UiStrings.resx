@@ -53,11 +53,11 @@
   <data name="Common_StartService" xml:space="preserve"><value>Start service</value></data>
   <data name="Common_StopService" xml:space="preserve"><value>Stop service</value></data>
   <data name="Common_Yes" xml:space="preserve"><value>yes</value></data>
-  <data name="Config_AddressHint" xml:space="preserve"><value>Filled in when you choose a device; it can also stay empty.</value></data>
+  <data name="Config_AddressHint" xml:space="preserve"><value>Filled in when you choose a device. Required when tracking by MAC address; otherwise optional.</value></data>
   <data name="Config_AddressOptional" xml:space="preserve"><value>Device address (optional)</value></data>
   <data name="Config_Advanced" xml:space="preserve"><value>Advanced options</value></data>
   <data name="Config_BluetoothDevice" xml:space="preserve"><value>Bluetooth device</value></data>
-  <data name="Config_BluetoothDeviceHint" xml:space="preserve"><value>Choose from the BLE devices paired with Windows; the IRK is read automatically and never shown.</value></data>
+  <data name="Config_BluetoothDeviceHint" xml:space="preserve"><value>Choose a BLE device paired with Windows; the IRK is read automatically and never shown. Devices without an IRK but with a fixed address are marked "by MAC address" and can be chosen too.</value></data>
   <data name="Config_ByteOrderAuto" xml:space="preserve"><value>Detect automatically</value></data>
   <data name="Config_ByteOrderNormal" xml:space="preserve"><value>As entered</value></data>
   <data name="Config_ByteOrderReversed" xml:space="preserve"><value>Reversed</value></data>
@@ -658,7 +658,19 @@ The current service configuration is not affected.</value></data>
   <data name="Wizard_Finish" xml:space="preserve"><value>Finish</value></data>
   <data name="Wizard_BackToFix" xml:space="preserve"><value>Go back and fix</value></data>
   <data name="Wizard_ServiceStartFailed" xml:space="preserve"><value>The settings were saved, but the service could not be started: {0}</value></data>
-  <data name="Pair_PairedButUnsupported" xml:space="preserve"><value>"{0}" was paired, but it has no identity key and cannot be used for unlocking. Use another device or another pairing method.</value></data>
+  <data name="Pair_PairedButUnsupported" xml:space="preserve"><value>Paired with "{0}". It does not provide an IRK and will be tracked by MAC address (only for devices with a fixed address).</value></data>
   <data name="Rules_S7_I7_K" xml:space="preserve"><value>Setup not finished:</value></data>
   <data name="Rules_S7_I7_V" xml:space="preserve"><value>with no device chosen, nothing is monitored and the screen is neither locked nor unlocked; with a device but no Windows user name or password, leaving still locks the screen, but returning does not unlock it. Completing the setup takes effect immediately, without restarting the service.</value></data>
+  <data name="Bonds_ManualAddress" xml:space="preserve"><value>Enter a MAC address…</value></data>
+  <data name="Device_TrackByAddress" xml:space="preserve"><value>This device does not provide an IRK and will be tracked by its MAC address: only for devices whose address never changes. An address is easy to spoof, so this is less secure than an IRK.</value></data>
+  <data name="Device_EnterAddress" xml:space="preserve"><value>Type the MAC address to track in "Device address" below (only for devices whose address never changes).</value></data>
+  <data name="Validation_AddressRequiredForMac" xml:space="preserve"><value>Tracking by MAC address needs a device address</value></data>
+  <data name="Wizard_ByAddress" xml:space="preserve"><value>No IRK: will be tracked by MAC address (only for devices with a fixed address)</value></data>
+  <data name="Pair_TrackByAddress" xml:space="preserve"><value>Track by MAC address (no pairing)</value></data>
+  <data name="Pair_TrackByAddressTip" xml:space="preserve"><value>Track this device's signal by its MAC address without pairing it with Windows. Only for devices whose address never changes; an address is easy to spoof, so this is less secure than an IRK.</value></data>
+  <data name="Pair_AddressChanges" xml:space="preserve"><value>This device changes its address regularly, so it cannot be tracked by MAC address; pair it instead and see whether it provides an IRK.</value></data>
+  <data name="Pair_PairedByAddress" xml:space="preserve"><value>Paired with "{0}". It does not provide an IRK and will be tracked by MAC address.</value></data>
+  <data name="Pair_TrackingByAddress" xml:space="preserve"><value>Tracking "{0}" by MAC address.</value></data>
+  <data name="MacRisk_Title" xml:space="preserve"><value>Security notice: MAC addresses are easy to spoof</value></data>
+  <data name="MacRisk_Message" xml:space="preserve"><value>When tracking by MAC address, the PC recognises the device only by the address in its broadcasts. That address is broadcast in the open: anyone can read it with a Bluetooth app on a phone and broadcast the same address, and bringing it near your PC could fool BleUnlock into unlocking. Devices with an IRK are not exposed this way, because the IRK never appears in broadcasts. Recommended: use it only in a trusted place such as home, or leave the password empty under "Credentials" so the PC only locks when you leave and never unlocks automatically.</value></data>
 </root>

@@ -18,9 +18,10 @@ public sealed record SetupWizardDevice(BleBondDevice Device)
 
     public string Address => Device.Address;
 
-    public bool IsSupported => Device.IsSupported;
+    // Sin IRK también vale: se sigue por la dirección MAC (solo dispositivos con dirección fija)
+    public bool IsSupported => Device.IsSupported || Device.TracksByAddress;
 
-    public string Note => IsSupported ? "" : UiStrings.Wizard_Unsupported;
+    public string Note => Device.TracksByAddress ? UiStrings.Wizard_ByAddress : "";
 }
 
 /// <summary>
@@ -35,6 +36,8 @@ public sealed partial class SetupWizardDialog : UserControl
     private readonly ConfigViewModel _config;
     private readonly BleBondClient _bondClient = new();
     private readonly ObservableCollection<SetupWizardDevice> _devices = [];
+    // Elegido en el escaneo para seguirlo por MAC sin emparejar: no está en el almacén de Windows
+    private BleBondDevice? _unpaired;
     private readonly TaskCompletionSource _closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _step;
     private bool _busy;
@@ -49,6 +52,12 @@ public sealed partial class SetupWizardDialog : UserControl
 
         // Se parte siempre del disco: el asistente no hereda ediciones a medias de la página Configuración
         _config.Initialize();
+        // Ya configurado por MAC y sin emparejar: no está en el almacén, pero debe seguir en la lista
+        if (_config.IrkText.Trim().Length == 0 &&
+            BleAddress.Display(_config.IdentityAddressText) is { } configured)
+        {
+            _unpaired = new BleBondDevice(configured, null, "", Paired: false);
+        }
         // Con dominio incluido (o «MicrosoftAccount\correo»): el nombre suelto no basta para una cuenta de dominio
         UserNameBox.Text = _config.SavedUserName.Length > 0 ? _config.SavedUserName : CurrentAccount.DefaultLogonName();
 
@@ -174,10 +183,15 @@ public sealed partial class SetupWizardDialog : UserControl
                 return;
             }
 
-            // Los compatibles primero; dentro de cada grupo se mantiene el orden del servicio (por nombre)
+            // Los que dan IRK primero; dentro de cada grupo se mantiene el orden del servicio (por nombre)
             foreach (var device in result.Devices.OrderBy(d => d.IsSupported ? 0 : 1))
             {
                 _devices.Add(new SetupWizardDevice(device));
+            }
+
+            if (_unpaired is not null && FindSupported(_unpaired.Address) is null)
+            {
+                _devices.Insert(0, new SetupWizardDevice(_unpaired));
             }
 
             var usable = _devices.Count(d => d.IsSupported);
@@ -189,7 +203,9 @@ public sealed partial class SetupWizardDialog : UserControl
             var configuredIrk = ConfigValidator.NormalizeIrk(_config.IrkText);
             DeviceList.SelectedItem =
                 FindSupported(previous) ??
-                _devices.FirstOrDefault(d => d.IsSupported && ConfigValidator.NormalizeIrk(d.Device.Irk) == configuredIrk) ??
+                (configuredIrk is not null
+                    ? _devices.FirstOrDefault(d => d.Device.IsSupported && ConfigValidator.NormalizeIrk(d.Device.Irk) == configuredIrk)
+                    : FindSupported(_config.IdentityAddressText)) ??
                 (usable == 1 ? _devices.First(d => d.IsSupported) : null);
         }
         catch (Exception ex)
@@ -216,7 +232,12 @@ public sealed partial class SetupWizardDialog : UserControl
             d.IsSupported && string.Equals(BondDiff.AddressKey(d.Address), key, StringComparison.OrdinalIgnoreCase));
     }
 
-    private void OnDeviceSelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateFooter();
+    private void OnDeviceSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // Un dispositivo seguido por MAC lleva el aviso de suplantación antes de continuar
+        MacRiskBar.IsOpen = SelectedDevice?.Device.TracksByAddress == true;
+        UpdateFooter();
+    }
 
     private async void OnRefreshClicked(object sender, RoutedEventArgs e) => await LoadDevicesAsync();
 
@@ -226,6 +247,11 @@ public sealed partial class SetupWizardDialog : UserControl
         {
             var dialog = new PairDeviceDialog();
             await _window.ShowOverlayAsync(dialog, dialog.Completion);
+            if (dialog.PairedDevice is { Paired: false } unpaired)
+            {
+                _unpaired = unpaired;
+            }
+
             await LoadDevicesAsync(dialog.PairedDevice?.Address);
         }
         catch (Exception ex)

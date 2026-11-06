@@ -5,13 +5,29 @@ using BleUnlockManager.Core.Resources;
 
 namespace BleUnlockManager.Core.Bonds;
 
-/// <summary>管理端看到的已配对 BLE 设备（IRK 由服务从 Windows 配对库读取）。</summary>
-public sealed record BleBondDevice(string Address, string? Name, string Irk)
+/// <summary>
+/// 管理端看到的 BLE 设备（IRK 由服务从 Windows 配对库读取）。
+/// Paired = false：没有与 Windows 配对、只按 MAC 地址追踪的设备（配对向导里扫描选中的）。
+/// </summary>
+public sealed record BleBondDevice(string Address, string? Name, string Irk, bool Paired = true)
 {
-    /// <summary>下拉框显示文本：名字（地址）；没有名字时只显示地址。</summary>
-    public string DisplayName => string.IsNullOrWhiteSpace(Name)
-        ? Address
-        : string.Format(CoreStrings.Bond_NameWithAddress, Name, Address);
+    /// <summary>
+    /// 下拉框显示文本：名字（地址）；没有名字时只显示地址；没有地址（合成项）时只显示名字。
+    /// 没有 IRK 的设备加上「按 MAC 地址」标注。
+    /// </summary>
+    public string DisplayName
+    {
+        get
+        {
+            var text = Address.Length == 0 ? Name ?? ""
+                : string.IsNullOrWhiteSpace(Name) ? Address
+                : string.Format(CoreStrings.Bond_NameWithAddress, Name, Address);
+            return TracksByAddress ? text + CoreStrings.Bond_ByAddressSuffix : text;
+        }
+    }
+
+    /// <summary>没有 IRK、有地址：按固定的 MAC 地址追踪（只适用于地址不变的设备）。</summary>
+    public bool TracksByAddress => Irk.Length == 0 && Address.Length > 0;
 
     /// <summary>
     /// 能否用于解锁：只有配对时交换了身份密钥（IRK）的设备才能在随机地址下被认出。

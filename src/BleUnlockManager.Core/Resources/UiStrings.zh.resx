@@ -53,11 +53,11 @@
   <data name="Common_StartService" xml:space="preserve"><value>启动服务</value></data>
   <data name="Common_StopService" xml:space="preserve"><value>停止服务</value></data>
   <data name="Common_Yes" xml:space="preserve"><value>是</value></data>
-  <data name="Config_AddressHint" xml:space="preserve"><value>选择设备后自动填入；留空也可以。</value></data>
+  <data name="Config_AddressHint" xml:space="preserve"><value>选择设备后自动填入。按 MAC 地址追踪时必填，其余情况可留空。</value></data>
   <data name="Config_AddressOptional" xml:space="preserve"><value>设备地址（可选）</value></data>
   <data name="Config_Advanced" xml:space="preserve"><value>高级选项</value></data>
   <data name="Config_BluetoothDevice" xml:space="preserve"><value>蓝牙设备</value></data>
-  <data name="Config_BluetoothDeviceHint" xml:space="preserve"><value>从已与 Windows 配对的 BLE 设备中选择；IRK 自动读取，不在界面显示。</value></data>
+  <data name="Config_BluetoothDeviceHint" xml:space="preserve"><value>从已与 Windows 配对的 BLE 设备中选择；IRK 自动读取，不在界面显示。不提供 IRK、但地址固定的设备会标注「按 MAC 地址」，也可以选择。</value></data>
   <data name="Config_ByteOrderAuto" xml:space="preserve"><value>自动检测</value></data>
   <data name="Config_ByteOrderNormal" xml:space="preserve"><value>正序</value></data>
   <data name="Config_ByteOrderReversed" xml:space="preserve"><value>反序</value></data>
@@ -658,7 +658,19 @@
   <data name="Wizard_Finish" xml:space="preserve"><value>完成</value></data>
   <data name="Wizard_BackToFix" xml:space="preserve"><value>返回修改</value></data>
   <data name="Wizard_ServiceStartFailed" xml:space="preserve"><value>配置已保存，但服务没能启动：{0}</value></data>
-  <data name="Pair_PairedButUnsupported" xml:space="preserve"><value>已配对「{0}」，但它没有身份密钥，无法用于解锁。请换一台设备，或换一种配对方式。</value></data>
+  <data name="Pair_PairedButUnsupported" xml:space="preserve"><value>已配对「{0}」，它不提供 IRK，将按 MAC 地址追踪（只适用于地址固定的设备）。</value></data>
   <data name="Rules_S7_I7_K" xml:space="preserve"><value>未设置完成：</value></data>
   <data name="Rules_S7_I7_V" xml:space="preserve"><value>还没有选择设备时不监测任何设备，既不锁屏也不解锁；选了设备但没有填写 Windows 用户名或密码时，离开照常自动锁屏，回来不自动解锁。补全后立即生效，不用重启服务。</value></data>
+  <data name="Bonds_ManualAddress" xml:space="preserve"><value>手动填写 MAC 地址…</value></data>
+  <data name="Device_TrackByAddress" xml:space="preserve"><value>该设备不提供 IRK，将按 MAC 地址追踪：只适用于地址固定不变的设备。地址容易被别人冒用，安全性比 IRK 低。</value></data>
+  <data name="Device_EnterAddress" xml:space="preserve"><value>在下方「设备地址」里填写要追踪的 MAC 地址（只适用于地址固定不变的设备）。</value></data>
+  <data name="Validation_AddressRequiredForMac" xml:space="preserve"><value>按 MAC 地址追踪时必须填写设备地址</value></data>
+  <data name="Wizard_ByAddress" xml:space="preserve"><value>不提供 IRK，将按 MAC 地址追踪（只适用于地址固定的设备）</value></data>
+  <data name="Pair_TrackByAddress" xml:space="preserve"><value>按 MAC 地址追踪（不配对）</value></data>
+  <data name="Pair_TrackByAddressTip" xml:space="preserve"><value>不与 Windows 配对，直接按这个设备的 MAC 地址追踪信号。只适用于地址固定不变的设备；地址容易被冒用，安全性比 IRK 低。</value></data>
+  <data name="Pair_AddressChanges" xml:space="preserve"><value>这个设备的地址会定期变化，不能按 MAC 地址追踪；请改用配对，看它是否提供 IRK。</value></data>
+  <data name="Pair_PairedByAddress" xml:space="preserve"><value>已配对「{0}」。它不提供 IRK，将按 MAC 地址追踪。</value></data>
+  <data name="Pair_TrackingByAddress" xml:space="preserve"><value>已选择按 MAC 地址追踪「{0}」。</value></data>
+  <data name="MacRisk_Title" xml:space="preserve"><value>安全提示：MAC 地址容易被冒用</value></data>
+  <data name="MacRisk_Message" xml:space="preserve"><value>按 MAC 地址追踪时，电脑只凭广播里的地址认设备。这个地址是公开广播的，别人用手机上的蓝牙工具就能读到，并伪造成同一个地址；带着它靠近你的电脑，就可能骗过 BleUnlock，触发自动解锁。用 IRK 的设备不会这样，因为 IRK 不会在广播里出现。建议：只在家里等可信环境使用；或者在「凭据」里不填密码，这样只会离开时自动锁屏，不会自动解锁。</value></data>
 </root>

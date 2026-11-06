@@ -18,6 +18,7 @@ public sealed partial class TargetDeviceService : ObservableObject
     // idioma nuevo al cambiarlo; los nombres reales del dispositivo no se traducen
     private IReadOnlyList<BleBondDevice> _bonds = [];
     private string? _irk;
+    private string? _address;
     private bool _failed;
     private bool _resolved;
 
@@ -43,8 +44,8 @@ public sealed partial class TargetDeviceService : ObservableObject
             var result = await _client.ListAsync();
             var bonds = result.Devices;
 
-            (_bonds, _irk, _failed, _resolved) = (bonds, irk, false, true);
-            DeviceName = TargetDevice.Resolve(bonds, irk);
+            (_bonds, _irk, _address, _failed, _resolved) = (bonds, irk, config.Device.IdentityAddress, false, true);
+            DeviceName = TargetDevice.Resolve(bonds, irk, config.Device.IdentityAddress);
             DeviceAddress = bonds.FirstOrDefault(d => string.Equals(d.Irk, irk, StringComparison.OrdinalIgnoreCase))?.Address
                 ?? config.Device.IdentityAddress
                 ?? "";
@@ -52,7 +53,7 @@ public sealed partial class TargetDeviceService : ObservableObject
         catch
         {
             // Sin acceso al fichero o sin servicio: se muestra como desconocido, nunca se interrumpe la UI
-            (_bonds, _irk, _failed, _resolved) = ([], null, true, true);
+            (_bonds, _irk, _address, _failed, _resolved) = ([], null, null, true, true);
             DeviceName = TargetDevice.Unknown;
             DeviceAddress = "";
         }
@@ -66,7 +67,7 @@ public sealed partial class TargetDeviceService : ObservableObject
             return;
         }
 
-        var name = _failed ? TargetDevice.Unknown : TargetDevice.Resolve(_bonds, _irk);
+        var name = _failed ? TargetDevice.Unknown : TargetDevice.Resolve(_bonds, _irk, _address);
         var dispatcher = System.Windows.Application.Current?.Dispatcher;
         if (dispatcher is null || dispatcher.CheckAccess())
         {

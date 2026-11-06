@@ -106,7 +106,7 @@ public sealed partial class ConfigViewModel : ObservableObject
     public partial BleBondDevice? SelectedBondDevice { get; set; }
 
     /// <summary>「解除匹配」可用：仅真实的 Windows 配对设备（合成项地址为空）。</summary>
-    public bool CanUnpairSelectedDevice => SelectedBondDevice is { Address.Length: > 0 };
+    public bool CanUnpairSelectedDevice => SelectedBondDevice is { Address.Length: > 0, Paired: true };
 
     /// <summary>当前下拉选中项是否就是磁盘配置正在使用的设备（解除配对时要清空配置/停服务）。</summary>
     public bool IsSelectedDeviceActive => SelectedBondDevice is { } device && IsLoadedDevice(device);
@@ -480,8 +480,24 @@ public sealed partial class ConfigViewModel : ObservableObject
 
             if (result.Error is null)
             {
-                // 没有 IRK 的设备无法用于解锁：配置页下拉框只列可选的（向导里会以灰色列出并说明原因）
-                items.AddRange(result.Devices.Where(d => d.IsSupported));
+                // 没有 IRK 的设备也列出：按 MAC 地址追踪（只适用于地址固定的设备，显示时带标注）
+                items.AddRange(result.Devices.Where(d => d.IsSupported || d.Address.Length > 0));
+            }
+
+            // 当前配置是按 MAC 地址追踪（没有 IRK、有地址）：选中同地址的无 IRK 条目；
+            // 不在配对库里（扫描时选的未配对设备）就补一条合成项
+            var macOnly = currentIrk.Length == 0 && ConfigValidator.NormalizeAddress(IdentityAddressText) is not null;
+            BleBondDevice? macItem = null;
+            if (macOnly)
+            {
+                var key = BondDiff.AddressKey(IdentityAddressText);
+                macItem = items.FirstOrDefault(d => d.TracksByAddress &&
+                    string.Equals(BondDiff.AddressKey(d.Address), key, StringComparison.OrdinalIgnoreCase));
+                if (macItem is null)
+                {
+                    macItem = new BleBondDevice(BleAddress.Display(IdentityAddressText)!, null, "", Paired: false);
+                    items.Add(macItem);
+                }
             }
 
             // 当前配置的 IRK 不在配对库里（旧设备/跨机器/手工录入）：保留一条可选中的合成项
@@ -493,10 +509,16 @@ public sealed partial class ConfigViewModel : ObservableObject
                 items.Add(new BleBondDevice("", UiStrings.Bonds_CurrentNotListed, currentIrk));
             }
 
-            var selected = currentIrk.Length == 0 || noDevice
-                ? null
-                : items.FirstOrDefault(d =>
-                    string.Equals(d.Irk, currentIrk, StringComparison.OrdinalIgnoreCase));
+            // Siempre al final: seguir un dispositivo por una MAC escrita a mano
+            _manualItem = NewManualItem();
+            items.Add(_manualItem);
+
+            var selected = macOnly
+                ? macItem
+                : currentIrk.Length == 0 || noDevice
+                    ? null
+                    : items.FirstOrDefault(d =>
+                        string.Equals(d.Irk, currentIrk, StringComparison.OrdinalIgnoreCase));
 
             _suppressBondSelection = true;
             try
@@ -514,7 +536,7 @@ public sealed partial class ConfigViewModel : ObservableObject
                 _suppressBondSelection = false;
             }
 
-            var pairedCount = items.Count(d => d.Address.Length > 0);
+            var pairedCount = items.Count(d => d.Paired && d.Address.Length > 0);
             BondStatusText = result.Error is not null
                 ? string.Format(UiStrings.Bonds_ReadError, result.Error)
                 : pairedCount == 0
@@ -538,27 +560,57 @@ public sealed partial class ConfigViewModel : ObservableObject
     /// <summary>用户从下拉框选择设备：IRK 与身份地址随之更新（IRK 不在界面明文显示）。</summary>
     partial void OnSelectedBondDeviceChanged(BleBondDevice? value)
     {
-        if (_suppressBondSelection || value is null || value.Irk.Length == 0)
+        if (_suppressBondSelection || value is null)
         {
             return;
         }
 
+        // Sin IRK = seguimiento por MAC: el IRK se vacía y manda la dirección (la del dispositivo, o la que
+        // escriba el usuario si eligió la entrada manual)
         IrkText = value.Irk;
         if (value.Address.Length > 0)
         {
             IdentityAddressText = value.Address;
+        }
+        else if (IsManualAddressSelected)
+        {
+            // La dirección del dispositivo anterior no vale: hay que escribir la nueva
+            IdentityAddressText = "";
         }
 
         IrkByteOrderIndex = 0;
         IrkHint = BuildIrkHint();
     }
 
+    // Entrada fija al final de la lista: seguir por una dirección MAC escrita a mano. Se crea en cada carga
+    // para que el texto siga el idioma actual
+    private BleBondDevice _manualItem = NewManualItem();
+
+    private static BleBondDevice NewManualItem() => new("", UiStrings.Bonds_ManualAddress, "", Paired: false);
+
+    private bool IsManualAddressSelected => ReferenceEquals(SelectedBondDevice, _manualItem);
+
+    /// <summary>El formulario sigue el dispositivo solo por su MAC: se muestra el aviso de suplantación.</summary>
+    public bool IsMacTracking =>
+        IrkText.Trim().Length == 0 &&
+        (IsManualAddressSelected || ConfigValidator.NormalizeAddress(IdentityAddressText) is not null);
+
     /// <summary>
     /// 配对向导返回后调用：重新读取配对库，按地址选中新设备并回填 IRK/地址。
     /// 保存由用户确认，避免向导直接改动服务配置。
     /// </summary>
-    public async Task<bool> SelectBondedDeviceAsync(string address)
+    public async Task<bool> SelectBondedDeviceAsync(BleBondDevice picked)
     {
+        // Sin emparejar (elegido en el escaneo para seguirlo por MAC): no está en el almacén de Windows
+        if (!picked.Paired)
+        {
+            IrkText = "";
+            IdentityAddressText = picked.Address;
+            await LoadBondedDevicesAsync();
+            return true;
+        }
+
+        var address = picked.Address;
         await LoadBondedDevicesAsync();
         var device = BondDiff.FindByAddress(BondedDevices, address);
         if (device is null)
@@ -727,7 +779,9 @@ public sealed partial class ConfigViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(raw))
         {
-            return UiStrings.Device_ChooseFromList;
+            return ConfigValidator.NormalizeAddress(IdentityAddressText) is not null ? UiStrings.Device_TrackByAddress
+                : IsManualAddressSelected ? UiStrings.Device_EnterAddress
+                : UiStrings.Device_ChooseFromList;
         }
 
         if (ConfigSecrets.IsUnreadableOnThisMachine(raw))
@@ -751,6 +805,11 @@ public sealed partial class ConfigViewModel : ObservableObject
         // 解析失败字段不再附带基于默认值的规则错误（避免噪声）；其余字段的规则错误一次呈现
         var brokenFields = new HashSet<string>(parseErrors.Select(e => e.Field), StringComparer.Ordinal);
         var errors = new List<ConfigError>(parseErrors);
+        if (IsManualAddressSelected && string.IsNullOrWhiteSpace(IdentityAddressText))
+        {
+            errors.Add(new ConfigError(ConfigFields.DeviceIdentityAddress, UiStrings.Validation_AddressRequiredForMac));
+            brokenFields.Add(ConfigFields.DeviceIdentityAddress);
+        }
         errors.AddRange(ConfigValidator.Validate(config).Errors.Where(e => !brokenFields.Contains(e.Field)));
 
         if (errors.Count > 0)
@@ -1130,9 +1189,14 @@ public sealed partial class ConfigViewModel : ObservableObject
         {
             case nameof(IrkText):
                 if (IrkError is { Length: > 0 }) IrkError = "";
+                OnPropertyChanged(nameof(IsMacTracking));
                 break;
             case nameof(IdentityAddressText):
                 if (IdentityAddressError is { Length: > 0 }) IdentityAddressError = "";
+                OnPropertyChanged(nameof(IsMacTracking));
+                break;
+            case nameof(SelectedBondDevice):
+                OnPropertyChanged(nameof(IsMacTracking));
                 break;
             case nameof(UserNameText):
                 if (UserNameError is { Length: > 0 }) UserNameError = "";

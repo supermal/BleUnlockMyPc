@@ -53,11 +53,11 @@
   <data name="Common_StartService" xml:space="preserve"><value>Iniciar servicio</value></data>
   <data name="Common_StopService" xml:space="preserve"><value>Detener servicio</value></data>
   <data name="Common_Yes" xml:space="preserve"><value>sí</value></data>
-  <data name="Config_AddressHint" xml:space="preserve"><value>Se rellena al elegir un dispositivo; también puede quedar vacío.</value></data>
+  <data name="Config_AddressHint" xml:space="preserve"><value>Se rellena al elegir el dispositivo. Obligatoria al seguir por dirección MAC; si no, opcional.</value></data>
   <data name="Config_AddressOptional" xml:space="preserve"><value>Dirección del dispositivo (opcional)</value></data>
   <data name="Config_Advanced" xml:space="preserve"><value>Opciones avanzadas</value></data>
   <data name="Config_BluetoothDevice" xml:space="preserve"><value>Dispositivo Bluetooth</value></data>
-  <data name="Config_BluetoothDeviceHint" xml:space="preserve"><value>Elige entre los dispositivos BLE emparejados con Windows; el IRK se lee automáticamente y nunca se muestra.</value></data>
+  <data name="Config_BluetoothDeviceHint" xml:space="preserve"><value>Elige un dispositivo BLE emparejado con Windows; el IRK se lee solo y nunca se muestra. Los dispositivos sin IRK pero con dirección fija aparecen como «por dirección MAC» y también se pueden elegir.</value></data>
   <data name="Config_ByteOrderAuto" xml:space="preserve"><value>Detectar automáticamente</value></data>
   <data name="Config_ByteOrderNormal" xml:space="preserve"><value>Tal cual</value></data>
   <data name="Config_ByteOrderReversed" xml:space="preserve"><value>Invertido</value></data>
@@ -658,7 +658,19 @@ La configuración actual del servicio no cambia.</value></data>
   <data name="Wizard_Finish" xml:space="preserve"><value>Terminar</value></data>
   <data name="Wizard_BackToFix" xml:space="preserve"><value>Volver a corregir</value></data>
   <data name="Wizard_ServiceStartFailed" xml:space="preserve"><value>La configuración se guardó, pero el servicio no se pudo iniciar: {0}</value></data>
-  <data name="Pair_PairedButUnsupported" xml:space="preserve"><value>«{0}» se ha emparejado, pero no tiene clave de identidad y no sirve para desbloquear. Usa otro dispositivo u otra forma de emparejarlo.</value></data>
+  <data name="Pair_PairedButUnsupported" xml:space="preserve"><value>Emparejado con «{0}». No da IRK y se seguirá por dirección MAC (solo para dispositivos con dirección fija).</value></data>
   <data name="Rules_S7_I7_K" xml:space="preserve"><value>Configuración sin terminar:</value></data>
   <data name="Rules_S7_I7_V" xml:space="preserve"><value>sin dispositivo elegido no se vigila nada y la pantalla ni se bloquea ni se desbloquea; con dispositivo pero sin usuario o contraseña de Windows, al irte se sigue bloqueando, pero al volver no se desbloquea. Completar la configuración surte efecto al momento, sin reiniciar el servicio.</value></data>
+  <data name="Bonds_ManualAddress" xml:space="preserve"><value>Escribir una dirección MAC…</value></data>
+  <data name="Device_TrackByAddress" xml:space="preserve"><value>Este dispositivo no da IRK y se seguirá por su dirección MAC: solo sirve si la dirección no cambia nunca. Una dirección es fácil de suplantar, así que es menos seguro que un IRK.</value></data>
+  <data name="Device_EnterAddress" xml:space="preserve"><value>Escribe en «Dirección del dispositivo» la MAC que quieres seguir (solo para dispositivos con dirección fija).</value></data>
+  <data name="Validation_AddressRequiredForMac" xml:space="preserve"><value>Para seguir por dirección MAC hace falta la dirección del dispositivo</value></data>
+  <data name="Wizard_ByAddress" xml:space="preserve"><value>Sin IRK: se seguirá por dirección MAC (solo para dispositivos con dirección fija)</value></data>
+  <data name="Pair_TrackByAddress" xml:space="preserve"><value>Seguir por dirección MAC (sin emparejar)</value></data>
+  <data name="Pair_TrackByAddressTip" xml:space="preserve"><value>Sigue la señal de este dispositivo por su dirección MAC sin emparejarlo con Windows. Solo para dispositivos cuya dirección no cambia; una dirección es fácil de suplantar, así que es menos seguro que un IRK.</value></data>
+  <data name="Pair_AddressChanges" xml:space="preserve"><value>Este dispositivo cambia de dirección periódicamente y no se puede seguir por su MAC; emparéjalo y comprueba si da un IRK.</value></data>
+  <data name="Pair_PairedByAddress" xml:space="preserve"><value>Emparejado con «{0}». No da IRK y se seguirá por dirección MAC.</value></data>
+  <data name="Pair_TrackingByAddress" xml:space="preserve"><value>Se seguirá «{0}» por dirección MAC.</value></data>
+  <data name="MacRisk_Title" xml:space="preserve"><value>Aviso de seguridad: la dirección MAC es fácil de suplantar</value></data>
+  <data name="MacRisk_Message" xml:space="preserve"><value>Al seguir por dirección MAC, el equipo reconoce el dispositivo solo por la dirección de sus anuncios. Esa dirección se emite a la vista: cualquiera puede leerla con una app Bluetooth en el móvil y emitir la misma dirección, y acercándola a tu equipo podría engañar a BleUnlock para que desbloquee. Los dispositivos con IRK no tienen este problema, porque el IRK nunca aparece en los anuncios. Recomendación: úsalo solo en un sitio de confianza, como en casa, o deja la contraseña vacía en «Credenciales» para que el equipo solo se bloquee al irte y nunca se desbloquee solo.</value></data>
 </root>

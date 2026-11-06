@@ -97,4 +97,5 @@
   <data name="Tray_NeedsSetupTitle" xml:space="preserve"><value>Setup needed</value></data>
   <data name="Tray_NoDeviceHint" xml:space="preserve"><value>No unlock device chosen; open the Manager to finish setup</value></data>
   <data name="Tray_NoCredentialsHint" xml:space="preserve"><value>No password: locks only, no automatic unlock</value></data>
+  <data name="Bond_ByAddressSuffix" xml:space="preserve"><value> · by MAC address</value></data>
 </root>

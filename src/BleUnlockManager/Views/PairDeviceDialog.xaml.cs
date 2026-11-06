@@ -170,13 +170,8 @@ public sealed partial class PairDeviceDialog : UserControl
                     continue;
                 }
 
-                // Emparejado, pero sin clave de identidad: no sirve para desbloquear. Se avisa y se sigue esperando
-                if (changed.FirstOrDefault(d => d.IsSupported) is not { } supported)
-                {
-                    PeripheralStatusText.Text = string.Format(UiStrings.Pair_PairedButUnsupported, changed[0].DisplayName);
-                    continue;
-                }
-
+                // Mejor con clave de identidad; sin ella el dispositivo se seguirá por su dirección MAC
+                var supported = changed.FirstOrDefault(d => d.IsSupported) ?? changed[0];
                 PairedDevice = supported;
                 BlePeripheralHost.Shared.StopAdvertising();
                 SetPeripheralStep(5);
@@ -328,7 +323,8 @@ public sealed partial class PairDeviceDialog : UserControl
             }
 
             PairedDevice = found;
-            CentralStatusText.Text = string.Format(UiStrings.Pair_PairedWithFound, found.DisplayName);
+            CentralStatusText.Text = string.Format(
+                found.TracksByAddress ? UiStrings.Pair_PairedByAddress : UiStrings.Pair_PairedWithFound, found.DisplayName);
             await Task.Delay(500, _cts.Token);
             Close();
         }
@@ -478,7 +474,8 @@ public sealed partial class PairDeviceDialog : UserControl
                                   StringComparison.OrdinalIgnoreCase))
                           ?? changed.FirstOrDefault()
                           ?? BondDiff.FindByAddress(result.Devices, selected.Address);
-                if (hit is not null && hit.Irk.Length > 0)
+                // Sin IRK también se devuelve: se seguirá por la dirección MAC
+                if (hit is not null && hit.Address.Length > 0)
                 {
                     return hit;
                 }
@@ -553,6 +550,21 @@ public sealed partial class PairDeviceDialog : UserControl
 
     private void OnDeviceSelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateFooter();
 
+    // Sin emparejar: el dispositivo se seguirá por su dirección MAC (útil si se niega a emparejarse con Windows)
+    private void OnTrackByAddressClicked(object sender, RoutedEventArgs e)
+    {
+        if (_busy || DeviceList.SelectedItem is not NearbyBleDevice selected ||
+            !BleAddress.IsStable(selected.AddressValue, selected.IsRandomAddress))
+        {
+            return;
+        }
+
+        StopScanning();
+        PairedDevice = new BleBondDevice(selected.Address, selected.Name, "", Paired: false);
+        CentralStatusText.Text = string.Format(UiStrings.Pair_TrackingByAddress, selected.ShownName);
+        Close();
+    }
+
     private void OnModeChanged(object sender, RoutedEventArgs e)
     {
         if (!_initialized)
@@ -603,6 +615,13 @@ public sealed partial class PairDeviceDialog : UserControl
         StopScanButton.Visibility = Show(!peripheral && scanning);
         PairSelectedButton.Visibility = Show(!peripheral);
         PairSelectedButton.IsEnabled = !_busy && DeviceList.SelectedItem is not null;
+        // Seguir por MAC solo tiene sentido con una dirección que no cambia (pública o aleatoria estática)
+        var picked = DeviceList.SelectedItem as NearbyBleDevice;
+        TrackByAddressButton.Visibility = Show(!peripheral);
+        TrackByAddressButton.IsEnabled = !_busy && picked is not null && BleAddress.IsStable(picked.AddressValue, picked.IsRandomAddress);
+        TrackByAddressButton.ToolTip = picked is not null && !BleAddress.IsStable(picked.AddressValue, picked.IsRandomAddress)
+            ? UiStrings.Pair_AddressChanges
+            : UiStrings.Pair_TrackByAddressTip;
         StartScanButton.IsEnabled = !_busy;
         StartAdvertisingButton.IsEnabled = !_busy;
     }

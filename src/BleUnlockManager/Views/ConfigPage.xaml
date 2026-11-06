@@ -190,6 +190,14 @@
                                     Style="{StaticResource Ui.ExpanderToggle}"
                                     ToolTip="{loc:Loc Config_Advanced}" />
                             </Grid>
+                            <!--  Seguimiento por MAC: aviso fijo de suplantación mientras esté elegido  -->
+                            <ui:InfoBar
+                                Title="{loc:Loc MacRisk_Title}"
+                                Margin="52,0,16,12"
+                                IsClosable="False"
+                                IsOpen="{Binding IsMacTracking, Mode=OneWay}"
+                                Message="{loc:Loc MacRisk_Message}"
+                                Severity="Warning" />
                             <Border BorderBrush="{DynamicResource Ui.Stroke.Divider}" BorderThickness="0,1,0,0">
                                 <DockPanel Margin="52,10,16,10">
                                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">

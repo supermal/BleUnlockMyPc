@@ -201,7 +201,7 @@ public partial class ConfigPage : UserControl
                 return;
             }
 
-            if (await ViewModel.SelectBondedDeviceAsync(device.Address))
+            if (await ViewModel.SelectBondedDeviceAsync(device))
             {
                 ViewModel.ShowBanner(InfoBarSeverity.Success, UiStrings.Pair_SucceededTitle, string.Format(UiStrings.Pair_SelectedSave, device.DisplayName));
             }

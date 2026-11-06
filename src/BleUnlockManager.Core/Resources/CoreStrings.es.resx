@@ -97,4 +97,5 @@
   <data name="Tray_NeedsSetupTitle" xml:space="preserve"><value>Falta terminar la configuración</value></data>
   <data name="Tray_NoDeviceHint" xml:space="preserve"><value>Sin dispositivo de desbloqueo; abre el Gestor para terminar</value></data>
   <data name="Tray_NoCredentialsHint" xml:space="preserve"><value>Sin contraseña: solo bloquea, no desbloquea</value></data>
+  <data name="Bond_ByAddressSuffix" xml:space="preserve"><value> · por dirección MAC</value></data>
 </root>
