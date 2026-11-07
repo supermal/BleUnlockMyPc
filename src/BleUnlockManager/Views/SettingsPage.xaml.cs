@@ -28,6 +28,41 @@ public partial class SettingsPage : UserControl
 
     private async void OnLoaded(object sender, RoutedEventArgs e) => await ViewModel.RefreshAutoStartAsync();
 
+    // —— Acerca de ——
+
+    private async void OnCopyCloneClicked(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Clipboard.SetText(ViewModel.CloneCommand);
+        }
+        catch
+        {
+            // Portapapeles ocupado por otro programa: no se muestra «copiado»
+            return;
+        }
+
+        CopiedText.Visibility = Visibility.Visible;
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        CopiedText.Visibility = Visibility.Collapsed;
+    }
+
+    private void OnOpenIssuesClicked(object sender, RoutedEventArgs e) => OpenUrl(ViewModel.IssuesUrl);
+
+    private void OnOpenRepoClicked(object sender, RoutedEventArgs e) => OpenUrl(ViewModel.RepositoryUrl);
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+        }
+        catch
+        {
+            // Sin navegador predeterminado: no hay nada más que hacer desde aquí
+        }
+    }
+
     // Fichero: se abre la carpeta con él seleccionado; carpeta: se abre tal cual
     private void OnOpenPathClicked(object sender, RoutedEventArgs e)
     {

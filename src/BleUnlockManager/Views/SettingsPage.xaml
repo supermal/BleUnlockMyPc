@@ -12,6 +12,20 @@
             <Setter Property="Margin" Value="0,24,0,8" />
         </Style>
 
+        <!--  Fila pulsable de la tarjeta «Acerca de»: ancho completo, sin esquinas, resalta al pasar  -->
+        <Style x:Key="AboutRow" BasedOn="{StaticResource Ui.Button.Subtle}" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!--  Tarjeta de tema: vista previa en miniatura + radio; seleccionada = borde de acento  -->
         <Style x:Key="ThemeTile" TargetType="RadioButton">
             <Setter Property="Cursor" Value="Hand" />
@@ -203,18 +217,127 @@
             <ContentPresenter Content="{Binding LogsLocation, RelativeSource={RelativeSource AncestorType=UserControl}}" ContentTemplate="{StaticResource PathRow}" />
             <ContentPresenter Content="{Binding InstallLocation, RelativeSource={RelativeSource AncestorType=UserControl}}" ContentTemplate="{StaticResource PathRow}" />
 
-            <!--  ===== Acerca de =====  -->
+            <!--  ===== Acerca de: tarjeta desplegable (nombre, versión, repositorio, incidencias) =====  -->
             <TextBlock Style="{StaticResource GroupTitle}" Text="{loc:Loc Settings_About}" />
-            <controls:SettingRow
-                Description="{loc:Loc Settings_VersionHint}"
-                Header="{loc:Loc Settings_Version}"
-                Icon="Info20">
-                <TextBlock
-                    VerticalAlignment="Center"
-                    AutomationProperties.Name="{loc:Loc Settings_Version}"
-                    FontFamily="{StaticResource Ui.Font.Mono}"
-                    Text="{Binding Version}" />
-            </controls:SettingRow>
+            <Border Padding="0" Style="{StaticResource Ui.Card}">
+                <StackPanel>
+                    <Grid Margin="16,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Image
+                            Width="32"
+                            Height="32"
+                            Margin="0,0,16,0"
+                            VerticalAlignment="Center"
+                            Source="pack://application:,,,/Assets/AppIcon.ico" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="BleUnlock" />
+                            <TextBlock Style="{StaticResource Ui.TextStyle.Caption}" Text="{Binding Copyright}" />
+                        </StackPanel>
+                        <TextBlock
+                            Grid.Column="2"
+                            Margin="16,0,8,0"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{loc:Loc Settings_Version}"
+                            FontFamily="{StaticResource Ui.Font.Mono}"
+                            Text="{Binding Version}"
+                            ToolTip="{loc:Loc Settings_VersionHint}" />
+                        <ToggleButton
+                            x:Name="AboutToggle"
+                            Grid.Column="3"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{loc:Loc Settings_About}"
+                            IsChecked="True"
+                            Style="{StaticResource Ui.ExpanderToggle}"
+                            ToolTip="{loc:Loc Settings_About}" />
+                    </Grid>
+                    <StackPanel
+                        Background="{DynamicResource Ui.Bg.Layer}"
+                        Visibility="{Binding IsChecked, ElementName=AboutToggle, Converter={StaticResource BoolToVisibility}}">
+                    <Border BorderBrush="{DynamicResource Ui.Stroke.Divider}" BorderThickness="0,1,0,0" />
+                    <Button
+                        Height="Auto"
+                        MinHeight="48"
+                        Padding="16,12"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        AutomationProperties.Name="{loc:Loc Settings_CloneRepo}"
+                        Click="OnCopyCloneClicked"
+                        Style="{StaticResource AboutRow}"
+                        ToolTip="{loc:Loc Settings_CloneCopyTip}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <TextBlock
+                                    x:Name="CopiedText"
+                                    Margin="0,0,12,0"
+                                    VerticalAlignment="Center"
+                                    Foreground="{DynamicResource Ui.Status.Success.Fg}"
+                                    Style="{StaticResource Ui.TextStyle.Caption}"
+                                    Text="{loc:Loc Settings_Copied}"
+                                    Visibility="Collapsed" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource Ui.Font.Mono}"
+                                    Text="{Binding CloneCommand}" />
+                            </StackPanel>
+                            <TextBlock VerticalAlignment="Center" Text="{loc:Loc Settings_CloneRepo}" />
+                        </DockPanel>
+                    </Button>
+                    <Border BorderBrush="{DynamicResource Ui.Stroke.Divider}" BorderThickness="0,1,0,0" />
+                    <Button
+                        Height="Auto"
+                        MinHeight="48"
+                        Padding="16,12"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        AutomationProperties.Name="{loc:Loc Settings_ReportIssue}"
+                        Click="OnOpenIssuesClicked"
+                        Style="{StaticResource AboutRow}"
+                        ToolTip="{Binding IssuesUrl}">
+                        <DockPanel>
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="16"
+                                Foreground="{DynamicResource Ui.Icon.Primary}"
+                                Symbol="Link24" />
+                            <TextBlock VerticalAlignment="Center" Text="{loc:Loc Settings_ReportIssue}" />
+                        </DockPanel>
+                    </Button>
+                    <Border BorderBrush="{DynamicResource Ui.Stroke.Divider}" BorderThickness="0,1,0,0" />
+                    <Button
+                        Height="Auto"
+                        MinHeight="48"
+                        Padding="16,12"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        AutomationProperties.Name="{loc:Loc Settings_ProjectHome}"
+                        Click="OnOpenRepoClicked"
+                        Style="{StaticResource AboutRow}"
+                        ToolTip="{Binding RepositoryUrl}">
+                        <DockPanel>
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="16"
+                                Foreground="{DynamicResource Ui.Icon.Primary}"
+                                Symbol="Link24" />
+                            <TextBlock VerticalAlignment="Center" Text="{loc:Loc Settings_ProjectHome}" />
+                        </DockPanel>
+                    </Button>
+                    <Border BorderBrush="{DynamicResource Ui.Stroke.Divider}" BorderThickness="0,1,0,0" />
+                    <DockPanel Margin="16,14" ToolTip="{loc:Loc Settings_VersionHint}">
+                        <TextBlock
+                            DockPanel.Dock="Right"
+                            FontFamily="{StaticResource Ui.Font.Mono}"
+                            Text="{Binding Version}" />
+                        <TextBlock Text="{loc:Loc Settings_Version}" />
+                    </DockPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

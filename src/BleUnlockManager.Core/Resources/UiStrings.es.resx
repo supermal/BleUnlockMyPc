@@ -673,4 +673,9 @@ La configuración actual del servicio no cambia.</value></data>
   <data name="Pair_TrackingByAddress" xml:space="preserve"><value>Se seguirá «{0}» por dirección MAC.</value></data>
   <data name="MacRisk_Title" xml:space="preserve"><value>Aviso de seguridad: la dirección MAC es fácil de suplantar</value></data>
   <data name="MacRisk_Message" xml:space="preserve"><value>Al seguir por dirección MAC, el equipo reconoce el dispositivo solo por la dirección de sus anuncios. Esa dirección se emite a la vista: cualquiera puede leerla con una app Bluetooth en el móvil y emitir la misma dirección, y acercándola a tu equipo podría engañar a BleUnlock para que desbloquee. Los dispositivos con IRK no tienen este problema, porque el IRK nunca aparece en los anuncios. Recomendación: úsalo solo en un sitio de confianza, como en casa, o deja la contraseña vacía en «Credenciales» para que el equipo solo se bloquee al irte y nunca se desbloquee solo.</value></data>
+  <data name="Settings_CloneRepo" xml:space="preserve"><value>Clonar este repositorio</value></data>
+  <data name="Settings_CloneCopyTip" xml:space="preserve"><value>Pulsa para copiar el comando</value></data>
+  <data name="Settings_Copied" xml:space="preserve"><value>Copiado</value></data>
+  <data name="Settings_ReportIssue" xml:space="preserve"><value>Informar de un error o pedir una mejora</value></data>
+  <data name="Settings_ProjectHome" xml:space="preserve"><value>Ver la página del proyecto</value></data>
 </root>

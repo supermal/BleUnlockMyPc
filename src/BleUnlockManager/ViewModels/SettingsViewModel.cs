@@ -46,6 +46,14 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>Versión del paquete instalado (la misma del nombre del instalador).</summary>
     public string Version => AppVersion.Display(typeof(SettingsViewModel).Assembly);
 
+    public string RepositoryUrl => "https://github.com/supermal/BleUnlockMyPc";
+
+    public string IssuesUrl => "https://github.com/supermal/BleUnlockMyPc/issues";
+
+    public string CloneCommand => $"git clone {RepositoryUrl}.git";
+
+    public string Copyright => "© 2026 supermal | BleUnlock";
+
     // —— Idioma (se guarda en la configuración del servicio: uno por equipo) ——
 
     /// <summary>Sin configuración del servicio no hay dónde guardar el idioma.</summary>
