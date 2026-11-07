@@ -12,10 +12,15 @@
       reutiliza: mismo código, misma versión. Con cambios sin confirmar no se empaqueta, para que la
       versión siempre corresponda a un commit (se ignora appsettings.json, que puede llevar las
       credenciales de prueba de este equipo y no entra en el paquete).
+    - En GitHub Actions (.github\workflows\release.yml) se ejecuta sobre una etiqueta ya empujada: el
+      commit ya está etiquetado y se reutiliza esa versión.
     Requiere Inno Setup 6 (ISCC.exe). Uso: .\installer\build-installer.ps1
+    -PlatformToolset: conjunto de herramientas C++ del proveedor de credenciales (vacío = el del proyecto,
+      v145 de VS 2026); la compilación en la nube pasa v143 si la imagen solo trae VS 2022.
 #>
 param(
-    [string]$TemplateRevision = 'HEAD'
+    [string]$TemplateRevision = 'HEAD',
+    [string]$PlatformToolset = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -113,8 +118,9 @@ $msbuild = if (Test-Path $vswhere) {
     & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
 }
 if ($msbuild) {
+    $toolsetArg = if ($PlatformToolset) { @("/p:PlatformToolset=$PlatformToolset") } else { @() }
     & $msbuild (Join-Path $repo 'src\BleUnlockCredentialProvider\BleUnlockCredentialProvider.vcxproj') `
-        /p:Configuration=Release /p:Platform=x64 /m /nologo /verbosity:minimal
+        /p:Configuration=Release /p:Platform=x64 /m /nologo /verbosity:minimal @toolsetArg
     if ($LASTEXITCODE -ne 0) { Write-Warning 'MSBuild failed; using the existing credential provider build.' }
 } else {
     Write-Warning 'MSBuild not found; using the existing credential provider build.'

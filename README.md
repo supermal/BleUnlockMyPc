@@ -492,6 +492,23 @@ dotnet test tests\BleUnlockManager.Tests\BleUnlockManager.Tests.csproj
 
 > 在 PowerShell 里给 `-TemplateRevision` 传空字符串时，请用 `& .\installer\build-installer.ps1 -TemplateRevision ''` 直接调用；经 `powershell -File` 转发会丢掉空参数。
 
+### 在 GitHub 上自动打包（GitHub Actions）
+
+工作流 `.github/workflows/release.yml` 在 GitHub 的 Windows 云电脑上跑同一个打包脚本：
+
+- **发布新版本**：推送一个 `vX.Y.Z` 标签即可，例如
+
+  ```powershell
+  git tag -a v1.0.4 -m "BleUnlock 1.0.4"
+  git push origin v1.0.4
+  ```
+
+  也可以照旧在本机运行打包脚本（它会自动打标签），再 `git push origin <标签>`。云端依次运行全部测试 → 打包 → 在 **Releases** 页面创建这个版本并附上 `BleUnlock-Setup-x.y.z.exe`，发布说明根据提交记录自动生成。测试不通过就不会发布。
+- **只想试一下能不能打包**：在仓库的 **Actions → Release → Run workflow** 手动运行。安装包只作为运行结果里的附件（Artifacts）供下载，不会创建 Release，也不会推送标签。
+- 配置模板同样取自 git，云端打出的安装包不会带任何本机凭据。
+- 云电脑没有 VS 2026 时，凭据提供程序改用 VS 2022 的 C++ 工具集（`-PlatformToolset v143`）编译。
+- 私有仓库每月有 2000 分钟免费额度，Windows 按 2 倍计算；打一次包约 15–20 分钟。
+
 ---
 
 ## 十四、用脚本安装与卸载
