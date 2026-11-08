@@ -39,6 +39,8 @@
     <!-- Icono de ventana y de reserva de la bandeja: se distribuye con la publicación -->
     <Content Include="Assets\AppIcon.ico" CopyToOutputDirectory="PreserveNewest" />
     <Resource Include="Assets\AppIcon.ico" />
+    <!-- Fotograma de 256 px del icono: el .ico en un Image de WPF elige mal el tamaño y se ve borroso -->
+    <Resource Include="Assets\AppIcon.png" />
   </ItemGroup>
 
 

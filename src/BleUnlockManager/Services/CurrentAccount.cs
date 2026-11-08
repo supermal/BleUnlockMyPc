@@ -49,7 +49,8 @@ public static class CurrentAccount
             }
 
             // Una cuenta Microsoft se resuelve a su SID S-1-11-96-…, que la sesión lleva como grupo
-            bool same = sid.Equals(identity.User) ||
+            // identity.User es null en identidades anónimas: entonces solo cuenta la comparación por grupo
+            bool same = (identity.User is { } user && sid.Equals(user)) ||
                 (sid.Value.StartsWith(MicrosoftAccountSidPrefix, StringComparison.Ordinal) &&
                  (identity.Groups?.Any(g => g.Equals(sid)) ?? false));
             return new AccountMatch(same ? AccountMatchKind.Same : AccountMatchKind.Other, current);

@@ -233,7 +233,8 @@
                             Height="32"
                             Margin="0,0,16,0"
                             VerticalAlignment="Center"
-                            Source="pack://application:,,,/Assets/AppIcon.ico" />
+                            RenderOptions.BitmapScalingMode="HighQuality"
+                            Source="pack://application:,,,/Assets/AppIcon.png" />
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="BleUnlock" />
                             <TextBlock Style="{StaticResource Ui.TextStyle.Caption}" Text="{Binding Copyright}" />
