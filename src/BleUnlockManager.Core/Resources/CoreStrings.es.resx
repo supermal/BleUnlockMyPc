@@ -98,4 +98,14 @@
   <data name="Tray_NoDeviceHint" xml:space="preserve"><value>Sin dispositivo de desbloqueo; abre el Gestor para terminar</value></data>
   <data name="Tray_NoCredentialsHint" xml:space="preserve"><value>Sin contraseña: solo bloquea, no desbloquea</value></data>
   <data name="Bond_ByAddressSuffix" xml:space="preserve"><value> · por dirección MAC</value></data>
+  <data name="Field_SuddenReference" xml:space="preserve"><value>Lecturas de referencia del cambio brusco</value></data>
+  <data name="Field_SuddenDelta" xml:space="preserve"><value>Salto del cambio brusco (dB)</value></data>
+  <data name="Field_SuddenDropSeconds" xml:space="preserve"><value>Comprobación de caída (s)</value></data>
+  <data name="Field_SuddenRiseSeconds" xml:space="preserve"><value>Comprobación de subida (s)</value></data>
+  <data name="Validation_SuddenReferenceRange" xml:space="preserve"><value>{0} debe estar entre 5 y 50</value></data>
+  <data name="Validation_SuddenDeltaRange" xml:space="preserve"><value>{0} debe ser 0 (desactivado) o estar entre 5 y 60</value></data>
+  <data name="Validation_SuddenDropSecondsRange" xml:space="preserve"><value>{0} debe estar entre 5 y 300</value></data>
+  <data name="Validation_SuddenRiseSecondsRange" xml:space="preserve"><value>{0} debe estar entre 1 y 60</value></data>
+  <data name="Batch_OfSeconds" xml:space="preserve"><value>{0} s</value></data>
+  <data name="Tray_SuddenDrop" xml:space="preserve"><value>Comprobación de caída {0}/{1} s</value></data>
 </root>

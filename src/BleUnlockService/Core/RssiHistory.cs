@@ -2,24 +2,35 @@ namespace BleUnlockService.Core;
 
 public readonly record struct WindowStats(int Count, double Average);
 
+// Real = la envió el dispositivo; false = copia de la anterior que añade el muestreo a intervalo fijo
+// (SampleResampler) cuando en ese intervalo no llegó nada
+public readonly record struct RssiPoint(DateTimeOffset Time, short Rssi, bool Real)
+{
+    public void Deconstruct(out DateTimeOffset time, out short rssi)
+    {
+        time = Time;
+        rssi = Rssi;
+    }
+}
+
 // Cola de muestras con poda por antiguedad. No asume que las marcas de tiempo
 // lleguen ordenadas: el callback de WinRT no lo garantiza
 public sealed class RssiHistory(TimeSpan retention, TimeProvider time)
 {
     private const int PruneThreshold = 16;
 
-    private readonly List<(DateTimeOffset Time, short Rssi)> _points = [];
+    private readonly List<RssiPoint> _points = [];
     private readonly object _lock = new();
 
     public bool HasEverSeenDevice { get; private set; }
 
-    public void Add(short rssi, DateTimeOffset at)
+    public void Add(short rssi, DateTimeOffset at, bool real = true)
     {
         lock (_lock)
         {
             HasEverSeenDevice = true;
 
-            _points.Add((at, rssi));
+            _points.Add(new RssiPoint(at, rssi, real));
 
             // La poda es relativa al reloj actual, no a las marcas de las muestras: un hueco
             // largo sin emisiones o una marca adelantada no pueden envenenar la base de poda,
@@ -56,17 +67,33 @@ public sealed class RssiHistory(TimeSpan retention, TimeProvider time)
 
     // 自水印之后到达的样本，按时间升序（批次判定按到达顺序消费）。
     // 时间戳可能乱序到达（WinRT 不保证顺序），所以这里排序后再返回
-    public IReadOnlyList<(DateTimeOffset Time, short Rssi)> Since(DateTimeOffset after)
+    public IReadOnlyList<RssiPoint> Since(DateTimeOffset after)
     {
         lock (_lock)
         {
-            var result = new List<(DateTimeOffset Time, short Rssi)>();
+            var result = new List<RssiPoint>();
             foreach (var p in _points)
                 if (p.Time > after)
                     result.Add(p);
 
             result.Sort(static (a, b) => a.Time.CompareTo(b.Time));
             return result;
+        }
+    }
+
+    // 突变保护的参考读数：before 之前 window 以内的真实读数（不含补点），按时间升序，最多取最近 max 个
+    public IReadOnlyList<short> RealBefore(DateTimeOffset before, TimeSpan window, int max)
+    {
+        var from = before - window;
+        lock (_lock)
+        {
+            var real = new List<RssiPoint>();
+            foreach (var p in _points)
+                if (p.Real && p.Time > from && p.Time < before)
+                    real.Add(p);
+
+            real.Sort(static (a, b) => a.Time.CompareTo(b.Time));
+            return real.Skip(Math.Max(0, real.Count - max)).Select(p => p.Rssi).ToList();
         }
     }
 

@@ -98,4 +98,14 @@
   <data name="Tray_NoDeviceHint" xml:space="preserve"><value>尚未选择解锁设备，打开管理器完成设置</value></data>
   <data name="Tray_NoCredentialsHint" xml:space="preserve"><value>没有密码：只自动锁屏，不自动解锁</value></data>
   <data name="Bond_ByAddressSuffix" xml:space="preserve"><value> · 按 MAC 地址</value></data>
+  <data name="Field_SuddenReference" xml:space="preserve"><value>突变参考读数个数</value></data>
+  <data name="Field_SuddenDelta" xml:space="preserve"><value>突变落差（dB）</value></data>
+  <data name="Field_SuddenDropSeconds" xml:space="preserve"><value>突降确认时长（秒）</value></data>
+  <data name="Field_SuddenRiseSeconds" xml:space="preserve"><value>突升确认时长（秒）</value></data>
+  <data name="Validation_SuddenReferenceRange" xml:space="preserve"><value>{0} 必须在 5 到 50 之间</value></data>
+  <data name="Validation_SuddenDeltaRange" xml:space="preserve"><value>{0} 必须是 0（关闭）或 5 到 60 之间</value></data>
+  <data name="Validation_SuddenDropSecondsRange" xml:space="preserve"><value>{0} 必须在 5 到 300 之间</value></data>
+  <data name="Validation_SuddenRiseSecondsRange" xml:space="preserve"><value>{0} 必须在 1 到 60 之间</value></data>
+  <data name="Batch_OfSeconds" xml:space="preserve"><value>{0} 秒</value></data>
+  <data name="Tray_SuddenDrop" xml:space="preserve"><value>突降确认 {0}/{1} 秒</value></data>
 </root>

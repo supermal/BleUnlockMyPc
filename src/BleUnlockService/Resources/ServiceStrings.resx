@@ -197,4 +197,18 @@
   <data name="Notify_SetupNoDevice" xml:space="preserve"><value>BleUnlock is not set up yet: no unlock device has been chosen. Open the BleUnlock Manager to finish the setup</value></data>
   <data name="Notify_SetupNoCredentials" xml:space="preserve"><value>BleUnlock has no Windows password yet: it locks the screen when you leave but will not unlock it when you return. Enter it in the BleUnlock Manager</value></data>
   <data name="Validation_ReloadDropsSetup" xml:space="preserve"><value>The device or the credentials in the configuration became empty; the file may be half-written or damaged, so the previous configuration was kept. To remove the device, unpair it in the Manager</value></data>
+  <data name="Validation_SuddenReferenceRange" xml:space="preserve"><value>Proximity.SuddenChangeReferenceCount must be between 5 and 50</value></data>
+  <data name="Validation_SuddenDeltaRange" xml:space="preserve"><value>Proximity.SuddenChangeDeltaDb must be 0 (off) or between 5 and 60</value></data>
+  <data name="Validation_SuddenDropSecondsRange" xml:space="preserve"><value>Proximity.SuddenDropConfirmSeconds must be between 5 and 300</value></data>
+  <data name="Validation_SuddenRiseSecondsRange" xml:space="preserve"><value>Proximity.SuddenRiseConfirmSeconds must be between 1 and 60</value></data>
+  <data name="Note_SuddenDrop" xml:space="preserve"><value>Sudden drop: {0:0} dBm, {3:0.#} dB below the {2:0.#} dBm average of the previous {1} real readings. No prompt yet; watching for {4:0} s</value></data>
+  <data name="Note_SuddenDropCancelled" xml:space="preserve"><value>Sudden-drop watch cancelled: the signal came back to {0:0} dBm (≥ lock threshold); treated as a glitch</value></data>
+  <data name="Note_SuddenDropNoSignal" xml:space="preserve"><value>Sudden-drop watch ended: no real reading for {0:0} s; handled by "No signal counts as leaving"</value></data>
+  <data name="Note_SuddenRise" xml:space="preserve"><value>Sudden rise: {0:0} dBm, {3:0.#} dB above the {2:0.#} dBm average of the previous {1} real readings. Not unlocking yet; watching for {4:0} s</value></data>
+  <data name="Note_SuddenRiseCancelled" xml:space="preserve"><value>Sudden-rise watch cancelled: the signal fell back to {0:0} dBm (≤ unlock threshold); treated as a glitch</value></data>
+  <data name="Reason_SuddenDropConfirmed" xml:space="preserve"><value>after the sudden drop, all {1} real readings within {0:0} s &lt; {2:0} dBm; locking directly</value></data>
+  <data name="Reason_SuddenRiseConfirmed" xml:space="preserve"><value>after the sudden rise, all {1} real readings within {0:0} s &gt; {2:0} dBm</value></data>
+  <data name="Batch_SuddenDrop" xml:space="preserve"><value>sudden-drop check {0}/{1} s</value></data>
+  <data name="Batch_SuddenRise" xml:space="preserve"><value>sudden-rise check {0}/{1} s</value></data>
+  <data name="Note_SuddenRiseTooFew" xml:space="preserve"><value>Sudden-rise watch ended: only {1} real readings within {0:0} s (at least {2} needed); not unlocking, back to the normal rule</value></data>
 </root>

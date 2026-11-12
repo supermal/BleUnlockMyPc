@@ -106,6 +106,7 @@ public sealed class Worker(
                 catch (OperationCanceledException) { break; }
 
                 Transition(() => _machine.Evaluate(_history));
+                LogMachineNotes();
                 PublishBatchProgress();
                 WriteSummaryIfDue();
             }
@@ -173,17 +174,20 @@ public sealed class Worker(
             var noSignal = options.Current.Proximity.NoSignalDepartureSeconds;
             var value = _resampler.Take(
                 holdAllowed: !Volatile.Read(ref _scanStalled),
-                holdLimit: noSignal > 0 ? TimeSpan.FromSeconds(noSignal) : TimeSpan.Zero);
+                holdLimit: noSignal > 0 ? TimeSpan.FromSeconds(noSignal) : TimeSpan.Zero,
+                out var real);
             if (value is not { } rssi) continue;
 
             var now = time.GetUtcNow();
-            _history.Add(rssi, now);
+            _history.Add(rssi, now, real);
             telemetry.OnSample(now.ToUnixTimeMilliseconds(), rssi);
         }
     }
 
-    // BLE 规范把 -127/+127 一带预留为「RSSI 不可用」：不能当作读数
-    internal static bool HasUsableRssi(short rssi) => rssi is > -127 and < 127;
+    // BLE 规范把 -127/+127 一带预留为「RSSI 不可用」：不能当作读数。
+    // 2026-11-10：0 dBm 及以上也丢掉——实测出现过 0、+18 dBm 的尖峰，真实信号不可能这么强，
+    // 是驱动报的错误值，放进来会凭空凑出「靠近」（可能触发自动解锁）
+    internal static bool HasUsableRssi(short rssi) => rssi is > -127 and < 0;
 
     private void OnStatus(ScanStatus status)
     {
@@ -220,6 +224,15 @@ public sealed class Worker(
 
         try { await notifier.NotifyAsync(message, CancellationToken.None); }
         catch (Exception ex) { log.LogError(ex, ServiceStrings.Log_ActionFailed, "NotifyScan"); }
+    }
+
+    // Avisos de la máquina que no son transiciones (protección contra cambios bruscos): solo al registro
+    private void LogMachineNotes()
+    {
+        IReadOnlyList<string> notes;
+        lock (_gate) notes = _machine.DrainNotes();
+        foreach (var note in notes)
+            log.LogInformation("{Note:l}", note);
     }
 
     // Telemetría: el progreso del lote se lee bajo el mismo candado que las transiciones

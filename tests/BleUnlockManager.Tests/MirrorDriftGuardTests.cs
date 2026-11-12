@@ -34,7 +34,7 @@ public sealed class MirrorDriftGuardTests
     private static string ServiceSourcePath(params string[] parts)
         => Path.Combine(new[] { RepoRoot, "src", "BleUnlockService" }.Concat(parts).ToArray());
 
-    /// <summary>全字段非法配置：一次触发 13 条规则（上限 1 条为插值生成（SnoozeMinutes），其余 12 条为服务端字面量）。</summary>
+    /// <summary>全字段非法配置：一次触发 17 条规则（上限 1 条为插值生成（SnoozeMinutes），其余 16 条为服务端字面量）。</summary>
     private static BleUnlockConfig AllInvalidConfig()
     {
         var config = new BleUnlockConfig();
@@ -50,6 +50,10 @@ public sealed class MirrorDriftGuardTests
         config.Proximity.StartupGraceSeconds = -1;                // 不能为负数
         config.Proximity.UnlockPendingTimeoutSeconds = 0;         // 必须为正数
         config.Proximity.NoSignalDepartureSeconds = 10;           // 0 或 30–3600
+        config.Proximity.SuddenChangeReferenceCount = 4;          // 5–50
+        config.Proximity.SuddenChangeDeltaDb = 3;                 // 0 或 5–60
+        config.Proximity.SuddenDropConfirmSeconds = 4;            // 5–300
+        config.Proximity.SuddenRiseConfirmSeconds = 0;            // 1–60
         config.Notification.RejectSnoozeSeconds = 0;              // 必须为正数
         config.Notification.SnoozeMinutes = 300;                  // 超上限
         return config;
@@ -63,7 +67,7 @@ public sealed class MirrorDriftGuardTests
         var source = File.ReadAllText(ServiceSourcePath("Resources", "ServiceStrings.zh.resx"));
         var errors = ConfigValidator.Validate(AllInvalidConfig()).Errors;
 
-        Assert.Equal(13, errors.Count);
+        Assert.Equal(17, errors.Count);
 
         // 服务端以字符串插值拼接的上限文案：这里断言其字面前缀存在于源码
         foreach (var prefix in new[]

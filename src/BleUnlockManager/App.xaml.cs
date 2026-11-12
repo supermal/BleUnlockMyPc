@@ -60,6 +60,9 @@ public partial class App : Application
 
         _ = _services.GetRequiredService<TargetDeviceService>().RefreshAsync();
 
+        // Al iniciar sesión el gestor se abre antes que el servicio: si está parado, se arranca
+        _ = _services.GetRequiredService<OverviewViewModel>().AutoStartServiceIfNeededAsync();
+
         // El registro se sigue desde el arranque: la navegación muestra las advertencias del día
         _services.GetRequiredService<LogsViewModel>().Initialize();
 

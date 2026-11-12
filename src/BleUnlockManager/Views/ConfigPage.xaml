@@ -419,6 +419,42 @@
                         <controls:UnitTextBox AutomationProperties.Name="{loc:Loc Config_NoSignalDeparture}" Text="{Binding NoSignalDepartureText, UpdateSourceTrigger=PropertyChanged}" Unit="{loc:Loc Unit_Seconds}" />
                     </controls:SettingRow>
 
+                    <!--  ===== Protección contra cambios bruscos =====  -->
+                    <TextBlock Style="{StaticResource GroupTitle}" Text="{loc:Loc Config_SuddenGuard}" />
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        Style="{StaticResource Ui.TextStyle.Caption}"
+                        Text="{loc:Loc Config_SuddenGuardHint}"
+                        TextWrapping="Wrap" />
+                    <controls:SettingRow
+                        Description="{loc:Loc Config_SuddenDeltaHint}"
+                        Error="{Binding SuddenDeltaError}"
+                        Header="{loc:Loc Config_SuddenDelta}"
+                        IsModified="{Binding ModifiedFields, Converter={StaticResource FieldModified}, ConverterParameter=Proximity.SuddenChangeDeltaDb}">
+                        <controls:UnitTextBox AutomationProperties.Name="{loc:Loc Config_SuddenDelta}" Text="{Binding SuddenDeltaText, UpdateSourceTrigger=PropertyChanged}" Unit="dB" />
+                    </controls:SettingRow>
+                    <controls:SettingRow
+                        Description="{loc:Loc Config_SuddenReferenceHint}"
+                        Error="{Binding SuddenReferenceError}"
+                        Header="{loc:Loc Config_SuddenReference}"
+                        IsModified="{Binding ModifiedFields, Converter={StaticResource FieldModified}, ConverterParameter=Proximity.SuddenChangeReferenceCount}">
+                        <controls:UnitTextBox AutomationProperties.Name="{loc:Loc Config_SuddenReference}" Text="{Binding SuddenReferenceText, UpdateSourceTrigger=PropertyChanged}" Unit="{loc:Loc Unit_Readings}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow
+                        Description="{loc:Loc Config_SuddenDropSecondsHint}"
+                        Error="{Binding SuddenDropSecondsError}"
+                        Header="{loc:Loc Config_SuddenDropSeconds}"
+                        IsModified="{Binding ModifiedFields, Converter={StaticResource FieldModified}, ConverterParameter=Proximity.SuddenDropConfirmSeconds}">
+                        <controls:UnitTextBox AutomationProperties.Name="{loc:Loc Config_SuddenDropSeconds}" Text="{Binding SuddenDropSecondsText, UpdateSourceTrigger=PropertyChanged}" Unit="{loc:Loc Unit_Seconds}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow
+                        Description="{loc:Loc Config_SuddenRiseSecondsHint}"
+                        Error="{Binding SuddenRiseSecondsError}"
+                        Header="{loc:Loc Config_SuddenRiseSeconds}"
+                        IsModified="{Binding ModifiedFields, Converter={StaticResource FieldModified}, ConverterParameter=Proximity.SuddenRiseConfirmSeconds}">
+                        <controls:UnitTextBox AutomationProperties.Name="{loc:Loc Config_SuddenRiseSeconds}" Text="{Binding SuddenRiseSecondsText, UpdateSourceTrigger=PropertyChanged}" Unit="{loc:Loc Unit_Seconds}" />
+                    </controls:SettingRow>
+
                     <!--  ===== Aviso de bloqueo =====  -->
                     <TextBlock Style="{StaticResource GroupTitle}" Text="{loc:Loc Config_LockPrompt}" />
                     <controls:SettingRow

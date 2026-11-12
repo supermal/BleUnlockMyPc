@@ -84,6 +84,14 @@ public static class ConfigDiff
             from.Proximity.UnlockPendingTimeoutSeconds, to.Proximity.UnlockPendingTimeoutSeconds);
         AddNumber(changes, ConfigFields.ProximityNoSignalDepartureSeconds,
             from.Proximity.NoSignalDepartureSeconds, to.Proximity.NoSignalDepartureSeconds);
+        AddCount(changes, ConfigFields.ProximitySuddenChangeReferenceCount,
+            from.Proximity.SuddenChangeReferenceCount, to.Proximity.SuddenChangeReferenceCount);
+        AddNumber(changes, ConfigFields.ProximitySuddenChangeDeltaDb,
+            from.Proximity.SuddenChangeDeltaDb, to.Proximity.SuddenChangeDeltaDb);
+        AddNumber(changes, ConfigFields.ProximitySuddenDropConfirmSeconds,
+            from.Proximity.SuddenDropConfirmSeconds, to.Proximity.SuddenDropConfirmSeconds);
+        AddNumber(changes, ConfigFields.ProximitySuddenRiseConfirmSeconds,
+            from.Proximity.SuddenRiseConfirmSeconds, to.Proximity.SuddenRiseConfirmSeconds);
 
         if (from.Notification.Mode != to.Notification.Mode)
         {
@@ -138,6 +146,10 @@ public static class ConfigDiff
         ConfigFields.ProximityStartupGraceSeconds => CoreStrings.Field_StartupGrace,
         ConfigFields.ProximityUnlockPendingTimeoutSeconds => CoreStrings.Field_UnlockPendingTimeout,
         ConfigFields.ProximityNoSignalDepartureSeconds => CoreStrings.Field_NoSignalDeparture,
+        ConfigFields.ProximitySuddenChangeReferenceCount => CoreStrings.Field_SuddenReference,
+        ConfigFields.ProximitySuddenChangeDeltaDb => CoreStrings.Field_SuddenDelta,
+        ConfigFields.ProximitySuddenDropConfirmSeconds => CoreStrings.Field_SuddenDropSeconds,
+        ConfigFields.ProximitySuddenRiseConfirmSeconds => CoreStrings.Field_SuddenRiseSeconds,
         ConfigFields.NotificationMode => CoreStrings.Field_NotificationMode,
         ConfigFields.NotificationRejectSnoozeSeconds => CoreStrings.Field_RejectSnooze,
         ConfigFields.NotificationSnoozeMinutes => CoreStrings.Field_Snooze,

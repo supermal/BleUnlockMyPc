@@ -406,7 +406,7 @@
   <data name="Rules_P_unlock_Effect" xml:space="preserve"><value>After locking, readings must be above it to count as "near, OK to unlock"</value></data>
   <data name="Rules_P_unlock_Name" xml:space="preserve"><value>Unlock threshold</value></data>
   <data name="Rules_P_unlock_Value" xml:space="preserve"><value>{unlock} dBm</value></data>
-  <data name="Rules_S0_Lead" xml:space="preserve"><value>These are the values the service is using. Any value that differs from the default shows the default next to it.</value></data>
+  <data name="Rules_S0_Lead" xml:space="preserve"><value>These are the values the service is using. Any value that differs from the default shows the default next to it.{guardnote}</value></data>
   <data name="Rules_S0_Title" xml:space="preserve"><value>Settings in effect</value></data>
   <data name="Rules_S1_I1_K" xml:space="preserve"><value>Target device:</value></data>
   <data name="Rules_S1_I1_V" xml:space="preserve"><value>the address matches the identity address in the configuration, or the IRK resolves its random address.</value></data>
@@ -678,4 +678,21 @@ The current service configuration is not affected.</value></data>
   <data name="Settings_Copied" xml:space="preserve"><value>Copied</value></data>
   <data name="Settings_ReportIssue" xml:space="preserve"><value>Report a bug or request a feature</value></data>
   <data name="Settings_ProjectHome" xml:space="preserve"><value>Visit the project page</value></data>
+  <data name="Batch_SuddenDrop" xml:space="preserve"><value>Sudden-drop check</value></data>
+  <data name="Batch_SuddenRise" xml:space="preserve"><value>Sudden-rise check</value></data>
+  <data name="Config_SuddenGuard" xml:space="preserve"><value>Sudden-change protection</value></data>
+  <data name="Config_SuddenGuardHint" xml:space="preserve"><value>A jump in the signal is not trusted straight away: a sudden drop while unlocked shows no prompt and locks only if it lasts; a sudden rise after locking unlocks only once it is steady. Gradual changes follow the normal rules.</value></data>
+  <data name="Config_SuddenReference" xml:space="preserve"><value>Reference readings</value></data>
+  <data name="Config_SuddenReferenceHint" xml:space="preserve"><value>Compared with the average of up to this many readings actually sent by the device in the last 120 s before the trigger (repeated samples excluded). With fewer than 5, no sudden-change check. 5–50.</value></data>
+  <data name="Config_SuddenDelta" xml:space="preserve"><value>Sudden-change jump</value></data>
+  <data name="Config_SuddenDeltaHint" xml:space="preserve"><value>A trigger this far from the reference average counts as a sudden jump. 0 = protection off. 0 or 5–60.</value></data>
+  <data name="Config_SuddenDropSeconds" xml:space="preserve"><value>Sudden-drop check</value></data>
+  <data name="Config_SuddenDropSecondsHint" xml:space="preserve"><value>After a sudden drop, no prompt: if within this time at least 3 real readings are all below the lock threshold, the screen locks directly; one reading back above cancels it. 5–300 s.</value></data>
+  <data name="Config_SuddenRiseSeconds" xml:space="preserve"><value>Sudden-rise check</value></data>
+  <data name="Config_SuddenRiseSecondsHint" xml:space="preserve"><value>After a sudden rise while locked: unlocks only if within this time at least 2 real readings are all above the unlock threshold; a fall or too few readings means no unlock. 1–60 s.</value></data>
+  <data name="Rules_GuardNote" xml:space="preserve"><value> Sudden-change protection: when a trigger is ≥ {1} dB from the average of up to {0} previous real readings, a drop is watched for {2} s (at least 3 real readings all below the lock threshold lock the screen directly, with no prompt) and a rise for {3} s (at least 2 real readings all above the unlock threshold unlock); the reading-count rules below apply to gradual changes.</value></data>
+  <data name="Rules_GuardOff" xml:space="preserve"><value> Sudden-change protection is off.</value></data>
+  <data name="AutoStart_DoneTitle" xml:space="preserve"><value>Service started automatically</value></data>
+  <data name="AutoStart_DoneMessage" xml:space="preserve"><value>The BleUnlock service was not running when the manager opened, so it was started. If you stop it here with "Stop service", it will not be started automatically until you press "Start service".</value></data>
+  <data name="AutoStart_FailedTitle" xml:space="preserve"><value>Could not start the service automatically</value></data>
 </root>

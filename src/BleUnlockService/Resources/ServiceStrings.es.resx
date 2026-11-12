@@ -197,4 +197,18 @@
   <data name="Notify_SetupNoDevice" xml:space="preserve"><value>BleUnlock aún no está configurado: no se ha elegido el dispositivo de desbloqueo. Abre el Gestor de BleUnlock para terminar la configuración</value></data>
   <data name="Notify_SetupNoCredentials" xml:space="preserve"><value>BleUnlock aún no tiene la contraseña de Windows: bloquea la pantalla al irte, pero no la desbloqueará al volver. Escríbela en el Gestor de BleUnlock</value></data>
   <data name="Validation_ReloadDropsSetup" xml:space="preserve"><value>El dispositivo o las credenciales de la configuración han quedado vacíos; puede que el archivo esté a medio escribir o dañado, así que se ha conservado la configuración anterior. Para quitar el dispositivo, desemparéjalo en el Gestor</value></data>
+  <data name="Validation_SuddenReferenceRange" xml:space="preserve"><value>Proximity.SuddenChangeReferenceCount debe estar entre 5 y 50</value></data>
+  <data name="Validation_SuddenDeltaRange" xml:space="preserve"><value>Proximity.SuddenChangeDeltaDb debe ser 0 (desactivado) o estar entre 5 y 60</value></data>
+  <data name="Validation_SuddenDropSecondsRange" xml:space="preserve"><value>Proximity.SuddenDropConfirmSeconds debe estar entre 5 y 300</value></data>
+  <data name="Validation_SuddenRiseSecondsRange" xml:space="preserve"><value>Proximity.SuddenRiseConfirmSeconds debe estar entre 1 y 60</value></data>
+  <data name="Note_SuddenDrop" xml:space="preserve"><value>Caída brusca: {0:0} dBm, {3:0.#} dB por debajo de la media de {2:0.#} dBm de las {1} lecturas reales anteriores. Sin aviso por ahora; se observa {4:0} s</value></data>
+  <data name="Note_SuddenDropCancelled" xml:space="preserve"><value>Observación de caída anulada: la señal volvió a {0:0} dBm (≥ umbral de bloqueo); era un salto suelto</value></data>
+  <data name="Note_SuddenDropNoSignal" xml:space="preserve"><value>Observación de caída terminada: {0:0} s sin lecturas reales; lo decide «Sin señal cuenta como salida»</value></data>
+  <data name="Note_SuddenRise" xml:space="preserve"><value>Subida brusca: {0:0} dBm, {3:0.#} dB por encima de la media de {2:0.#} dBm de las {1} lecturas reales anteriores. Sin desbloquear por ahora; se observa {4:0} s</value></data>
+  <data name="Note_SuddenRiseCancelled" xml:space="preserve"><value>Observación de subida anulada: la señal bajó a {0:0} dBm (≤ umbral de desbloqueo); era un salto suelto</value></data>
+  <data name="Reason_SuddenDropConfirmed" xml:space="preserve"><value>tras la caída brusca, las {1} lecturas reales de {0:0} s &lt; {2:0} dBm; bloqueo directo</value></data>
+  <data name="Reason_SuddenRiseConfirmed" xml:space="preserve"><value>tras la subida brusca, las {1} lecturas reales de {0:0} s &gt; {2:0} dBm</value></data>
+  <data name="Batch_SuddenDrop" xml:space="preserve"><value>comprobación de caída {0}/{1} s</value></data>
+  <data name="Batch_SuddenRise" xml:space="preserve"><value>comprobación de subida {0}/{1} s</value></data>
+  <data name="Note_SuddenRiseTooFew" xml:space="preserve"><value>Observación de subida terminada: solo {1} lecturas reales en {0:0} s (hacen falta {2}); no se desbloquea, se sigue con la regla normal</value></data>
 </root>

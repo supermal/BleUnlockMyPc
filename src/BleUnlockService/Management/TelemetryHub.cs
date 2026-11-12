@@ -106,6 +106,9 @@ public sealed class TelemetryHub
         null => null,
         { Kind: BatchKind.LockConfirm } p => new SnapshotBatch("lockConfirm", p.Count, p.Target),
         { Kind: BatchKind.Unlock } p => new SnapshotBatch("unlock", p.Count, p.Target),
+        // Observación tras un cambio brusco: N/Of en segundos
+        { Kind: BatchKind.SuddenDrop } p => new SnapshotBatch("suddenDrop", p.Count, p.Target),
+        { Kind: BatchKind.SuddenRise } p => new SnapshotBatch("suddenRise", p.Count, p.Target),
         { } p => new SnapshotBatch("leave", p.Count, p.Target),
     };
 

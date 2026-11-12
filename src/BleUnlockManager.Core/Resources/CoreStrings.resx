@@ -98,4 +98,14 @@
   <data name="Tray_NoDeviceHint" xml:space="preserve"><value>No unlock device chosen; open the Manager to finish setup</value></data>
   <data name="Tray_NoCredentialsHint" xml:space="preserve"><value>No password: locks only, no automatic unlock</value></data>
   <data name="Bond_ByAddressSuffix" xml:space="preserve"><value> · by MAC address</value></data>
+  <data name="Field_SuddenReference" xml:space="preserve"><value>Sudden-change reference readings</value></data>
+  <data name="Field_SuddenDelta" xml:space="preserve"><value>Sudden-change jump (dB)</value></data>
+  <data name="Field_SuddenDropSeconds" xml:space="preserve"><value>Sudden-drop check (s)</value></data>
+  <data name="Field_SuddenRiseSeconds" xml:space="preserve"><value>Sudden-rise check (s)</value></data>
+  <data name="Validation_SuddenReferenceRange" xml:space="preserve"><value>{0} must be between 5 and 50</value></data>
+  <data name="Validation_SuddenDeltaRange" xml:space="preserve"><value>{0} must be 0 (off) or between 5 and 60</value></data>
+  <data name="Validation_SuddenDropSecondsRange" xml:space="preserve"><value>{0} must be between 5 and 300</value></data>
+  <data name="Validation_SuddenRiseSecondsRange" xml:space="preserve"><value>{0} must be between 1 and 60</value></data>
+  <data name="Batch_OfSeconds" xml:space="preserve"><value>{0} s</value></data>
+  <data name="Tray_SuddenDrop" xml:space="preserve"><value>Sudden-drop check {0}/{1} s</value></data>
 </root>

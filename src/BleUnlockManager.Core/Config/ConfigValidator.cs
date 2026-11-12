@@ -171,6 +171,27 @@ public static class ConfigValidator
             errors.Add(new ConfigError(ConfigFields.ProximityNoSignalDepartureSeconds,
                 string.Format(CoreStrings.Validation_NoSignalRange, ConfigFields.ProximityNoSignalDepartureSeconds)));
         }
+        // 突变保护（与服务端 OptionsValidator 一致）
+        if (p.SuddenChangeReferenceCount is < 5 or > 50)
+        {
+            errors.Add(new ConfigError(ConfigFields.ProximitySuddenChangeReferenceCount,
+                string.Format(CoreStrings.Validation_SuddenReferenceRange, ConfigFields.ProximitySuddenChangeReferenceCount)));
+        }
+        if (double.IsNaN(p.SuddenChangeDeltaDb) || p.SuddenChangeDeltaDb is not 0 and (< 5 or > 60))
+        {
+            errors.Add(new ConfigError(ConfigFields.ProximitySuddenChangeDeltaDb,
+                string.Format(CoreStrings.Validation_SuddenDeltaRange, ConfigFields.ProximitySuddenChangeDeltaDb)));
+        }
+        if (double.IsNaN(p.SuddenDropConfirmSeconds) || p.SuddenDropConfirmSeconds is < 5 or > 300)
+        {
+            errors.Add(new ConfigError(ConfigFields.ProximitySuddenDropConfirmSeconds,
+                string.Format(CoreStrings.Validation_SuddenDropSecondsRange, ConfigFields.ProximitySuddenDropConfirmSeconds)));
+        }
+        if (double.IsNaN(p.SuddenRiseConfirmSeconds) || p.SuddenRiseConfirmSeconds is < 1 or > 60)
+        {
+            errors.Add(new ConfigError(ConfigFields.ProximitySuddenRiseConfirmSeconds,
+                string.Format(CoreStrings.Validation_SuddenRiseSecondsRange, ConfigFields.ProximitySuddenRiseConfirmSeconds)));
+        }
 
         var n = config.Notification;
         // 上限与服务端 HelperProtocol 一致：辅助进程会拒绝超限值，静默拒绝会导致锁屏而无提示

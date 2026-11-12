@@ -300,7 +300,9 @@ if (-not [System.Diagnostics.EventLog]::SourceExists('BleUnlock')) {
 
 # ── 6. 创建并启动服务 ───────────────────────────────────────────────────────
 $exePath = Join-Path $InstallDir 'BleUnlockService.exe'
-sc.exe create $serviceName binPath= "`"$exePath`"" start= delayed-auto DisplayName= 'BleUnlock Proximity Unlock' | Out-Null
+# start= auto (no delayed-auto): con inicio retrasado el servicio tardaba 1–2 min tras iniciar sesión y el gestor
+# se quedaba esperándolo (2026-11-10)
+sc.exe create $serviceName binPath= "`"$exePath`"" start= auto DisplayName= 'BleUnlock Proximity Unlock' | Out-Null
 Assert-ScOk (T 'ActCreateService')
 sc.exe description $serviceName 'Locks and unlocks Windows based on the Bluetooth signal of your phone.' | Out-Null
 Assert-ScOk (T 'ActSetDescription')

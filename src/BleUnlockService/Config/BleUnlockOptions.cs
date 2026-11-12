@@ -55,6 +55,15 @@ public sealed class ProximityOptions
     // 完全收不到目标设备这么多秒，就把静默当作离开（设备关机/被拿走）。0 = 关闭这条兜底。
     // 2026-11-04 由固定 60 s 改为可配、默认 180 s：手表放着不动会停播一两分钟，人却还在
     public double NoSignalDepartureSeconds { get; set; } = 180;
+
+    // 突变保护（2026-11-10）：触发值与之前最近 120 秒内、最多 SuddenChangeReferenceCount 个真实读数的平均值
+    // 相差 SuddenChangeDeltaDb 以上 = 突变。突降（已解锁时）不弹提示，SuddenDropConfirmSeconds 秒内至少 3 个
+    // 真实读数且全部低于锁定阈值就直接锁屏；突升（锁屏后）要 SuddenRiseConfirmSeconds 秒内至少 2 个真实读数
+    // 全部高于解锁阈值才解锁。任一真实读数回到另一侧即取消。落差 0 = 关闭
+    public int SuddenChangeReferenceCount { get; set; } = 25;
+    public double SuddenChangeDeltaDb { get; set; } = 20;
+    public double SuddenDropConfirmSeconds { get; set; } = 30;
+    public double SuddenRiseConfirmSeconds { get; set; } = 5;
 }
 
 public sealed class NotificationOptions

@@ -18,7 +18,11 @@ public sealed record RuleValues(
     double UnlockTimeoutSeconds,
     double RejectSnoozeSeconds,
     double SnoozeMinutes,
-    double NoSignalSeconds = 180)
+    double NoSignalSeconds = 180,
+    int SuddenReference = 25,
+    double SuddenDelta = 20,
+    double SuddenDropSeconds = 30,
+    double SuddenRiseSeconds = 5)
 {
     /// <summary>Los mismos valores que una configuración recién creada (y que el servicio).</summary>
     public static RuleValues Defaults { get; } = FromConfig(new BleUnlockConfig());
@@ -34,7 +38,11 @@ public sealed record RuleValues(
         config.Proximity.UnlockPendingTimeoutSeconds,
         config.Notification.RejectSnoozeSeconds,
         config.Notification.SnoozeMinutes,
-        config.Proximity.NoSignalDepartureSeconds);
+        config.Proximity.NoSignalDepartureSeconds,
+        config.Proximity.SuddenChangeReferenceCount,
+        config.Proximity.SuddenChangeDeltaDb,
+        config.Proximity.SuddenDropConfirmSeconds,
+        config.Proximity.SuddenRiseConfirmSeconds);
 
     /// <summary>
     /// Lee la configuración del servicio. Si no existe o no se puede leer, devuelve los valores

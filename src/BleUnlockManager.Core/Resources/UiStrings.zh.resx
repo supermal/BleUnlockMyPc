@@ -406,7 +406,7 @@
   <data name="Rules_P_unlock_Effect" xml:space="preserve"><value>锁屏后，读数高于它才算「靠近、可以解锁」</value></data>
   <data name="Rules_P_unlock_Name" xml:space="preserve"><value>解锁阈值</value></data>
   <data name="Rules_P_unlock_Value" xml:space="preserve"><value>{unlock} dBm</value></data>
-  <data name="Rules_S0_Lead" xml:space="preserve"><value>下面是服务当前生效的值。和默认值不同的会标出默认值。</value></data>
+  <data name="Rules_S0_Lead" xml:space="preserve"><value>下面是服务当前生效的值。和默认值不同的会标出默认值。{guardnote}</value></data>
   <data name="Rules_S0_Title" xml:space="preserve"><value>默认参数</value></data>
   <data name="Rules_S1_I1_K" xml:space="preserve"><value>目标设备：</value></data>
   <data name="Rules_S1_I1_V" xml:space="preserve"><value>设备地址和配置里的身份地址一致，或者能用 IRK 解析出它的随机地址。</value></data>
@@ -678,4 +678,21 @@
   <data name="Settings_Copied" xml:space="preserve"><value>已复制</value></data>
   <data name="Settings_ReportIssue" xml:space="preserve"><value>报告问题或提出建议</value></data>
   <data name="Settings_ProjectHome" xml:space="preserve"><value>查看项目主页</value></data>
+  <data name="Batch_SuddenDrop" xml:space="preserve"><value>突降确认</value></data>
+  <data name="Batch_SuddenRise" xml:space="preserve"><value>突升确认</value></data>
+  <data name="Config_SuddenGuard" xml:space="preserve"><value>突变保护</value></data>
+  <data name="Config_SuddenGuardHint" xml:space="preserve"><value>信号一下子跳变时先不相信：已解锁时突然拉低不弹提示，持续够久才直接锁屏；锁屏后突然拉高不马上解锁，稳定够久才解锁。慢慢变化时照常判定。</value></data>
+  <data name="Config_SuddenReference" xml:space="preserve"><value>参考读数个数</value></data>
+  <data name="Config_SuddenReferenceHint" xml:space="preserve"><value>和触发前最近 120 秒内、最多这么多个手表真实发来的读数的平均值比较（不含补点）。不足 5 个时不做突变判断。范围 5–50。</value></data>
+  <data name="Config_SuddenDelta" xml:space="preserve"><value>突变落差</value></data>
+  <data name="Config_SuddenDeltaHint" xml:space="preserve"><value>触发值和参考平均值相差这么多以上，算「一下子」跳变。0 = 关闭突变保护。范围 0 或 5–60。</value></data>
+  <data name="Config_SuddenDropSeconds" xml:space="preserve"><value>突降确认时长</value></data>
+  <data name="Config_SuddenDropSecondsHint" xml:space="preserve"><value>突降后不弹提示：这么久之内至少 3 个真实读数、全部低于锁定阈值，就直接锁屏；有一个回到阈值以上就取消。范围 5–300 秒。</value></data>
+  <data name="Config_SuddenRiseSeconds" xml:space="preserve"><value>突升确认时长</value></data>
+  <data name="Config_SuddenRiseSecondsHint" xml:space="preserve"><value>锁屏后突升：这么久之内至少 2 个真实读数、全部高于解锁阈值，才自动解锁；有一个回落或读数不够就不解锁。范围 1–60 秒。</value></data>
+  <data name="Rules_GuardNote" xml:space="preserve"><value>突变保护：触发值与之前最多 {0} 个真实读数的平均值相差 ≥ {1} dB 时，突降先观察 {2} 秒（至少 3 个真实低读数全部低于锁定阈值才直接锁屏，不弹提示），突升先观察 {3} 秒（至少 2 个真实高读数全部高于解锁阈值才解锁）；下文的个数规则只用于慢慢变化的信号。</value></data>
+  <data name="Rules_GuardOff" xml:space="preserve"><value>突变保护已关闭。</value></data>
+  <data name="AutoStart_DoneTitle" xml:space="preserve"><value>已自动启动服务</value></data>
+  <data name="AutoStart_DoneMessage" xml:space="preserve"><value>打开管理器时发现 BleUnlock 服务没有运行，已经替你启动。如果你在这里点过「停止服务」，就不会自动启动，直到你再点「启动服务」。</value></data>
+  <data name="AutoStart_FailedTitle" xml:space="preserve"><value>自动启动服务失败</value></data>
 </root>

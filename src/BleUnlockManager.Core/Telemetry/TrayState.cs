@@ -59,7 +59,7 @@ public static class TrayStates
         }
 
         // Un lote de llegada (unlock) no es una salida: el usuario está volviendo
-        var leaving = stateName == "PendingLock" || batch is { Kind: "leave" or "lockConfirm" };
+        var leaving = stateName == "PendingLock" || batch is { Kind: "leave" or "lockConfirm" or "suddenDrop" };
         if (leaving)
         {
             return TrayState.Leaving;
@@ -100,6 +100,7 @@ public static class TrayStates
     private static string LeavingTitle(SnapshotBatch? batch) => batch switch
     {
         { Kind: "lockConfirm" } b => string.Format(CoreStrings.Tray_LockConfirm, b.N, b.Of),
+        { Kind: "suddenDrop" } b => string.Format(CoreStrings.Tray_SuddenDrop, b.N, b.Of),
         { Kind: "leave" } b => string.Format(CoreStrings.Tray_LeaveConfirm, b.N, b.Of),
         _ => TelemetryFormat.StateName("PendingLock"),
     };

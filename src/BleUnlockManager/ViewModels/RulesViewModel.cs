@@ -5,6 +5,7 @@ using BleUnlockManager.Core.Config;
 using BleUnlockManager.Core.Localization;
 using BleUnlockManager.Core.Resources;
 using BleUnlockManager.Core.Rules;
+using BleUnlockManager.Core.Telemetry;
 using BleUnlockManager.Services;
 
 namespace BleUnlockManager.ViewModels;
@@ -195,7 +196,7 @@ public sealed partial class RulesViewModel : ObservableObject
             node.IsCurrent = current;
             node.HasProgress = current && batch is { Of: > 0 };
             node.Progress = node.HasProgress ? Math.Clamp((double)batch!.N / batch.Of, 0, 1) : 0;
-            node.ProgressText = node.HasProgress ? $"{BatchLabel(batch!.Kind)} {batch.N}/{batch.Of}" : "";
+            node.ProgressText = node.HasProgress ? $"{BatchLabel(batch!.Kind)} {BatchText.Progress(batch)}" : "";
         }
 
         if (state is null)
@@ -206,7 +207,7 @@ public sealed partial class RulesViewModel : ObservableObject
         }
 
         var text = UiStrings.Rules_LiveOn.Replace("{state}", TelemetryFormat.StateName(state));
-        LiveText = batch is { Of: > 0 } ? $"{text} · {BatchLabel(batch.Kind)} {batch.N}/{batch.Of}" : text;
+        LiveText = batch is { Of: > 0 } ? $"{text} · {BatchLabel(batch.Kind)} {BatchText.Progress(batch)}" : text;
         LiveTone = "info";
     }
 
@@ -214,6 +215,8 @@ public sealed partial class RulesViewModel : ObservableObject
     {
         "lockConfirm" => UiStrings.Batch_LockConfirm,
         "unlock" => UiStrings.Batch_Unlock,
+        "suddenDrop" => UiStrings.Batch_SuddenDrop,
+        "suddenRise" => UiStrings.Batch_SuddenRise,
         _ => UiStrings.Batch_Leave,
     };
 }

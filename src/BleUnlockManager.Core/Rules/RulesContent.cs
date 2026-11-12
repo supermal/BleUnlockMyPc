@@ -110,6 +110,11 @@ public static partial class RulesContent
             ["nosignal"] = v.NoSignalSeconds > 0
                 ? string.Format(CultureInfo.CurrentCulture, UiStrings.Rules_NoSignalSeconds, RuleValues.Number(v.NoSignalSeconds))
                 : UiStrings.Rules_NoSignalOff,
+            // Protección contra cambios bruscos: una frase con los valores vigentes, o «desactivada»
+            ["guardnote"] = v.SuddenDelta > 0
+                ? string.Format(CultureInfo.CurrentCulture, UiStrings.Rules_GuardNote, RuleValues.Number(v.SuddenReference),
+                    RuleValues.Number(v.SuddenDelta), RuleValues.Number(v.SuddenDropSeconds), RuleValues.Number(v.SuddenRiseSeconds))
+                : UiStrings.Rules_GuardOff,
             ["trig"] = RuleValues.Number(ex.Trigger),
             ["back"] = RuleValues.Number(ex.Back),
             ["w1"] = RuleValues.Number(ex.Withdraw[0]),

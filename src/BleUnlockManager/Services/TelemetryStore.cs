@@ -80,7 +80,7 @@ public sealed class TelemetryStore : ObservableObject, IDisposable
     /// Salida en curso según la señal (lote de salida o aviso mostrado), sin depender del SCM:
     /// la consulta al servicio llega cada 3 s y puede ir con retraso.
     /// </summary>
-    public bool IsLeaving => StateName == "PendingLock" || Batch is { Kind: "leave" or "lockConfirm" };
+    public bool IsLeaving => StateName == "PendingLock" || Batch is { Kind: "leave" or "lockConfirm" or "suddenDrop" };
 
     public string StateSinceText => Snapshot is { } s ? TelemetryFormat.Since(s.State?.SinceMs, s.TsMs) : "—";
 

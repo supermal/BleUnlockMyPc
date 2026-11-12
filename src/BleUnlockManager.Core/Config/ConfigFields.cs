@@ -19,6 +19,10 @@ public static class ConfigFields
     public const string ProximityStartupGraceSeconds = "Proximity.StartupGraceSeconds";
     public const string ProximityUnlockPendingTimeoutSeconds = "Proximity.UnlockPendingTimeoutSeconds";
     public const string ProximityNoSignalDepartureSeconds = "Proximity.NoSignalDepartureSeconds";
+    public const string ProximitySuddenChangeReferenceCount = "Proximity.SuddenChangeReferenceCount";
+    public const string ProximitySuddenChangeDeltaDb = "Proximity.SuddenChangeDeltaDb";
+    public const string ProximitySuddenDropConfirmSeconds = "Proximity.SuddenDropConfirmSeconds";
+    public const string ProximitySuddenRiseConfirmSeconds = "Proximity.SuddenRiseConfirmSeconds";
     public const string NotificationMode = "Notification.Mode";
     public const string NotificationRejectSnoozeSeconds = "Notification.RejectSnoozeSeconds";
     public const string NotificationSnoozeMinutes = "Notification.SnoozeMinutes";

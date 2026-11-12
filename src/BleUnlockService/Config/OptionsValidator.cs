@@ -84,6 +84,14 @@ public static class OptionsValidator
         // 0 = 关闭；否则至少 30 s：太短会把设备的省电停播当成离开
         if (p.NoSignalDepartureSeconds is not 0 and (< 30 or > 3600))
             errors.Add(ServiceStrings.Validation_NoSignalRange);
+        if (p.SuddenChangeReferenceCount is < 5 or > 50)
+            errors.Add(ServiceStrings.Validation_SuddenReferenceRange);
+        if (double.IsNaN(p.SuddenChangeDeltaDb) || p.SuddenChangeDeltaDb is not 0 and (< 5 or > 60))
+            errors.Add(ServiceStrings.Validation_SuddenDeltaRange);
+        if (double.IsNaN(p.SuddenDropConfirmSeconds) || p.SuddenDropConfirmSeconds is < 5 or > 300)
+            errors.Add(ServiceStrings.Validation_SuddenDropSecondsRange);
+        if (double.IsNaN(p.SuddenRiseConfirmSeconds) || p.SuddenRiseConfirmSeconds is < 1 or > 60)
+            errors.Add(ServiceStrings.Validation_SuddenRiseSecondsRange);
 
         var n = o.Notification;
         // El maximo vive en HelperProtocol: el ayudante rechaza lo que lo supere,

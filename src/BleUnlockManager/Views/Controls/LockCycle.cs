@@ -5,6 +5,7 @@ using System.Windows.Shapes;
 using BleUnlockManager.Core.Localization;
 using BleUnlockManager.Core.Management;
 using BleUnlockManager.Core.Resources;
+using BleUnlockManager.Core.Telemetry;
 
 namespace BleUnlockManager.Views.Controls;
 
@@ -169,7 +170,7 @@ public sealed class LockCycle : ContentControl
 
         var text = new TextBlock
         {
-            Text = $"{KindLabel(batch.Kind)} {batch.N}/{batch.Of}",
+            Text = $"{KindLabel(batch.Kind)} {BatchText.Progress(batch)}",
             Margin = new Thickness(0, 4, 0, 0),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -185,7 +186,7 @@ public sealed class LockCycle : ContentControl
     // que el hueco reservado alcance aunque el texto pase a dos líneas
     private static SnapshotBatch LongestBatch()
     {
-        var kind = new[] { "leave", "lockConfirm", "unlock" }.MaxBy(k => KindLabel(k).Length)!;
+        var kind = new[] { "leave", "lockConfirm", "unlock", "suddenDrop", "suddenRise" }.MaxBy(k => KindLabel(k).Length)!;
         return new SnapshotBatch(kind, MaxSegments, MaxSegments);
     }
 
@@ -193,6 +194,8 @@ public sealed class LockCycle : ContentControl
     {
         "lockConfirm" => UiStrings.Batch_LockConfirm,
         "unlock" => UiStrings.Batch_Unlock,
+        "suddenDrop" => UiStrings.Batch_SuddenDrop,
+        "suddenRise" => UiStrings.Batch_SuddenRise,
         _ => UiStrings.Batch_Leave,
     };
 }

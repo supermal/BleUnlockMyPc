@@ -39,7 +39,8 @@ public sealed record AuthResult(bool Success, uint NtStatus, uint Substatus = 0)
 
 // Lote en curso: Leave = confirmar salida (antes del aviso o con la pantalla ya bloqueada),
 // LockConfirm = confirmar el bloqueo tras el aviso, Unlock = confirmar la llegada
-public enum BatchKind { Leave, LockConfirm, Unlock }
+// SuddenDrop / SuddenRise = observación tras un cambio brusco (progreso en segundos)
+public enum BatchKind { Leave, LockConfirm, Unlock, SuddenDrop, SuddenRise }
 
 public sealed record BatchProgress(BatchKind Kind, int Count, int Target);
 
@@ -63,6 +64,13 @@ public sealed class ProximityStateMachine
     internal const int FadedReadingsBeforeSilence = 2;
     internal const double SilentValueDbm = -127;
 
+    // 突变保护（2026-11-10）：参考读数只取最近 120 秒内的真实读数，至少 5 个才做判断；
+    // 突降观察要至少 3 个真实低读数，突升观察要至少 2 个真实高读数
+    internal static readonly TimeSpan SuddenReferenceWindow = TimeSpan.FromSeconds(120);
+    internal const int SuddenMinReference = 5;
+    internal const int SuddenDropMinReal = 3;
+    internal const int SuddenRiseMinReal = 2;
+
     private readonly TimeProvider _time;
     private DateTimeOffset _graceUntil;
     private DateTimeOffset _snoozeUntil;
@@ -84,6 +92,16 @@ public sealed class ProximityStateMachine
     private short? _lastRealRssi;           // 最后一条真实读数（静默补点门槛的依据）
     private int _weakStreak;                // 连续低于锁定阈值的真实读数个数（遇到不低于阈值的即清零）
     private DateTimeOffset _lastRealAt;     // 上一条真实读数的时间（超长兜底计时；状态转换不重置）
+
+    // —— 突变保护 ——
+    private bool _dropWatch;                // 已解锁时的突降观察：期间不弹提示
+    private DateTimeOffset _dropWatchStart;
+    private int _dropWatchReal;             // 观察期内的真实低读数（含触发）
+    private bool _riseWatch;                // 锁屏后的突升观察：期间不解锁
+    private DateTimeOffset _riseWatchStart;
+    private int _riseWatchReal;             // 观察期内的真实高读数（含触发）
+    private DateTimeOffset _lastTrueRealAt; // 最后一条真实读数（不含补点）的时间：补点触发时，参考读数取它之前的
+    private readonly List<string> _notes = [];
 
     // —— 解锁侧批次（PendingLock 的信号恢复判定 / LockedArmed） ——
     private bool _unlockBatchActive;
@@ -118,6 +136,8 @@ public sealed class ProximityStateMachine
     // Progreso del lote actual (lectura aproximada, solo para observar: resumen y telemetría)
     public BatchProgress? Progress => State switch
     {
+        ProximityState.Unlocked when _dropWatch => WatchProgress(BatchKind.SuddenDrop, _dropWatchStart, Proximity.SuddenDropConfirmSeconds),
+        ProximityState.LockedArmed when _riseWatch => WatchProgress(BatchKind.SuddenRise, _riseWatchStart, Proximity.SuddenRiseConfirmSeconds),
         ProximityState.PendingLock when _lockBatchActive =>
             new BatchProgress(BatchKind.LockConfirm, _lockBatchCount, Math.Max(1, Proximity.LockConfirmSampleCount)),
         ProximityState.LockedArmed when _unlockBatchActive =>
@@ -127,9 +147,27 @@ public sealed class ProximityStateMachine
         _ => null
     };
 
+    private BatchProgress WatchProgress(BatchKind kind, DateTimeOffset start, double seconds)
+    {
+        var target = (int)Math.Ceiling(Math.Max(1, seconds));
+        var elapsed = (int)Math.Floor((_time.GetUtcNow() - start).TotalSeconds);
+        return new BatchProgress(kind, Math.Clamp(elapsed, 0, target), target);
+    }
+
+    /// <summary>Avisos para el registro que no son transiciones (inicio y fin de la observación de un cambio brusco).</summary>
+    public IReadOnlyList<string> DrainNotes()
+    {
+        if (_notes.Count == 0) return [];
+        var notes = _notes.ToArray();
+        _notes.Clear();
+        return notes;
+    }
+
     // 摘要日志用：当前批次的收集进度
     public string BatchProgressText => Progress switch
     {
+        { Kind: BatchKind.SuddenDrop } p => string.Format(ServiceStrings.Batch_SuddenDrop, p.Count, p.Target),
+        { Kind: BatchKind.SuddenRise } p => string.Format(ServiceStrings.Batch_SuddenRise, p.Count, p.Target),
         { Kind: BatchKind.LockConfirm } p => string.Format(ServiceStrings.Batch_LockConfirm, p.Count, p.Target),
         { Kind: BatchKind.Unlock } p => string.Format(ServiceStrings.Batch_Unlock, p.Count, p.Target),
         { } p => string.Format(ServiceStrings.Batch_Leave, p.Count, p.Target),
@@ -160,9 +198,17 @@ public sealed class ProximityStateMachine
         // recien instalado, "sin muestras" significa "sin configurar", no "el usuario se fue"
         if (!history.HasEverSeenDevice) return null;
 
-        if (LockBatchConfirmed(history, now, Proximity.LockPromptSampleCount, out var reason))
+        if (LockBatchConfirmed(history, now, Proximity.LockPromptSampleCount, out var reason, watchDrops: true, out var bySuddenDrop))
+        {
+            if (bySuddenDrop)
+            {
+                _screenLocked = true;
+                return Transition(ProximityState.LockedWaitingDeparture, ProximityAction.LockScreen, reason);
+            }
+
             return Transition(ProximityState.PendingLock, ProximityAction.ShowLockPrompt,
                 string.Format(ServiceStrings.Reason_DepartureDetected, reason));
+        }
 
         return null;
     }
@@ -216,7 +262,7 @@ public sealed class ProximityStateMachine
 
     private StateChange? EvaluateArmed(RssiHistory history, DateTimeOffset now)
     {
-        if (!UnlockBatchNear(history, Proximity.UnlockSampleCount, Proximity.UnlockThresholdDbm, enforceGap: true, out var reason)) return null;
+        if (!UnlockBatchNear(history, Proximity.UnlockSampleCount, Proximity.UnlockThresholdDbm, enforceGap: true, out var reason, watchRises: true)) return null;
 
         _unlockSentAt = now;
         return Transition(ProximityState.UnlockPending, ProximityAction.SendCredentials,
@@ -421,14 +467,21 @@ public sealed class ProximityStateMachine
     // 锁定侧：消费新读数（第一个低于阈值的只做触发、不计入）；静默超过宽限后
     // 每 1 秒注入一个极低值（静默本身即触发，注入值计入）。触发后收满 size 个
     // 且每一个都低于阈值 → true；任一条不达标整批作废，等下一个触发重来
-    private bool LockBatchConfirmed(RssiHistory history, DateTimeOffset now, int target, out string reason)
+    private bool LockBatchConfirmed(RssiHistory history, DateTimeOffset now, int target, out string reason) =>
+        LockBatchConfirmed(history, now, target, out reason, watchDrops: false, out _);
+
+    // watchDrops: solo con la pantalla desbloqueada (sin Win+L): una caída brusca abre la observación en lugar
+    // del lote, y bySuddenDrop = true si lo que confirma es esa observación (bloqueo directo, sin aviso)
+    private bool LockBatchConfirmed(RssiHistory history, DateTimeOffset now, int target, out string reason,
+        bool watchDrops, out bool bySuddenDrop)
     {
         reason = "";
+        bySuddenDrop = false;
         // Copia local: la recarga en caliente puede sustituir Proximity en mitad de la evaluacion
         var threshold = Proximity.LockThresholdDbm;
         var size = Math.Max(1, target);
 
-        foreach (var (at, rssi) in history.Since(_lockWatermark))
+        foreach (var (at, rssi, real) in history.Since(_lockWatermark))
         {
             _lockWatermark = at;
             _lockSilenceFrom = at;      // 有读数：静默计时重新开始
@@ -436,10 +489,39 @@ public sealed class ProximityStateMachine
             _lastRealRssi = rssi;       // 静默补点门槛与兜底都依据「最后一条真实读数」
             _lastRealAt = at;
             _weakStreak = rssi < threshold ? _weakStreak + 1 : 0;
+            // Una copia repite la última lectura real: sus referencias son las anteriores a esa lectura
+            var referenceCutoff = real ? at : _lastTrueRealAt;
+            if (real) _lastTrueRealAt = at;
+
+            // 突降观察中：补点不算数；任一真实读数回到阈值以上即取消，其余真实低读数计数
+            if (_dropWatch)
+            {
+                if (!real) continue;
+                if (rssi >= threshold)
+                {
+                    _dropWatch = false;
+                    ResetLockBatch();
+                    _notes.Add(string.Format(ServiceStrings.Note_SuddenDropCancelled, rssi));
+                    continue;
+                }
+
+                _dropWatchReal++;
+                continue;
+            }
 
             if (!_lockBatchActive)
             {
                 if (rssi >= threshold) continue;
+                if (watchDrops && IsSudden(history, referenceCutoff, rssi, drop: true, out var count, out var average))
+                {
+                    _dropWatch = true;
+                    _dropWatchStart = at;
+                    _dropWatchReal = 1;
+                    _notes.Add(string.Format(ServiceStrings.Note_SuddenDrop, rssi, count, average, average - rssi,
+                        Proximity.SuddenDropConfirmSeconds));
+                    continue;
+                }
+
                 StartLockBatch();       // 触发读数不计入
                 continue;
             }
@@ -455,6 +537,30 @@ public sealed class ProximityStateMachine
             {
                 reason = DescribeLockBatch(size, threshold);
                 return true;
+            }
+        }
+
+        if (_dropWatch)
+        {
+            var window = TimeSpan.FromSeconds(Math.Max(1, Proximity.SuddenDropConfirmSeconds));
+            if (now - _dropWatchStart >= window && _dropWatchReal >= SuddenDropMinReal)
+            {
+                _dropWatch = false;
+                bySuddenDrop = true;
+                reason = string.Format(ServiceStrings.Reason_SuddenDropConfirmed, window.TotalSeconds, _dropWatchReal, threshold);
+                return true;
+            }
+
+            // Sin lecturas reales durante el respaldo sin señal: la observación ya no decide, decide el silencio
+            var noSignal = Proximity.NoSignalDepartureSeconds;
+            if (noSignal > 0 && now - _lastTrueRealAt >= TimeSpan.FromSeconds(noSignal))
+            {
+                _dropWatch = false;
+                _notes.Add(string.Format(ServiceStrings.Note_SuddenDropNoSignal, noSignal));
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -494,14 +600,40 @@ public sealed class ProximityStateMachine
     // 收满 size 个才算靠近。间隙超过静默宽限的旧值作废：宁可重新数，不拿陈旧证据解锁。
     // threshold：LockedArmed 用解锁阈值；PendingLock 撤回提示用锁定阈值。
     // enforceGap：只有解锁才限制相邻读数间隔；撤回提示不限制（见 EvaluatePendingLock）
-    private bool UnlockBatchNear(RssiHistory history, int target, double threshold, bool enforceGap, out string reason)
+    // watchRises: solo para desbloquear (LockedArmed): una subida brusca abre una observación en lugar del lote
+    private bool UnlockBatchNear(RssiHistory history, int target, double threshold, bool enforceGap, out string reason,
+        bool watchRises = false)
     {
         reason = "";
         var size = Math.Max(1, target);
 
-        foreach (var (at, rssi) in history.Since(_unlockWatermark))
+        foreach (var (at, rssi, real) in history.Since(_unlockWatermark))
         {
             _unlockWatermark = at;
+            var referenceCutoff = real ? at : _lastTrueRealAt;
+            if (real) _lastTrueRealAt = at;
+
+            // 突升观察中：补点不算数；任一真实读数回落到阈值以下即取消，其余真实高读数计数。
+            // 只数窗口之内的：窗口过后才来的读数先结算观察（不够就结束），再按普通规则处理
+            if (_riseWatch && at - _riseWatchStart > RiseWindow)
+            {
+                if (FinishRiseWatch(threshold, ref reason)) return true;
+            }
+
+            if (_riseWatch)
+            {
+                if (!real) continue;
+                if (rssi <= threshold)
+                {
+                    _riseWatch = false;
+                    ResetUnlockBatch();
+                    _notes.Add(string.Format(ServiceStrings.Note_SuddenRiseCancelled, rssi));
+                    continue;
+                }
+
+                _riseWatchReal++;
+                continue;
+            }
 
             if (enforceGap && _unlockBatchActive && at - _unlockLastValueAt > SilenceGrace)
                 ResetUnlockBatch();
@@ -509,6 +641,16 @@ public sealed class ProximityStateMachine
             if (!_unlockBatchActive)
             {
                 if (rssi <= threshold) continue;
+                if (watchRises && IsSudden(history, referenceCutoff, rssi, drop: false, out var count, out var average))
+                {
+                    _riseWatch = true;
+                    _riseWatchStart = at;
+                    _riseWatchReal = 1;
+                    _notes.Add(string.Format(ServiceStrings.Note_SuddenRise, rssi, count, average, rssi - average,
+                        Proximity.SuddenRiseConfirmSeconds));
+                    continue;
+                }
+
                 _unlockBatchActive = true;
                 _unlockBatchCount = 0;
                 _unlockLastValueAt = at;   // 触发读数不计入
@@ -530,7 +672,45 @@ public sealed class ProximityStateMachine
             }
         }
 
+        if (_riseWatch && _time.GetUtcNow() - _riseWatchStart >= RiseWindow)
+            return FinishRiseWatch(threshold, ref reason);
+
         return false;
+    }
+
+    private TimeSpan RiseWindow => TimeSpan.FromSeconds(Math.Max(1, Proximity.SuddenRiseConfirmSeconds));
+
+    // Fin de la ventana de subida: con bastantes lecturas reales altas dentro de ella se desbloquea; si no,
+    // la subida no se confirmó y se vuelve al lote normal (la siguiente lectura alta es un disparo nuevo)
+    private bool FinishRiseWatch(double threshold, ref string reason)
+    {
+        _riseWatch = false;
+        ResetUnlockBatch();
+        if (_riseWatchReal >= SuddenRiseMinReal)
+        {
+            reason = string.Format(ServiceStrings.Reason_SuddenRiseConfirmed, RiseWindow.TotalSeconds, _riseWatchReal, threshold);
+            return true;
+        }
+
+        _notes.Add(string.Format(ServiceStrings.Note_SuddenRiseTooFew, RiseWindow.TotalSeconds, _riseWatchReal, SuddenRiseMinReal));
+        return false;
+    }
+
+    // 突变判定：value 与 cutoff 之前最近 120 秒内、最多 N 个真实读数的平均值相差达到落差。
+    // 参考读数不足 5 个（刚开机、刚回到范围）不判定，照常走批次。落差 0 = 关闭
+    private bool IsSudden(RssiHistory history, DateTimeOffset cutoff, short value, bool drop, out int count, out double average)
+    {
+        count = 0;
+        average = 0;
+        var delta = Proximity.SuddenChangeDeltaDb;
+        if (!(delta > 0)) return false;
+
+        var references = history.RealBefore(cutoff, SuddenReferenceWindow, Math.Clamp(Proximity.SuddenChangeReferenceCount, 1, 50));
+        count = references.Count;
+        if (count < SuddenMinReference) return false;
+
+        average = references.Average(r => (double)r);
+        return drop ? average - value >= delta : value - average >= delta;
     }
 
     private void StartLockBatch()
@@ -571,6 +751,9 @@ public sealed class ProximityStateMachine
 
         ResetUnlockBatch();
         _unlockWatermark = now;
+
+        _dropWatch = false;
+        _riseWatch = false;
 
         if (state == ProximityState.PendingLock)
             _lockBatchActive = true;

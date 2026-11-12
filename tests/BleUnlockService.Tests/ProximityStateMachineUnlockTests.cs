@@ -333,6 +333,8 @@ public class ProximityStateMachineUnlockTests
     public void Un_lote_de_aproximacion_que_no_confirma_se_descarta()
     {
         var (sm, time, history) = Build();
+        // Aquí se prueba el lote; la subida brusca (−90 → −40) tiene sus propias pruebas en SuddenChangeTests
+        sm.Proximity = new ProximityOptions { SuddenChangeDeltaDb = 0 };
         Arm(sm, time, history);
 
         time.Advance(TimeSpan.FromSeconds(5));

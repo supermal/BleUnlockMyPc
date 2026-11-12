@@ -30,16 +30,21 @@ internal sealed class SampleResampler(TimeProvider time)
     /// 到了取样时刻：返回要计入的读数，null = 这次不计入。
     /// holdAllowed = false 时只取真实读数；holdLimit 为零表示重复不设时限。
     /// </summary>
-    public short? Take(bool holdAllowed, TimeSpan holdLimit)
+    public short? Take(bool holdAllowed, TimeSpan holdLimit) => Take(holdAllowed, holdLimit, out _);
+
+    /// <summary>Igual que <see cref="Take(bool, TimeSpan)"/>; <paramref name="real"/> = false si es una copia.</summary>
+    public short? Take(bool holdAllowed, TimeSpan holdLimit, out bool real)
     {
         lock (_lock)
         {
+            real = true;
             if (_pending is { } fresh)
             {
                 _pending = null;
                 return fresh;
             }
 
+            real = false;
             if (!holdAllowed || _last is not { } last) return null;
             if (holdLimit > TimeSpan.Zero && time.GetUtcNow() - _lastRealAt >= holdLimit) return null;
             return last;

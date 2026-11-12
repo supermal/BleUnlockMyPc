@@ -197,4 +197,18 @@
   <data name="Notify_SetupNoDevice" xml:space="preserve"><value>BleUnlock 尚未设置：还没有选择解锁设备。请打开 BleUnlock 管理器完成设置</value></data>
   <data name="Notify_SetupNoCredentials" xml:space="preserve"><value>BleUnlock 还没有 Windows 密码：离开时会自动锁屏，但回来不会自动解锁。请在 BleUnlock 管理器中填写</value></data>
   <data name="Validation_ReloadDropsSetup" xml:space="preserve"><value>配置中的设备或凭据变成了空值，文件可能还没写完或已损坏，因此保留了原配置。如需移除设备，请在管理器中解除配对</value></data>
+  <data name="Validation_SuddenReferenceRange" xml:space="preserve"><value>Proximity.SuddenChangeReferenceCount 必须在 5 到 50 之间</value></data>
+  <data name="Validation_SuddenDeltaRange" xml:space="preserve"><value>Proximity.SuddenChangeDeltaDb 必须是 0（关闭）或 5 到 60 之间</value></data>
+  <data name="Validation_SuddenDropSecondsRange" xml:space="preserve"><value>Proximity.SuddenDropConfirmSeconds 必须在 5 到 300 之间</value></data>
+  <data name="Validation_SuddenRiseSecondsRange" xml:space="preserve"><value>Proximity.SuddenRiseConfirmSeconds 必须在 1 到 60 之间</value></data>
+  <data name="Note_SuddenDrop" xml:space="preserve"><value>信号突降：{0:0} dBm，比之前 {1} 个真实读数的平均值 {2:0.#} dBm 低 {3:0.#} dB。先不弹提示，观察 {4:0} 秒</value></data>
+  <data name="Note_SuddenDropCancelled" xml:space="preserve"><value>突降观察取消：信号回到 {0:0} dBm（≥ 锁定阈值），判定为偶发抖动</value></data>
+  <data name="Note_SuddenDropNoSignal" xml:space="preserve"><value>突降观察结束：已经 {0:0} 秒没有真实读数，改按「无信号判离开」处理</value></data>
+  <data name="Note_SuddenRise" xml:space="preserve"><value>信号突升：{0:0} dBm，比之前 {1} 个真实读数的平均值 {2:0.#} dBm 高 {3:0.#} dB。先不解锁，观察 {4:0} 秒</value></data>
+  <data name="Note_SuddenRiseCancelled" xml:space="preserve"><value>突升观察取消：信号回落到 {0:0} dBm（≤ 解锁阈值），判定为偶发抖动</value></data>
+  <data name="Reason_SuddenDropConfirmed" xml:space="preserve"><value>突降后 {0:0} 秒内 {1} 个真实读数全部 &lt; {2:0} dBm，直接锁屏</value></data>
+  <data name="Reason_SuddenRiseConfirmed" xml:space="preserve"><value>突升后 {0:0} 秒内 {1} 个真实读数全部 &gt; {2:0} dBm</value></data>
+  <data name="Batch_SuddenDrop" xml:space="preserve"><value>突降确认 {0}/{1} 秒</value></data>
+  <data name="Batch_SuddenRise" xml:space="preserve"><value>突升确认 {0}/{1} 秒</value></data>
+  <data name="Note_SuddenRiseTooFew" xml:space="preserve"><value>突升观察结束：{0:0} 秒内只有 {1} 个真实读数（至少要 {2} 个），不解锁，改按普通规则继续</value></data>
 </root>

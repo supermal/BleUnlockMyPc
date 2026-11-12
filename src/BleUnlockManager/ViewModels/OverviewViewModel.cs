@@ -161,6 +161,7 @@ public sealed partial class OverviewViewModel : ObservableObject
 
         if (result.Status == ServiceOperationStatus.Success)
         {
+            ServiceAutoStart.RememberStoppedByUser(AppPaths.ServiceStoppedByUserFile, kind == ServiceOperationKind.Stop);
             ShowBanner(InfoBarSeverity.Success, doneTitle, doneMessage);
         }
         else
@@ -169,6 +170,50 @@ public sealed partial class OverviewViewModel : ObservableObject
         }
 
         await Telemetry.RefreshServiceStatusAsync();
+    }
+
+    /// <summary>
+    /// Al abrir el gestor: si el servicio está parado (lo normal al iniciar sesión, porque el gestor se abre
+    /// antes) y el usuario no lo detuvo a propósito, se arranca y se avisa en la vista general.
+    /// </summary>
+    public async Task AutoStartServiceIfNeededAsync()
+    {
+        try
+        {
+            var status = await _serviceControl.GetStatusAsync();
+            if (!ServiceAutoStart.ShouldStart(status.Kind == ServiceStatusKind.Stopped,
+                    ServiceAutoStart.StoppedByUser(AppPaths.ServiceStoppedByUserFile)))
+            {
+                return;
+            }
+
+            OperationInProgress = true;
+            ServiceOperationResult result;
+            try
+            {
+                result = await _serviceControl.StartAsync();
+            }
+            finally
+            {
+                OperationInProgress = false;
+            }
+
+            if (result.Status == ServiceOperationStatus.Success)
+            {
+                ShowBanner(InfoBarSeverity.Informational, UiStrings.AutoStart_DoneTitle, UiStrings.AutoStart_DoneMessage);
+            }
+            else
+            {
+                ShowBanner(InfoBarSeverity.Error, UiStrings.AutoStart_FailedTitle, DescribeFailure(result));
+            }
+
+            await Telemetry.RefreshServiceStatusAsync();
+        }
+        catch (Exception ex)
+        {
+            // Nunca debe impedir que el gestor arranque: el usuario sigue teniendo el botón «启动服务»
+            ShowBanner(InfoBarSeverity.Error, UiStrings.AutoStart_FailedTitle, ex.Message);
+        }
     }
 
     /// <summary>

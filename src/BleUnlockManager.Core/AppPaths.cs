@@ -34,4 +34,7 @@ public static class AppPaths
     /// Fichero aparte de settings.json para no pisar los ajustes que guarda otra parte del gestor.
     /// </summary>
     public static string LogsSeenFile { get; } = Path.Combine(ManagerAppDataDir, "logs-seen.txt");
+
+    /// <summary>Existe mientras el usuario tenga el servicio detenido a propósito desde el gestor.</summary>
+    public static string ServiceStoppedByUserFile { get; } = Path.Combine(ManagerAppDataDir, "service-stopped-by-user.txt");
 }

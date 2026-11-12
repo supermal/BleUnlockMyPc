@@ -14,7 +14,10 @@ public class WorkerRssiFilterTests
     [InlineData((short)-126, true)]
     [InlineData((short)-100, true)]
     [InlineData((short)-55, true)]
-    [InlineData((short)0, true)]
+    [InlineData((short)-1, true)]
+    // 2026-11-10: 0 dBm o más es un valor erróneo del controlador (se vieron picos de 0 y +18 dBm)
+    [InlineData((short)0, false)]
+    [InlineData((short)18, false)]
     public void Solo_las_lecturas_utilizables_llegan_a_la_maquina(short rssi, bool expected)
         => Assert.Equal(expected, Worker.HasUsableRssi(rssi));
 }

@@ -36,6 +36,10 @@ public sealed class BleUnlockConfig
             StartupGraceSeconds = Proximity.StartupGraceSeconds,
             UnlockPendingTimeoutSeconds = Proximity.UnlockPendingTimeoutSeconds,
             NoSignalDepartureSeconds = Proximity.NoSignalDepartureSeconds,
+            SuddenChangeReferenceCount = Proximity.SuddenChangeReferenceCount,
+            SuddenChangeDeltaDb = Proximity.SuddenChangeDeltaDb,
+            SuddenDropConfirmSeconds = Proximity.SuddenDropConfirmSeconds,
+            SuddenRiseConfirmSeconds = Proximity.SuddenRiseConfirmSeconds,
         },
         Notification = new NotificationConfig
         {
@@ -92,6 +96,12 @@ public sealed class ProximityConfig
 
     /// <summary>完全收不到设备多少秒算离开（设备关机/被拿走）；0 = 关闭。范围 0 或 30–3600（与服务端一致）。</summary>
     public double NoSignalDepartureSeconds { get; set; } = 180;
+
+    /// <summary>突变保护（镜像服务端）：参考读数个数 5–50、落差 0（关闭）或 5–60 dB、突降确认 5–300 秒、突升确认 1–60 秒。</summary>
+    public int SuddenChangeReferenceCount { get; set; } = 25;
+    public double SuddenChangeDeltaDb { get; set; } = 20;
+    public double SuddenDropConfirmSeconds { get; set; } = 30;
+    public double SuddenRiseConfirmSeconds { get; set; } = 5;
 }
 
 public sealed class NotificationConfig

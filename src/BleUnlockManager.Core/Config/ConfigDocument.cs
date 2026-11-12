@@ -113,6 +113,10 @@ public static class ConfigDocument
         Set(proximity, "StartupGraceSeconds", JsonValue.Create(config.Proximity.StartupGraceSeconds));
         Set(proximity, "UnlockPendingTimeoutSeconds", JsonValue.Create(config.Proximity.UnlockPendingTimeoutSeconds));
         Set(proximity, "NoSignalDepartureSeconds", JsonValue.Create(config.Proximity.NoSignalDepartureSeconds));
+        Set(proximity, "SuddenChangeReferenceCount", JsonValue.Create(config.Proximity.SuddenChangeReferenceCount));
+        Set(proximity, "SuddenChangeDeltaDb", JsonValue.Create(config.Proximity.SuddenChangeDeltaDb));
+        Set(proximity, "SuddenDropConfirmSeconds", JsonValue.Create(config.Proximity.SuddenDropConfirmSeconds));
+        Set(proximity, "SuddenRiseConfirmSeconds", JsonValue.Create(config.Proximity.SuddenRiseConfirmSeconds));
 
         Set(notification, "Mode", JsonValue.Create(config.Notification.Mode.ToString()));
         Set(notification, "RejectSnoozeSeconds", JsonValue.Create(config.Notification.RejectSnoozeSeconds));

@@ -40,6 +40,7 @@ public sealed partial class ConfigViewModel : ObservableObject
         nameof(PasswordText), nameof(LockThresholdText), nameof(UnlockThresholdText), nameof(UnlockCountText),
         nameof(LockPromptCountText), nameof(LockConfirmCountText), nameof(SampleIntervalText),
         nameof(StartupGraceText), nameof(UnlockPendingTimeoutText), nameof(NoSignalDepartureText), nameof(NotifierModeIndex),
+        nameof(SuddenReferenceText), nameof(SuddenDeltaText), nameof(SuddenDropSecondsText), nameof(SuddenRiseSecondsText),
         nameof(RejectSnoozeText), nameof(SnoozeText),
     ];
 
@@ -128,6 +129,10 @@ public sealed partial class ConfigViewModel : ObservableObject
     [ObservableProperty] public partial string StartupGraceText { get; set; }
     [ObservableProperty] public partial string UnlockPendingTimeoutText { get; set; }
     [ObservableProperty] public partial string NoSignalDepartureText { get; set; }
+    [ObservableProperty] public partial string SuddenReferenceText { get; set; }
+    [ObservableProperty] public partial string SuddenDeltaText { get; set; }
+    [ObservableProperty] public partial string SuddenDropSecondsText { get; set; }
+    [ObservableProperty] public partial string SuddenRiseSecondsText { get; set; }
     [ObservableProperty] public partial int NotifierModeIndex { get; set; }
     [ObservableProperty] public partial string RejectSnoozeText { get; set; }
     [ObservableProperty] public partial string SnoozeText { get; set; }
@@ -185,6 +190,11 @@ public sealed partial class ConfigViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNoSignalDepartureError))]
     public partial string NoSignalDepartureError { get; set; }
+
+    [ObservableProperty] public partial string SuddenReferenceError { get; set; }
+    [ObservableProperty] public partial string SuddenDeltaError { get; set; }
+    [ObservableProperty] public partial string SuddenDropSecondsError { get; set; }
+    [ObservableProperty] public partial string SuddenRiseSecondsError { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasRejectSnoozeError))]
@@ -247,6 +257,14 @@ public sealed partial class ConfigViewModel : ObservableObject
         StartupGraceText = "";
         UnlockPendingTimeoutText = "";
         NoSignalDepartureText = "";
+        SuddenReferenceText = "";
+        SuddenDeltaText = "";
+        SuddenDropSecondsText = "";
+        SuddenRiseSecondsText = "";
+        SuddenReferenceError = "";
+        SuddenDeltaError = "";
+        SuddenDropSecondsError = "";
+        SuddenRiseSecondsError = "";
         RejectSnoozeText = "";
         SnoozeText = "";
         BondStatusText = "";
@@ -947,6 +965,11 @@ public sealed partial class ConfigViewModel : ObservableObject
             _serviceOperationInProgress = false;
         }
 
+        if (result.Status == ServiceOperationStatus.Success)
+        {
+            ServiceAutoStart.RememberStoppedByUser(AppPaths.ServiceStoppedByUserFile, stopped: false);
+        }
+
         var succeededTitle = action == ConfigBannerAction.StartService ? UiStrings.Op_ServiceStartedTitle : UiStrings.Op_ServiceRestartedTitle;
         var succeededMessage = action == ConfigBannerAction.StartService
             ? UiStrings.Op_StartedWithLatest
@@ -1034,6 +1057,14 @@ public sealed partial class ConfigViewModel : ObservableObject
             p.UnlockPendingTimeoutSeconds = unlockPending;
         if (TryGetNumber(NoSignalDepartureText, ConfigFields.ProximityNoSignalDepartureSeconds, errors, out var noSignal))
             p.NoSignalDepartureSeconds = noSignal;
+        if (TryGetCount(SuddenReferenceText, ConfigFields.ProximitySuddenChangeReferenceCount, errors, out var suddenReference))
+            p.SuddenChangeReferenceCount = suddenReference;
+        if (TryGetNumber(SuddenDeltaText, ConfigFields.ProximitySuddenChangeDeltaDb, errors, out var suddenDelta))
+            p.SuddenChangeDeltaDb = suddenDelta;
+        if (TryGetNumber(SuddenDropSecondsText, ConfigFields.ProximitySuddenDropConfirmSeconds, errors, out var suddenDrop))
+            p.SuddenDropConfirmSeconds = suddenDrop;
+        if (TryGetNumber(SuddenRiseSecondsText, ConfigFields.ProximitySuddenRiseConfirmSeconds, errors, out var suddenRise))
+            p.SuddenRiseConfirmSeconds = suddenRise;
 
         var n = config.Notification;
         n.Mode = (NotifierMode)Math.Clamp(NotifierModeIndex, 0, 1);
@@ -1065,6 +1096,10 @@ public sealed partial class ConfigViewModel : ObservableObject
         StartupGraceText = ConfigInput.FormatNumber(config.Proximity.StartupGraceSeconds);
         UnlockPendingTimeoutText = ConfigInput.FormatNumber(config.Proximity.UnlockPendingTimeoutSeconds);
         NoSignalDepartureText = ConfigInput.FormatNumber(config.Proximity.NoSignalDepartureSeconds);
+        SuddenReferenceText = ConfigInput.FormatCount(config.Proximity.SuddenChangeReferenceCount);
+        SuddenDeltaText = ConfigInput.FormatNumber(config.Proximity.SuddenChangeDeltaDb);
+        SuddenDropSecondsText = ConfigInput.FormatNumber(config.Proximity.SuddenDropConfirmSeconds);
+        SuddenRiseSecondsText = ConfigInput.FormatNumber(config.Proximity.SuddenRiseConfirmSeconds);
         NotifierModeIndex = Math.Clamp((int)config.Notification.Mode, 0, 1);
         RejectSnoozeText = ConfigInput.FormatNumber(config.Notification.RejectSnoozeSeconds);
         SnoozeText = ConfigInput.FormatNumber(config.Notification.SnoozeMinutes);
@@ -1148,6 +1183,18 @@ public sealed partial class ConfigViewModel : ObservableObject
             case ConfigFields.ProximityNoSignalDepartureSeconds:
                 if (NoSignalDepartureError.Length == 0) NoSignalDepartureError = error.Message;
                 break;
+            case ConfigFields.ProximitySuddenChangeReferenceCount:
+                if (SuddenReferenceError.Length == 0) SuddenReferenceError = error.Message;
+                break;
+            case ConfigFields.ProximitySuddenChangeDeltaDb:
+                if (SuddenDeltaError.Length == 0) SuddenDeltaError = error.Message;
+                break;
+            case ConfigFields.ProximitySuddenDropConfirmSeconds:
+                if (SuddenDropSecondsError.Length == 0) SuddenDropSecondsError = error.Message;
+                break;
+            case ConfigFields.ProximitySuddenRiseConfirmSeconds:
+                if (SuddenRiseSecondsError.Length == 0) SuddenRiseSecondsError = error.Message;
+                break;
             case ConfigFields.NotificationRejectSnoozeSeconds:
                 if (RejectSnoozeError.Length == 0) RejectSnoozeError = error.Message;
                 break;
@@ -1174,6 +1221,10 @@ public sealed partial class ConfigViewModel : ObservableObject
         StartupGraceError = "";
         UnlockPendingTimeoutError = "";
         NoSignalDepartureError = "";
+        SuddenReferenceError = "";
+        SuddenDeltaError = "";
+        SuddenDropSecondsError = "";
+        SuddenRiseSecondsError = "";
         RejectSnoozeError = "";
         SnoozeError = "";
         IrkHint = "";
@@ -1232,6 +1283,18 @@ public sealed partial class ConfigViewModel : ObservableObject
                 break;
             case nameof(NoSignalDepartureText):
                 if (NoSignalDepartureError is { Length: > 0 }) NoSignalDepartureError = "";
+                break;
+            case nameof(SuddenReferenceText):
+                if (SuddenReferenceError is { Length: > 0 }) SuddenReferenceError = "";
+                break;
+            case nameof(SuddenDeltaText):
+                if (SuddenDeltaError is { Length: > 0 }) SuddenDeltaError = "";
+                break;
+            case nameof(SuddenDropSecondsText):
+                if (SuddenDropSecondsError is { Length: > 0 }) SuddenDropSecondsError = "";
+                break;
+            case nameof(SuddenRiseSecondsText):
+                if (SuddenRiseSecondsError is { Length: > 0 }) SuddenRiseSecondsError = "";
                 break;
             case nameof(RejectSnoozeText):
                 if (RejectSnoozeError is { Length: > 0 }) RejectSnoozeError = "";

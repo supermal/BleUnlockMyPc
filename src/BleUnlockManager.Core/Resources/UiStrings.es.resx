@@ -406,7 +406,7 @@
   <data name="Rules_P_unlock_Effect" xml:space="preserve"><value>Tras bloquear, la lectura debe superarlo para contar como «cerca, se puede desbloquear»</value></data>
   <data name="Rules_P_unlock_Name" xml:space="preserve"><value>Umbral de desbloqueo</value></data>
   <data name="Rules_P_unlock_Value" xml:space="preserve"><value>{unlock} dBm</value></data>
-  <data name="Rules_S0_Lead" xml:space="preserve"><value>Son los valores que usa el servicio. Si alguno difiere del predeterminado, se muestra el predeterminado al lado.</value></data>
+  <data name="Rules_S0_Lead" xml:space="preserve"><value>Son los valores que usa el servicio. Si alguno difiere del predeterminado, se muestra el predeterminado al lado.{guardnote}</value></data>
   <data name="Rules_S0_Title" xml:space="preserve"><value>Ajustes vigentes</value></data>
   <data name="Rules_S1_I1_K" xml:space="preserve"><value>Dispositivo de destino:</value></data>
   <data name="Rules_S1_I1_V" xml:space="preserve"><value>la dirección coincide con la dirección de identidad de la configuración, o el IRK resuelve su dirección aleatoria.</value></data>
@@ -678,4 +678,21 @@ La configuración actual del servicio no cambia.</value></data>
   <data name="Settings_Copied" xml:space="preserve"><value>Copiado</value></data>
   <data name="Settings_ReportIssue" xml:space="preserve"><value>Informar de un error o pedir una mejora</value></data>
   <data name="Settings_ProjectHome" xml:space="preserve"><value>Ver la página del proyecto</value></data>
+  <data name="Batch_SuddenDrop" xml:space="preserve"><value>Comprobación de caída</value></data>
+  <data name="Batch_SuddenRise" xml:space="preserve"><value>Comprobación de subida</value></data>
+  <data name="Config_SuddenGuard" xml:space="preserve"><value>Protección contra cambios bruscos</value></data>
+  <data name="Config_SuddenGuardHint" xml:space="preserve"><value>Un salto de la señal no se cree enseguida: una caída brusca con el equipo desbloqueado no avisa y solo bloquea si dura; una subida brusca tras bloquear solo desbloquea cuando se mantiene. Los cambios graduales siguen las reglas normales.</value></data>
+  <data name="Config_SuddenReference" xml:space="preserve"><value>Lecturas de referencia</value></data>
+  <data name="Config_SuddenReferenceHint" xml:space="preserve"><value>Se compara con la media de hasta tantas lecturas enviadas de verdad por el dispositivo en los 120 s previos al disparo (sin las repetidas). Con menos de 5 no se comprueba. 5–50.</value></data>
+  <data name="Config_SuddenDelta" xml:space="preserve"><value>Salto del cambio brusco</value></data>
+  <data name="Config_SuddenDeltaHint" xml:space="preserve"><value>Un disparo a esta distancia de la media de referencia cuenta como salto brusco. 0 = protección desactivada. 0 o 5–60.</value></data>
+  <data name="Config_SuddenDropSeconds" xml:space="preserve"><value>Comprobación de caída</value></data>
+  <data name="Config_SuddenDropSecondsHint" xml:space="preserve"><value>Tras una caída brusca no hay aviso: si en este tiempo llegan al menos 3 lecturas reales todas por debajo del umbral de bloqueo, se bloquea directamente; una por encima lo anula. 5–300 s.</value></data>
+  <data name="Config_SuddenRiseSeconds" xml:space="preserve"><value>Comprobación de subida</value></data>
+  <data name="Config_SuddenRiseSecondsHint" xml:space="preserve"><value>Tras una subida brusca con la pantalla bloqueada: solo desbloquea si en este tiempo llegan al menos 2 lecturas reales todas por encima del umbral de desbloqueo; una bajada o pocas lecturas, no. 1–60 s.</value></data>
+  <data name="Rules_GuardNote" xml:space="preserve"><value> Protección contra cambios bruscos: si un disparo se aleja ≥ {1} dB de la media de hasta {0} lecturas reales anteriores, una caída se observa {2} s (al menos 3 lecturas reales por debajo del umbral de bloqueo bloquean directamente, sin aviso) y una subida {3} s (al menos 2 lecturas reales por encima del umbral de desbloqueo desbloquean); las reglas de número de lecturas de abajo son para cambios graduales.</value></data>
+  <data name="Rules_GuardOff" xml:space="preserve"><value> La protección contra cambios bruscos está desactivada.</value></data>
+  <data name="AutoStart_DoneTitle" xml:space="preserve"><value>Servicio iniciado automáticamente</value></data>
+  <data name="AutoStart_DoneMessage" xml:space="preserve"><value>El servicio BleUnlock no estaba en marcha al abrir el gestor y se ha iniciado. Si lo detienes aquí con «Detener servicio», no se volverá a iniciar solo hasta que pulses «Iniciar servicio».</value></data>
+  <data name="AutoStart_FailedTitle" xml:space="preserve"><value>No se pudo iniciar el servicio automáticamente</value></data>
 </root>

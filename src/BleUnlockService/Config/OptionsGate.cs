@@ -162,6 +162,12 @@ public sealed class OptionsGate : IDisposable
         a.Proximity.LockConfirmSampleCount != b.Proximity.LockConfirmSampleCount ||
         a.Proximity.StartupGraceSeconds != b.Proximity.StartupGraceSeconds ||
         a.Proximity.UnlockPendingTimeoutSeconds != b.Proximity.UnlockPendingTimeoutSeconds ||
+        // Faltaba: cambiar solo el respaldo sin señal se daba por «sin cambios» y no se aplicaba
+        a.Proximity.NoSignalDepartureSeconds != b.Proximity.NoSignalDepartureSeconds ||
+        a.Proximity.SuddenChangeReferenceCount != b.Proximity.SuddenChangeReferenceCount ||
+        a.Proximity.SuddenChangeDeltaDb != b.Proximity.SuddenChangeDeltaDb ||
+        a.Proximity.SuddenDropConfirmSeconds != b.Proximity.SuddenDropConfirmSeconds ||
+        a.Proximity.SuddenRiseConfirmSeconds != b.Proximity.SuddenRiseConfirmSeconds ||
         a.Notification.Mode != b.Notification.Mode ||
         a.Notification.RejectSnoozeSeconds != b.Notification.RejectSnoozeSeconds ||
         a.Notification.SnoozeMinutes != b.Notification.SnoozeMinutes ||
